@@ -34,6 +34,7 @@
 <a href="pages/media/index.html">Media</a>
 <a href="pages/contact/index.html">Contact</a>
         <a href="/pages/about/index.html">About</a>
+<!-- CTA ladder: keep header action visible but non-competing with hero primary -->
 <a class="nav-cta" href="pages/contact/index.html#dive-now">Dive Now</a>
 
       </nav>
@@ -63,11 +64,19 @@
           Dive deeper. Experience more.<br>
           <strong>Always dive.</strong>
         </p>
+        <p class="hero-local-line">Scuba certification and continuing education in La Grange, IL (Chicago area)</p>
+        <p class="hero-address-line">Training base: 1030 S La Grange Rd, La Grange, IL 60525</p>
 
         <div class="hero-buttons">
-          <a href="pages/training/course-builder/index.html" class="btn primary">Plan My Training</a>
-          <a href="pages/travel/index.html" class="btn secondary">Explore Travel</a>
+          <a href="/training" class="btn primary" aria-label="Plan my scuba training">Plan My Training</a>
+          <a href="/quiz" class="btn secondary" aria-label="Take the dive path quiz">Take the Dive Path Quiz</a>
         </div>
+        <!-- CTA ladder + trust microcopy: quiet confidence signal under primary actions -->
+        <p class="hero-trust-line" aria-label="Chicago-area training, small groups, real-world diving">
+          <span>Chicago-area training</span>
+          <span>Small groups</span>
+          <span>Real-world diving</span>
+        </p>
       </div>
 
       <div class="hero-logo" aria-hidden="true">
@@ -86,14 +95,13 @@
     </div>
   </section>
 
-
-
   <section class="features">
     <div class="feature-grid">
 
       <a href="pages/training/index.html" class="feature-card feature-card-training">
         <h3>Learn to Dive</h3>
         <p>From Open Water to advanced and specialty training, your adventure begins here!</p>
+        <p class="feature-price-note">Programs start at competitive rates. Request details.</p>
       </a>
 
       <a href="pages/travel/index.html" class="feature-card feature-card-travel">
@@ -108,6 +116,42 @@
 
     </div>
   </section>
+
+  <section class="dive-quiz-entry" aria-labelledby="dive-quiz-title">
+    <div class="dive-quiz-entry-inner">
+      <!-- Tone polish: reduce friction and keep guided-path voice -->
+      <h2 id="dive-quiz-title">Not sure where to start? We'll guide you.</h2>
+      <p class="dive-quiz-subtext">Quick recommendation or full dive path.</p>
+      <div class="dive-quiz-mode-grid">
+        <button type="button" class="dive-quiz-mode dive-quiz-mode-primary" data-open-quiz="quick">
+          <span class="dive-quiz-mode-title">Quick Recommendation (30 sec)</span>
+          <span class="dive-quiz-mode-copy">Get your best next step instantly.</span>
+        </button>
+        <button type="button" class="dive-quiz-mode" data-open-quiz="builder">
+          <span class="dive-quiz-mode-title">Build Your Dive Path (2 min)</span>
+          <span class="dive-quiz-mode-copy">Map your future as a diver.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div class="dive-quiz-modal" id="dive-quiz-modal" aria-hidden="true">
+    <div class="dive-quiz-card" role="dialog" aria-modal="true" aria-labelledby="dive-quiz-dialog-title">
+      <div class="dive-quiz-head">
+        <h2 id="dive-quiz-dialog-title">Find Your Dive Path</h2>
+        <button type="button" class="dive-quiz-close" data-close-quiz aria-label="Close quiz">Close</button>
+      </div>
+      <p class="dive-quiz-mode-label" id="dive-quiz-mode-label">Quick Recommendation</p>
+      <p class="dive-quiz-progress" id="dive-quiz-progress" aria-live="polite"></p>
+
+      <div class="dive-quiz-body" id="dive-quiz-body"></div>
+
+      <div class="dive-quiz-actions" id="dive-quiz-actions">
+        <button type="button" class="btn secondary" id="dive-quiz-back">Back</button>
+        <button type="button" class="btn primary" id="dive-quiz-next">Next</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= WHY + CTA (SINGLE BACKGROUND IMAGE) ================= -->
   <section class="why-bg">
@@ -124,15 +168,27 @@
       <section class="why-dmz">
         <h2>WHY DIVE WITH DMZ SCUBA?</h2>
         <p class="why-tagline">Professional training. Epic trips. Real adventures.</p>
+        <ul class="why-points" aria-label="DMZ Scuba credibility highlights">
+          <li>Local Chicago-area instruction in La Grange</li>
+          <li>Small groups with personal coaching</li>
+          <li>SDI training progression from Open Water forward</li>
+          <li>Real-world diving focus for confidence in the water</li>
+        </ul>
       </section>
 
       <section class="cta cta-on-bg">
-        <h2>Ready to Make a Splash?</h2>
-        <p>Contact us to plan your next dive.</p>
-        <a href="pages/contact/index.html" class="btn primary">Get in Touch</a>
+        <!-- Consistency: align final CTA with guided path/planning language -->
+        <h2>Tell me your dive goals. I'll map the path.</h2>
+        <p>New diver, continuing training, or planning your first trip - we'll build the next step together.</p>
+        <a href="pages/contact/index.html?interest=training#dive-now" class="btn primary">Start My Dive Plan</a>
       </section>
     </div>
   </section>
+
+  <div class="mobile-sticky-cta" id="mobile-sticky-cta" aria-label="Start diving quick action">
+    <a href="pages/contact/index.html?interest=training#dive-now" class="btn primary mobile-sticky-cta-link">Start Diving</a>
+    <button type="button" class="mobile-sticky-close" aria-label="Dismiss start diving button" data-dismiss-target="#mobile-sticky-cta">Close</button>
+  </div>
 
 
 
@@ -143,6 +199,7 @@
 
   <!-- Main JS -->
   <script src="js/main.js"></script>
+  <script src="js/quiz.js"></script>
 </body>
 </html>
 

@@ -57,7 +57,6 @@
   const fieldLogisticsDetails = document.getElementById("destFieldLogisticsDetails");
   const fieldDiveSites = document.getElementById("destFieldDiveSites");
   const fieldNonDiving = document.getElementById("destFieldNonDiving");
-  const fieldBaseJson = document.getElementById("destFieldBaseJson");
   const fieldExpandedJson = document.getElementById("destFieldExpandedJson");
   const applyJsonButton = document.getElementById("destApplyJson");
   const formatJsonButton = document.getElementById("destFormatJson");
@@ -74,6 +73,8 @@
 
   let items = [];
   let selectedId = "";
+  let advancedJsonDirty = false;
+  let suppressJsonDirty = false;
 
   function getToken() {
     return window.sessionStorage.getItem(tokenStorageKey) || "";
@@ -106,6 +107,7 @@
     logoutButtons.forEach((btn) => {
       btn.style.display = authed ? "" : "none";
     });
+    syncActionUi();
   }
 
   async function apiFetch(url, options = {}) {
@@ -305,6 +307,44 @@
   function setFormVisible(visible) {
     if (emptyState) emptyState.style.display = visible ? "none" : "block";
     if (formEl) formEl.style.display = visible ? "flex" : "none";
+    syncActionUi();
+  }
+
+  function clearForm() {
+    const textFields = [
+      fieldId,
+      fieldName,
+      fieldSubtitle,
+      fieldTags,
+      fieldHeroImage,
+      fieldIsoImage,
+      fieldIsoTitle,
+      fieldIsoDesc,
+      fieldSummary,
+      fieldExperience,
+      fieldLogistics,
+      fieldNarrative,
+      fieldDayToDay,
+      fieldResortDetails,
+      fieldLogisticsDetails,
+      fieldDiveSites,
+      fieldNonDiving,
+      fieldExpandedJson,
+    ];
+    textFields.forEach((field) => {
+      if (field) field.value = "";
+    });
+    if (fieldLat) fieldLat.value = "0";
+    if (fieldLon) fieldLon.value = "0";
+    renderBulletsEditor([]);
+  }
+
+  function syncActionUi() {
+    const authed = isAuthed();
+    const hasSelection = Boolean(getSelected());
+    if (addButton) addButton.disabled = !authed;
+    if (publishButton) publishButton.disabled = !authed || !hasSelection;
+    if (deleteButton) deleteButton.disabled = !authed || !hasSelection;
   }
 
   function setActiveTab(tab) {
@@ -342,9 +382,44 @@
     if (fieldNonDiving) fieldNonDiving.value = listToLines(item.nonDiving);
 
     const pretty = JSON.stringify(item, null, 2);
-    fieldBaseJson.value = pretty;
-    fieldExpandedJson.value = pretty;
+    suppressJsonDirty = true;
+    if (fieldExpandedJson) fieldExpandedJson.value = pretty;
+    suppressJsonDirty = false;
+    advancedJsonDirty = false;
     syncPreviewFromItem(item);
+  }
+
+  function parseAdvancedJsonFields() {
+    const rawExpanded = fieldExpandedJson ? fieldExpandedJson.value.trim() : "";
+    const raw = rawExpanded;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("Advanced JSON must be an object.");
+    }
+    return parsed;
+  }
+
+  function applyParsedJsonToDraft(parsed) {
+    if (!parsed || typeof parsed !== "object") return null;
+    const nextId = normalizeId(parsed.id || selectedId || fieldId.value);
+    if (!nextId) {
+      throw new Error("JSON must include a valid id.");
+    }
+    const currentIndex = items.findIndex((entry) => entry && entry.id === selectedId);
+    const current = currentIndex >= 0 ? items[currentIndex] : (getSelected() || {});
+    const next = { ...(current || {}), ...(parsed || {}), id: nextId };
+    if (currentIndex >= 0) {
+      items[currentIndex] = next;
+    } else {
+      items.push(next);
+    }
+    selectedId = nextId;
+    renderList(searchInput ? searchInput.value : "");
+    if (listEl) listEl.value = nextId;
+    setFormVisible(true);
+    fillForm(next);
+    return next;
   }
 
   function collectForm() {
@@ -404,6 +479,8 @@
     const active = getSelected();
     setFormVisible(Boolean(active));
     if (active) fillForm(active);
+    else clearForm();
+    syncActionUi();
   }
 
   async function loadItems(selectId = "") {
@@ -433,7 +510,26 @@
       return;
     }
 
+    if (advancedJsonDirty) {
+      try {
+        const parsed = parseAdvancedJsonFields();
+        if (parsed) {
+          applyParsedJsonToDraft(parsed);
+        }
+      } catch (error) {
+        showValidation(error && error.message ? error.message : "Invalid advanced JSON.", true);
+        setStatus("Save blocked", "error");
+        return;
+      }
+    }
+
     const item = collectForm();
+    const active = getSelected();
+    if (!active || !selectedId) {
+      showValidation("Select a destination or click Add Destination first.", true);
+      setStatus("Save blocked", "error");
+      return;
+    }
     if (!item.id || !item.name) {
       showValidation("ID and Name are required.", true);
       return;
@@ -488,6 +584,10 @@
   }
 
   function createNewDestination() {
+    if (!isAuthed()) {
+      buildLoginModal(() => createNewDestination());
+      return;
+    }
     const seed = `destination-${Date.now().toString().slice(-5)}`;
     const template = {
       id: seed,
@@ -520,6 +620,7 @@
     showValidation("New draft created. Click Publish to save.");
     setStatus("Draft", "neutral");
     notifySubscribers();
+    syncActionUi();
   }
 
   async function requestImagesDirectUpload(variant) {
@@ -614,11 +715,12 @@
   }
 
   function applyJson() {
-    const raw = (fieldExpandedJson && fieldExpandedJson.value.trim()) || (fieldBaseJson && fieldBaseJson.value.trim()) || "";
+    const raw = (fieldExpandedJson && fieldExpandedJson.value.trim()) || "";
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
-      fillForm(parsed);
+      applyParsedJsonToDraft(parsed);
+      advancedJsonDirty = false;
       showValidation("JSON applied.");
     } catch (error) {
       showValidation("Invalid JSON.", true);
@@ -629,8 +731,10 @@
     try {
       const parsed = collectForm();
       const pretty = JSON.stringify(parsed, null, 2);
-      if (fieldBaseJson) fieldBaseJson.value = pretty;
+      suppressJsonDirty = true;
       if (fieldExpandedJson) fieldExpandedJson.value = pretty;
+      suppressJsonDirty = false;
+      advancedJsonDirty = false;
       showValidation("JSON formatted.");
     } catch (error) {
       showValidation("Could not format JSON.", true);
@@ -758,6 +862,7 @@
       const active = getSelected();
       setFormVisible(Boolean(active));
       if (active) fillForm(active);
+      syncActionUi();
     });
   }
 
@@ -798,6 +903,11 @@
   if (deleteButton) deleteButton.addEventListener("click", deleteSelected);
   if (applyJsonButton) applyJsonButton.addEventListener("click", applyJson);
   if (formatJsonButton) formatJsonButton.addEventListener("click", formatJson);
+  if (fieldExpandedJson) {
+    fieldExpandedJson.addEventListener("input", () => {
+      if (!suppressJsonDirty) advancedJsonDirty = true;
+    });
+  }
   if (bulletsAddButton) {
     bulletsAddButton.addEventListener("click", () => {
       addBulletRow("");

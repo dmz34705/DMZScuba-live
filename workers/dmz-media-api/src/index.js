@@ -282,6 +282,14 @@ function buildTemplateVariables(name = "", destinationName = "") {
   };
 }
 
+const QUIZ_RESULTS_TEMPLATE_ID_FALLBACK = "a2b38bfb-89a1-41e4-99f9-9a95063a3cf1";
+
+function shouldSendQuizResultsAutoReply(formName = "") {
+  const value = String(formName || "").trim().toLowerCase();
+  if (!value) return false;
+  return value.includes("dive quiz") || value.includes("quiz");
+}
+
 function shouldSendGeneralInquiryAutoReply(formName = "") {
   const value = String(formName || "").trim().toLowerCase();
   if (!value) return false;
@@ -291,6 +299,47 @@ function shouldSendGeneralInquiryAutoReply(formName = "") {
     value.includes("course builder") ||
     value.includes("contact")
   );
+}
+
+function buildQuizResultsConfirmationEmail() {
+  const subject = "We received your Dive Path Quiz results - DMZ Scuba";
+  const html = `<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#050b14;color:#eaf2ff;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#050b14;padding:18px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;border:1px solid rgba(255,255,255,0.12);border-radius:18px;overflow:hidden;background:#071325;">
+            <tr>
+              <td style="padding:24px;background:linear-gradient(180deg, rgba(85,185,255,0.18) 0%, rgba(7,19,37,1) 100%);border-bottom:1px solid rgba(255,255,255,0.08);text-align:center;">
+                <img src="https://dmzscuba.com/assets/images/logos/dmz-scuba-logo.png" width="96" alt="DMZ Scuba logo" style="display:inline-block;width:96px;height:auto;border:0;outline:none;text-decoration:none;margin:0 0 10px 0;" />
+                <h1 style="margin:0;font-size:28px;line-height:1.2;color:#eaf2ff;">Your dive path is in.</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:22px 24px;color:#dce8f8;">
+                <p style="margin:0 0 12px 0;font-size:15px;line-height:1.75;">Thank you for completing the DMZ Scuba Dive Path Quiz. We received your results and are preparing your personalized next-step plan.</p>
+                <p style="margin:0 0 12px 0;font-size:15px;line-height:1.75;">Please watch for either an email from <a href="mailto:info@dmzscuba.com" style="color:#9bd3ff;text-decoration:none;">info@dmzscuba.com</a> or a call from <a href="tel:+16307039125" style="color:#9bd3ff;text-decoration:none;">630-703-9125</a>.</p>
+                <p style="margin:0;font-size:15px;line-height:1.75;color:#eaf2ff;">Warm regards,<br/>Zachary Lisowski<br/>Owner | DMZ Scuba LLC<br/><a href="mailto:info@dmzscuba.com" style="color:#9bd3ff;text-decoration:none;">info@dmzscuba.com</a><br/><a href="https://dmzscuba.com" style="color:#9bd3ff;text-decoration:none;">dmzscuba.com</a></p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+  const text = [
+    "Thank you for completing the DMZ Scuba Dive Path Quiz.",
+    "We received your results and are preparing your personalized next-step plan.",
+    "",
+    "Please watch for either:",
+    "- Email: info@dmzscuba.com",
+    "- Call: 630-703-9125",
+    "",
+    "DMZ Scuba",
+  ].join("\n");
+  return { subject, html, text };
 }
 
 function buildGeneralInquiryConfirmationEmail(name = "") {
@@ -611,25 +660,31 @@ async function handleContact(request, env) {
 
   let generalAutoReplySent = false;
   if (email && isValidEmail(email) && shouldSendGeneralInquiryAutoReply(formName)) {
+    const isQuizSubmission = shouldSendQuizResultsAutoReply(formName);
     const generalTemplateId = String(env.RESEND_TEMPLATE_GENERAL_INQUIRY || "").trim();
-    const generalContent = buildGeneralInquiryConfirmationEmail(name);
-    const autoReplyPayload = generalTemplateId
+    const quizTemplateId =
+      String(env.RESEND_TEMPLATE_QUIZ_RESULTS || "").trim() || QUIZ_RESULTS_TEMPLATE_ID_FALLBACK;
+    const selectedTemplateId = isQuizSubmission ? quizTemplateId : generalTemplateId;
+    const autoReplyContent = isQuizSubmission
+      ? buildQuizResultsConfirmationEmail()
+      : buildGeneralInquiryConfirmationEmail(name);
+    const autoReplyPayload = selectedTemplateId
       ? {
           from: `${fromName} <${fromEmail}>`,
           to: [email],
-          subject: generalContent.subject,
+          subject: autoReplyContent.subject,
           reply_to: [toEmail],
           template: {
-            id: generalTemplateId,
+            id: selectedTemplateId,
             variables: buildTemplateVariables(name, ""),
           },
         }
       : {
           from: `${fromName} <${fromEmail}>`,
           to: [email],
-          subject: generalContent.subject,
-          html: generalContent.html,
-          text: generalContent.text,
+          subject: autoReplyContent.subject,
+          html: autoReplyContent.html,
+          text: autoReplyContent.text,
           reply_to: [toEmail],
         };
 
@@ -1244,6 +1299,24 @@ async function handleStreamTusUpload(request, env) {
   return jsonResponse({ ok: true, uploadURL: location, uid });
 }
 
+async function handleClientTelemetry(request) {
+  const body = await request.json().catch(() => ({}));
+  const eventType = String(body.eventType || "").trim().slice(0, 80);
+  if (!eventType) {
+    return jsonResponse({ ok: false, error: "Missing eventType." }, 400);
+  }
+  const payload = {
+    kind: "client_telemetry",
+    eventType,
+    pageUrl: String(body.pageUrl || "").slice(0, 500),
+    userAgent: String(body.userAgent || "").slice(0, 400),
+    details: body.details && typeof body.details === "object" ? body.details : {},
+    receivedAt: new Date().toISOString(),
+  };
+  console.log(JSON.stringify(payload));
+  return jsonResponse({ ok: true });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
@@ -1258,6 +1331,8 @@ export default {
       response = await handleGetMedia(env);
     } else if (pathname === "/api/contact" && request.method === "POST") {
       response = await handleContact(request, env);
+    } else if (pathname === "/api/client-telemetry" && request.method === "POST") {
+      response = await handleClientTelemetry(request);
     } else if (pathname === "/api/admin/login" && request.method === "POST") {
       response = await handleLogin(request, env);
     } else if (pathname === "/api/admin/stream-direct-upload" && request.method === "POST") {
