@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="/assets/icons/favicon.png" type="image/png" />
+  <link rel="icon" href="/assets/icons/favicon.ico" sizes="any" />
+  <title>DMZ Scuba | Interactive Training Tools</title>
+  <meta name="description" content="Interactive scuba training tools to visualize depth effects and build better dive awareness before you hit the water." />
+  <link rel="stylesheet" href="../../../css/base.css" />
+  <link rel="stylesheet" href="../../../css/components.css" />
+  <link rel="stylesheet" href="../../../css/responsive.css" />
+  <style>
+    .tools-stage {
+      border-radius: 24px;
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+      margin-top: 14px;
+    }
+
+    .tools-frame {
+      width: 100%;
+      height: 780px;
+      border: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      background: transparent;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .tools-frame.tools-frame-immersive {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      border-radius: 0;
+      background: #000;
+      padding: 0;
+      margin: 0;
+    }
+
+    .tools-frame-canvas {
+      position: relative;
+      transform-origin: top center;
+      will-change: transform;
+      width: 1220px;
+      height: 780px;
+    }
+
+    .tools-frame iframe {
+      width: 1220px;
+      height: 780px;
+      border: 0;
+      display: block;
+      border-radius: 20px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+    }
+
+    .tools-actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .tools-frame {
+        border-radius: 16px;
+      }
+
+      .tools-frame iframe {
+        border-radius: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <header class="site-header">
+      <div class="nav-container">
+        <a class="logo" href="../../../index.html" aria-label="DMZ Scuba Home">
+          <img src="../../../assets/images/logos/dmz-scuba-logo.png" alt="DMZ Scuba logo" />
+        </a>
+        <div class="site-name">DMZ Scuba</div>
+
+        <nav class="main-nav" aria-label="Primary">
+          <a href="../../../index.html">Home</a>
+          <a class="is-active" href="../index.html">Training</a>
+          <a href="../../travel/index.html">Travel</a>
+          <a href="../../media/index.html">Media</a>
+          <a href="../../contact/index.html">Contact</a>
+          <a href="/pages/about/index.html">About</a>
+          <a class="nav-cta" href="../course-builder/index.html">Dive Now</a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="page-hero page-hero-training">
+      <div class="page-hero-inner">
+        <div class="page-hero-copy">
+          <h1>Interactive Tools</h1>
+          <p class="page-hero-sub">
+            Build visual intuition before class. Use simulation tools to understand depth effects, gear visibility, and how lighting changes what you see underwater.
+          </p>
+          <div class="page-hero-actions">
+            <a class="btn primary" href="#color-loss-tool">Open Color-Loss Demo</a>
+            <a class="btn secondary" href="../index.html">Back to Training</a>
+          </div>
+        </div>
+        <div class="page-hero-card training-hero-logo">
+          <img src="../../../assets/images/logos/dmz-scuba-logo.png" alt="DMZ Scuba logo" />
+        </div>
+      </div>
+    </section>
+
+    <main class="page-main">
+      <section class="content-section" id="color-loss-tool">
+        <h2>Underwater Color-Loss Simulator</h2>
+        <p>
+          Drag the diver to change depth, test high-visibility gear colors, and use the flashlight to compare natural ambient light vs artificial light recovery.
+        </p>
+        <div class="tools-stage">
+          <div class="tools-frame" id="colorLossFrame">
+            <div class="tools-frame-canvas" id="colorLossCanvas">
+              <iframe src="./color-loss-demo.html" title="DMZ Scuba Interactive Color Loss Demo" loading="lazy" scrolling="no" allowfullscreen webkitallowfullscreen mozallowfullscreen allow="fullscreen"></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta cta-inline cta-inline-level-up">
+        <h2>More Interactive Tools Coming</h2>
+        <p>We are building additional hands-on visual tools for buoyancy, navigation, and dive planning.</p>
+        <div class="tools-actions">
+          <a class="btn primary" href="../course-builder/index.html">Plan My Training</a>
+          <a class="btn secondary" href="../../contact/index.html">Request a Tool Topic</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <small>&copy; <span id="year"></span> DMZ Scuba. All rights reserved.</small>
+    </footer>
+
+    <script src="../../../js/main.js"></script>
+    <script>
+      (function autoFitDemoFrame() {
+        const frame = document.getElementById("colorLossFrame");
+        const canvas = document.getElementById("colorLossCanvas");
+        const iframe = canvas ? canvas.querySelector("iframe") : null;
+        if (!frame || !canvas || !iframe) return;
+        const desktopW = 1220;
+        const desktopH = 780;
+        const mobileQuery = window.matchMedia("(max-width: 900px)");
+        let embeddedImmersive = false;
+
+        function viewportHeight() {
+          const vvHeight = window.visualViewport && window.visualViewport.height
+            ? Math.round(window.visualViewport.height)
+            : 0;
+          return Math.max(vvHeight, window.innerHeight || 0, document.documentElement.clientHeight || 0, 1);
+        }
+
+        function mobileHeight() {
+          const vh = viewportHeight();
+          return Math.max(560, Math.min(Math.round(vh * 0.8), 760));
+        }
+
+        function measuredMobileHeight() {
+          try {
+            const doc = iframe.contentDocument;
+            if (!doc) return 0;
+            const scene = doc.querySelector(".scene");
+            const body = doc.body;
+            if (!scene || !body) return 0;
+            const bodyStyle = doc.defaultView && doc.defaultView.getComputedStyle
+              ? doc.defaultView.getComputedStyle(body)
+              : null;
+            const padY = bodyStyle
+              ? (parseFloat(bodyStyle.paddingTop) || 0) + (parseFloat(bodyStyle.paddingBottom) || 0)
+              : 0;
+            const sceneRect = scene.getBoundingClientRect();
+            const measured = Math.round(sceneRect.height + padY + 18);
+            if (!Number.isFinite(measured) || measured < 420) return 0;
+            return Math.min(Math.max(measured, 520), 720);
+          } catch (_e) {
+            return 0;
+          }
+        }
+
+        function measuredDesktopHeight() {
+          try {
+            const doc = iframe.contentDocument;
+            if (!doc) return 0;
+            const page = doc.querySelector(".page");
+            const body = doc.body;
+            if (!page || !body) return 0;
+            const bodyStyle = doc.defaultView && doc.defaultView.getComputedStyle
+              ? doc.defaultView.getComputedStyle(body)
+              : null;
+            const padY = bodyStyle
+              ? (parseFloat(bodyStyle.paddingTop) || 0) + (parseFloat(bodyStyle.paddingBottom) || 0)
+              : 0;
+            const pageRect = page.getBoundingClientRect();
+            const measured = Math.round(pageRect.height + padY + 4);
+            if (!Number.isFinite(measured) || measured < desktopH) return 0;
+            return Math.min(measured, 1100);
+          } catch (_e) {
+            return 0;
+          }
+        }
+
+        function fit() {
+          const frameWidth = frame.clientWidth;
+          if (!frameWidth) return;
+          const mobileMode = mobileQuery.matches;
+
+          if (embeddedImmersive) {
+            const fullW = Math.max(window.innerWidth || frameWidth, 1);
+            const fullH = viewportHeight();
+            canvas.style.transform = "none";
+            canvas.style.width = `${fullW}px`;
+            canvas.style.height = `${fullH}px`;
+            iframe.style.width = `${fullW}px`;
+            iframe.style.height = `${fullH}px`;
+            frame.style.height = `${fullH}px`;
+            return;
+          }
+
+          if (mobileMode) {
+            const maxSafe = Math.max(520, viewportHeight() - 24);
+            const targetH = Math.min(measuredMobileHeight() || mobileHeight(), maxSafe);
+            canvas.style.transform = "none";
+            canvas.style.width = `${frameWidth}px`;
+            canvas.style.height = `${targetH}px`;
+            iframe.style.width = `${frameWidth}px`;
+            iframe.style.height = `${targetH}px`;
+            frame.style.height = `${targetH}px`;
+            return;
+          }
+
+          const targetDesktopH = Math.max(desktopH, measuredDesktopHeight() || 0);
+          const scale = Math.min(frameWidth / desktopW, 1);
+          canvas.style.transform = `scale(${scale.toFixed(4)})`;
+          canvas.style.width = `${desktopW}px`;
+          canvas.style.height = `${targetDesktopH}px`;
+          iframe.style.width = `${desktopW}px`;
+          iframe.style.height = `${targetDesktopH}px`;
+          frame.style.height = `${Math.round(targetDesktopH * scale)}px`;
+        }
+
+        let rafId = 0;
+        function scheduleFit() {
+          if (rafId) cancelAnimationFrame(rafId);
+          rafId = requestAnimationFrame(fit);
+        }
+
+        window.addEventListener("resize", scheduleFit, { passive: true });
+        window.addEventListener("orientationchange", scheduleFit, { passive: true });
+        if (window.visualViewport && window.visualViewport.addEventListener) {
+          window.visualViewport.addEventListener("resize", scheduleFit, { passive: true });
+        }
+        if (mobileQuery && mobileQuery.addEventListener) {
+          mobileQuery.addEventListener("change", scheduleFit);
+        }
+        window.addEventListener("message", (event) => {
+          const data = event && event.data;
+          if (!data || data.type !== "dmzColorLossImmersive") return;
+          embeddedImmersive = Boolean(data.enabled);
+          frame.classList.toggle("tools-frame-immersive", embeddedImmersive);
+          document.body.style.overflow = embeddedImmersive ? "hidden" : "";
+          scheduleFit();
+        });
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(scheduleFit).catch(() => {});
+        }
+        iframe.addEventListener("load", scheduleFit);
+        scheduleFit();
+      })();
+    </script>
+  </div>
+</body>
+</html>
