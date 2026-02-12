@@ -66,8 +66,8 @@
         </p>
         <p class="hero-local-line">Scuba certification and continuing education in La Grange, IL (Chicago area)</p>
                 <p class="hero-address-line">Training Locations &amp; Partners</p>
-        <p class="hero-address-line"><a href="geo:0,0?q=DJ%27s%20Scuba%20Locker%20Inc.%2C%209301%20Ogden%20Ave%2C%20Brookfield%2C%20IL%2060513" class="js-map-link" data-map-query="DJ's Scuba Locker Inc., 9301 Ogden Ave, Brookfield, IL 60513" title="Get directions to DJ's Scuba Locker Inc.">Primary Training Facility: DJ's Scuba Locker Inc., 9301 Ogden Ave, Brookfield, IL 60513</a></p>
-        <p class="hero-address-line"><a href="geo:0,0?q=1030%20S%20La%20Grange%20Rd%2C%20La%20Grange%2C%20IL%2060525" class="js-map-link" data-map-query="1030 S La Grange Rd, La Grange, IL 60525" title="Get directions to La Grange training location">Training Location  La Grange: 1030 S La Grange Rd, La Grange, IL 60525</a></p>
+        <p class="hero-address-line"><a href="https://maps.apple.com/?q=DJ%27s%20Scuba%20Locker%20Inc.%2C%209301%20Ogden%20Ave%2C%20Brookfield%2C%20IL%2060513" class="js-map-link" data-map-query="DJ's Scuba Locker Inc., 9301 Ogden Ave, Brookfield, IL 60513" title="Get directions to DJ's Scuba Locker Inc.">Primary Training Facility: DJ's Scuba Locker Inc., 9301 Ogden Ave, Brookfield, IL 60513</a></p>
+        <p class="hero-address-line"><a href="https://maps.apple.com/?q=1030%20S%20La%20Grange%20Rd%2C%20La%20Grange%2C%20IL%2060525" class="js-map-link" data-map-query="1030 S La Grange Rd, La Grange, IL 60525" title="Get directions to La Grange training location">Training Location  La Grange: 1030 S La Grange Rd, La Grange, IL 60525</a></p>
         <p class="hero-address-line">Training and certification programs are conducted here in partnership with this approved facility.</p>
 
         <div class="hero-buttons">
@@ -204,12 +204,14 @@
   <!-- Main JS -->
   <script src="js/main.js"></script>
   <script src="js/quiz.js"></script>
-    <script>
+      <script>
     (function mapLinkChooser() {
       const links = document.querySelectorAll(".js-map-link");
       if (!links.length) return;
 
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+      const ua = navigator.userAgent || "";
+      const isIOS = /iPhone|iPad|iPod/i.test(ua);
+      const isAndroid = /Android/i.test(ua);
 
       links.forEach((link) => {
         link.addEventListener("click", (event) => {
@@ -217,16 +219,22 @@
           if (!query) return;
 
           const encoded = encodeURIComponent(query);
+          const appleUrl = `https://maps.apple.com/?q=${encoded}`;
           const geoUrl = `geo:0,0?q=${encoded}`;
           const googleUrl = `https://www.google.com/maps/search/?api=1&query=${encoded}`;
 
-          if (isMobile) {
-            event.preventDefault();
+          event.preventDefault();
+
+          if (isIOS) {
+            window.location.href = appleUrl;
+            return;
+          }
+
+          if (isAndroid) {
             window.location.href = geoUrl;
             return;
           }
 
-          event.preventDefault();
           window.open(googleUrl, "_blank", "noopener");
         });
       });
@@ -234,6 +242,7 @@
   </script>
 </body>
 </html>
+
 
 
 
