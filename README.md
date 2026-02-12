@@ -148,7 +148,16 @@ Worker deploy (API backend):
 - Keep this README and Worker docs in sync with endpoint/config changes.
 - Submit pending Search Console indexing requests for About and Quiz when quota allows.
 
-## 12) Command Quick Reference
+## 12) Project Development Summary (Past ~3.5 Weeks)
+
+From January 26, 2026 to February 12, 2026, the site moved from initial structure to a launch-ready live platform:
+
+- Week 1 (Jan 26-Jan 31): initial site foundation, media/admin backend wiring, contact flow setup, and first major page/content builds.
+- Week 2 (Feb 1-Feb 7): major travel and destination system expansion, including v2 API migration, robust admin editing flows, Cloudflare Images integration, and reliability fixes for save/publish workflows.
+- Week 3 (Feb 8-Feb 12): media reel/mobile polish, interactive tools camera-mode rollout, training-partner clarity updates, map-link behavior refinement for desktop/mobile, and SEO/indexing hardening (`robots.txt`, `sitemap.xml`, canonical/metadata alignment).
+- Current status: live architecture is stable with production deployment flow in place; remaining post-launch housekeeping includes Search Console indexing requests for About and Quiz pages once quota resets.
+
+## 13) Command Quick Reference
 
 - Status: `git -C "H:/dmz-scuba-live" status --short --branch`
 - Push: `git -C "H:/dmz-scuba-live" push origin main`
