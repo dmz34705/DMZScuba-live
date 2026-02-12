@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://dmzscuba.com/sitemap.xml
+Sitemap: https://www.dmzscuba.com/sitemap.xml
+
