@@ -152,6 +152,7 @@ Worker deploy (API backend):
 
 From January 26, 2026 to February 12, 2026, the site moved from initial structure to a launch-ready live platform:
 
+- Build approach: the site was built entirely by hand, using Codex as a development tool, starting from an empty folder and iteratively shipping each system into production.
 - Week 1 (Jan 26-Jan 31): initial site foundation, media/admin backend wiring, contact flow setup, and first major page/content builds.
 - Week 2 (Feb 1-Feb 7): major travel and destination system expansion, including v2 API migration, robust admin editing flows, Cloudflare Images integration, and reliability fixes for save/publish workflows.
 - Week 3 (Feb 8-Feb 12): media reel/mobile polish, interactive tools camera-mode rollout, training-partner clarity updates, map-link behavior refinement for desktop/mobile, and SEO/indexing hardening (`robots.txt`, `sitemap.xml`, canonical/metadata alignment).
