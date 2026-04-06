@@ -399,6 +399,74 @@ function buildGeneralInquiryConfirmationEmail(name = "") {
   return { subject, html, text };
 }
 
+function buildEventRegistrationNotifyEmail(details = {}) {
+  const title = String(details.title || "DMZ Scuba Event").trim();
+  const scheduleLine = String(details.scheduleLine || "").trim();
+  const registrantName = String(details.registrantName || "New registrant").trim();
+  const email = String(details.email || "").trim();
+  const phone = String(details.phone || "").trim();
+  const certLevel = String(details.certLevel || "").trim();
+  const additionalGuests = Math.max(0, Number(details.additionalGuests) || 0);
+  const partySize = Math.max(1, Number(details.partySize) || 1);
+  const remainingSpots = Math.max(0, Number(details.remainingSpots) || 0);
+  const subject = `New event signup: ${title}`;
+  const text = [
+    `A new event registration was submitted for ${title}.`,
+    scheduleLine ? `Schedule: ${scheduleLine}` : "",
+    `Registrant: ${registrantName}`,
+    email ? `Email: ${email}` : "",
+    phone ? `Phone: ${phone}` : "",
+    certLevel ? `Certification Level: ${certLevel}` : "",
+    `Party Size: ${partySize}`,
+    `Additional Guests: ${additionalGuests}`,
+    `Remaining Spots: ${remainingSpots}`,
+  ].filter(Boolean).join("\n");
+  const html = `<!doctype html><html><body style="margin:0;padding:20px;background:#050b14;color:#eaf2ff;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;border:1px solid rgba(255,255,255,0.12);border-radius:18px;overflow:hidden;background:#071325;"><tr><td style="padding:24px;"><p style="margin:0 0 8px 0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#55b9ff;">Event Registration</p><h1 style="margin:0 0 12px 0;font-size:24px;color:#eaf2ff;">${title}</h1><p style="margin:0 0 14px 0;color:#dce8f8;line-height:1.7;">A new signup was received for this event.</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr><td style="padding:8px 0;color:#8fb2d6;">Registrant</td><td style="padding:8px 0;color:#eaf2ff;">${registrantName}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Schedule</td><td style="padding:8px 0;color:#eaf2ff;">${scheduleLine || "Date coming soon"}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Email</td><td style="padding:8px 0;color:#eaf2ff;">${email || "-"}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Phone</td><td style="padding:8px 0;color:#eaf2ff;">${phone || "-"}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Certification</td><td style="padding:8px 0;color:#eaf2ff;">${certLevel || "-"}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Party Size</td><td style="padding:8px 0;color:#eaf2ff;">${partySize}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Additional Guests</td><td style="padding:8px 0;color:#eaf2ff;">${additionalGuests}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Remaining Spots</td><td style="padding:8px 0;color:#eaf2ff;">${remainingSpots}</td></tr></table></td></tr></table></td></tr></table></body></html>`;
+  return { subject, html, text };
+}
+
+function buildEventRegistrationConfirmationEmail(details = {}) {
+  const title = String(details.title || "your DMZ Scuba event").trim();
+  const scheduleLine = String(details.scheduleLine || "").trim();
+  const registrantName = String(details.registrantName || "Diver").trim();
+  const partySize = Math.max(1, Number(details.partySize) || 1);
+  const remainingSpots = Math.max(0, Number(details.remainingSpots) || 0);
+  const subject = `You're signed up for ${title}`;
+  const text = [
+    `Hi ${registrantName},`,
+    "",
+    `You're signed up for ${title}.`,
+    scheduleLine ? `Schedule: ${scheduleLine}` : "",
+    `Party Size: ${partySize}`,
+    `Remaining Spots: ${remainingSpots}`,
+    "",
+    "If you have any questions before the event, reply to this email and DMZ Scuba will help you out.",
+    "",
+    "DMZ Scuba",
+  ].filter(Boolean).join("\n");
+  const html = `<!doctype html><html><body style="margin:0;padding:20px;background:#050b14;color:#eaf2ff;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;border:1px solid rgba(255,255,255,0.12);border-radius:18px;overflow:hidden;background:#071325;"><tr><td style="padding:24px;"><p style="margin:0 0 8px 0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#55b9ff;">Event Confirmation</p><h1 style="margin:0 0 12px 0;font-size:24px;color:#eaf2ff;">You're signed up.</h1><p style="margin:0 0 12px 0;color:#dce8f8;line-height:1.7;">Hi ${registrantName}, thanks for registering for <strong>${title}</strong>.</p><p style="margin:0 0 12px 0;color:#dce8f8;line-height:1.7;">${scheduleLine || "We'll follow up with the final schedule details if anything changes."}</p><p style="margin:0 0 12px 0;color:#dce8f8;line-height:1.7;">Your party size is <strong>${partySize}</strong>. There are currently <strong>${remainingSpots}</strong> spots remaining.</p><p style="margin:0;color:#dce8f8;line-height:1.7;">Reply directly to this email if you need to update anything before the event.</p></td></tr></table></td></tr></table></body></html>`;
+  return { subject, html, text };
+}
+
+async function sendResendEmail(env, payload, logLabel = "Resend email") {
+  const apiKey = String(env.RESEND_API_KEY || "").trim();
+  if (!apiKey) return { ok: false, error: "RESEND_API_KEY is not configured." };
+  const resp = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!resp.ok) {
+    const errorText = await resp.text();
+    console.log(`${logLabel} error`, resp.status, errorText);
+    return { ok: false, error: errorText || `HTTP ${resp.status}` };
+  }
+  return { ok: true };
+}
+
 async function handleLogin(request, env) {
   const body = await request.json().catch(() => ({}));
   const user = String(body.user || "");
@@ -1202,6 +1270,61 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
     .run();
 
   const snapshotAfter = await getRegistrationSnapshot(env, sourceId, eventDate, config);
+  const fromEmail = String(env.RESEND_FROM_EMAIL || "").trim() || "no-reply@dmzscuba.com";
+  const fromName = String(env.RESEND_FROM_NAME || "").trim() || "DMZ Scuba";
+  const toEmail = String(env.RESEND_TO || "").trim() || "info@dmzscuba.com";
+  const registrantName = `${firstName} ${lastName}`.trim();
+  const scheduleLine = [String(config.title || "").trim(), String(eventDate || "").trim()]
+    .filter(Boolean)
+    .join(" | ");
+  let notifyEmailSent = false;
+  let attendeeEmailSent = false;
+  let emailWarning = "";
+
+  const notifyContent = buildEventRegistrationNotifyEmail({
+    title: config.title || "DMZ Scuba Event",
+    scheduleLine,
+    registrantName,
+    email,
+    phone,
+    certLevel,
+    additionalGuests,
+    partySize,
+    remainingSpots: snapshotAfter.remainingSpots,
+  });
+  const notifyPayload = {
+    from: `${fromName} <${fromEmail}>`,
+    to: [toEmail],
+    subject: notifyContent.subject,
+    html: notifyContent.html,
+    text: notifyContent.text,
+    reply_to: [email],
+  };
+  const notifyResult = await sendResendEmail(env, notifyPayload, "Event notify email");
+  notifyEmailSent = Boolean(notifyResult.ok);
+
+  const attendeeContent = buildEventRegistrationConfirmationEmail({
+    title: config.title || "DMZ Scuba Event",
+    scheduleLine,
+    registrantName: firstName || registrantName,
+    partySize,
+    remainingSpots: snapshotAfter.remainingSpots,
+  });
+  const attendeePayload = {
+    from: `${fromName} <${fromEmail}>`,
+    to: [email],
+    subject: attendeeContent.subject,
+    html: attendeeContent.html,
+    text: attendeeContent.text,
+    reply_to: [toEmail],
+  };
+  const attendeeResult = await sendResendEmail(env, attendeePayload, "Event attendee confirmation email");
+  attendeeEmailSent = Boolean(attendeeResult.ok);
+
+  if (!notifyResult.ok || !attendeeResult.ok) {
+    emailWarning = [notifyResult.error, attendeeResult.error].filter(Boolean).join(" | ");
+  }
+
   return jsonResponse(
     {
       ok: true,
@@ -1212,6 +1335,9 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
         partySize,
         createdAt: now,
       },
+      notifyEmailSent,
+      attendeeEmailSent,
+      emailWarning: emailWarning || undefined,
       ...snapshotAfter,
     },
     201,
