@@ -104,6 +104,14 @@
   let selectedKey = "";
   let editMode = false;
   let isDirty = false;
+  let registrationUiState = {
+    sourceId: "",
+    eventDate: "",
+    loading: false,
+    deletingId: "",
+    snapshot: null,
+    error: "",
+  };
   let selectionContext = {
     requestedDate: "",
     openedFromDate: false,
@@ -218,6 +226,212 @@
     if (!validationEl) return;
     validationEl.textContent = message || "";
     validationEl.classList.toggle("is-error", Boolean(isError));
+  }
+
+  function formatDateTime(value) {
+    const stamp = String(value || "").trim();
+    if (!stamp) return "";
+    const parsed = new Date(stamp);
+    if (Number.isNaN(parsed.getTime())) return stamp;
+    return parsed.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function getEntryRegistrationContext(entry) {
+    if (!entry) return null;
+    const item = entry.item || {};
+    if (!item.registrationEnabled || Math.max(0, Number(item.registrationCapacity) || 0) <= 0) return null;
+    const sourceId = String(item.id || "").trim();
+    let eventDate = "";
+    if (entry.kind === "event") {
+      eventDate = String(selectionContext.requestedDate || item.date || "").trim();
+    } else if (selectionContext.requestedDate && templateCoversDate(item, selectionContext.requestedDate)) {
+      eventDate = String(selectionContext.requestedDate || "").trim();
+    }
+    if (!sourceId || !eventDate) return null;
+    return {
+      sourceId,
+      eventDate,
+      registrationCapacity: Math.max(0, Number(item.registrationCapacity) || 0),
+    };
+  }
+
+  function resetRegistrationUiState() {
+    registrationUiState = {
+      sourceId: "",
+      eventDate: "",
+      loading: false,
+      deletingId: "",
+      snapshot: null,
+      error: "",
+    };
+  }
+
+  function renderRegistrationManager(context, options = {}) {
+    if (!context) return "";
+    const isLoading = Boolean(options.loading);
+    const errorText = String(options.error || "").trim();
+    const snapshot = options.snapshot && typeof options.snapshot === "object" ? options.snapshot : null;
+    const registrants = Array.isArray(snapshot && snapshot.registrants) ? snapshot.registrants : [];
+    const deletingId = String(options.deletingId || "").trim();
+    const capacity = Math.max(0, Number((snapshot && snapshot.registrationCapacity) || context.registrationCapacity || 0) || 0);
+    const usedSpots = Math.max(0, Number((snapshot && snapshot.usedSpots) || 0) || 0);
+    const remainingSpots = Math.max(0, Number((snapshot && snapshot.remainingSpots) || 0) || 0);
+    const summaryText = snapshot
+      ? `${usedSpots} of ${capacity} spots filled. ${remainingSpots} remaining.`
+      : "Load current signups to manage this event's registration list.";
+
+    return `
+      <section class="events-admin-registrations" data-events-registration-manager>
+        <div class="events-admin-registrations-head">
+          <div>
+            <h4>Registered Divers</h4>
+            <p>${escapeHtml(summaryText)}</p>
+          </div>
+          <button
+            class="btn secondary"
+            type="button"
+            data-events-registration-refresh="${escapeHtml(context.sourceId)}"
+            ${isLoading ? "disabled" : ""}
+          >${isLoading ? "Loading..." : "Refresh Signups"}</button>
+        </div>
+        ${errorText ? `<p class="events-admin-registrations-error">${escapeHtml(errorText)}</p>` : ""}
+        ${!snapshot && !isLoading ? `<div class="events-admin-registrations-empty">No signup data loaded yet.</div>` : ""}
+        ${snapshot && !registrants.length ? `<div class="events-admin-registrations-empty">Nobody is registered for this date yet.</div>` : ""}
+        ${registrants.length ? `
+          <div class="events-admin-registrations-list">
+            ${registrants.map((registrant) => {
+              const registrantId = String((registrant && registrant.id) || "").trim();
+              const additionalGuests = Math.max(0, Number((registrant && registrant.additionalGuests) || 0) || 0);
+              const partySize = Math.max(1, Number((registrant && registrant.partySize) || 1) || 1);
+              const createdAt = String((registrant && registrant.createdAt) || "").trim();
+              const detailBits = [
+                partySize > 1 ? `${partySize} divers total` : "Solo signup",
+                additionalGuests > 0 ? `${additionalGuests} guest${additionalGuests === 1 ? "" : "s"}` : "",
+                createdAt ? `Signed up ${formatDateTime(createdAt)}` : "",
+              ].filter(Boolean);
+              const isDeleting = registrantId && registrantId === deletingId;
+              return `
+                <div class="events-admin-registrations-item">
+                  <div class="events-admin-registrations-copy">
+                    <strong>${escapeHtml(String((registrant && registrant.name) || "Unnamed registrant").trim())}</strong>
+                    <span>${escapeHtml(detailBits.join(" | "))}</span>
+                  </div>
+                  <button
+                    class="btn secondary events-admin-registrations-remove"
+                    type="button"
+                    data-events-registration-remove="${escapeHtml(registrantId)}"
+                    ${!registrantId || isDeleting || isLoading ? "disabled" : ""}
+                  >${isDeleting ? "Removing..." : "Remove"}</button>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        ` : ""}
+      </section>
+    `;
+  }
+
+  async function loadRegistrationSnapshot(entry, options = {}) {
+    const context = getEntryRegistrationContext(entry);
+    if (!context || !isAuthed()) {
+      resetRegistrationUiState();
+      return null;
+    }
+    const preserveSnapshot = Boolean(options.preserveSnapshot);
+    registrationUiState = {
+      sourceId: context.sourceId,
+      eventDate: context.eventDate,
+      loading: true,
+      deletingId: preserveSnapshot ? registrationUiState.deletingId : "",
+      snapshot: preserveSnapshot ? registrationUiState.snapshot : null,
+      error: "",
+    };
+    updateDatePicker(getSelectedEntry());
+    try {
+      const resp = await apiFetch(`${publicUrl}/${encodeURIComponent(context.sourceId)}/registrations?date=${encodeURIComponent(context.eventDate)}&t=${Date.now()}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.ok) {
+        throw new Error((data && data.error) || "Could not load registrations.");
+      }
+      registrationUiState = {
+        sourceId: context.sourceId,
+        eventDate: context.eventDate,
+        loading: false,
+        deletingId: "",
+        snapshot: data,
+        error: "",
+      };
+      updateDatePicker(getSelectedEntry());
+      return data;
+    } catch (error) {
+      registrationUiState = {
+        sourceId: context.sourceId,
+        eventDate: context.eventDate,
+        loading: false,
+        deletingId: "",
+        snapshot: null,
+        error: error && error.message ? error.message : "Could not load registrations.",
+      };
+      updateDatePicker(getSelectedEntry());
+      return null;
+    }
+  }
+
+  async function removeRegistration(registrationId) {
+    const entry = getSelectedEntry();
+    const context = getEntryRegistrationContext(entry);
+    const safeId = String(registrationId || "").trim();
+    if (!context || !safeId) return;
+    if (!window.confirm("Remove this registrant from the selected event date?")) return;
+    registrationUiState = {
+      sourceId: context.sourceId,
+      eventDate: context.eventDate,
+      loading: false,
+      deletingId: safeId,
+      snapshot: registrationUiState.snapshot,
+      error: "",
+    };
+    updateDatePicker(entry);
+    try {
+      const resp = await apiFetch(
+        `${adminUrl}/${encodeURIComponent(context.sourceId)}/registrations/${encodeURIComponent(safeId)}?date=${encodeURIComponent(context.eventDate)}&t=${Date.now()}`,
+        { method: "DELETE", cache: "no-store" }
+      );
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.ok) {
+        throw new Error((data && data.error) || "Could not remove that registration.");
+      }
+      registrationUiState = {
+        sourceId: context.sourceId,
+        eventDate: context.eventDate,
+        loading: false,
+        deletingId: "",
+        snapshot: data,
+        error: "",
+      };
+      updateDatePicker(getSelectedEntry());
+      showValidation("Registrant removed from this event date.");
+    } catch (error) {
+      registrationUiState = {
+        sourceId: context.sourceId,
+        eventDate: context.eventDate,
+        loading: false,
+        deletingId: "",
+        snapshot: registrationUiState.snapshot,
+        error: error && error.message ? error.message : "Could not remove that registration.",
+      };
+      updateDatePicker(getSelectedEntry());
+      showValidation(registrationUiState.error, true);
+    }
   }
 
   function setEditMode(next) {
@@ -780,6 +994,11 @@
         candidate.kind === "template"
           ? `Repeats every ${Math.max(1, Number(item.repeatInterval || item.intervalMonths) || 1)} ${repeatUnitValue}${Math.max(1, Number(item.repeatInterval || item.intervalMonths) || 1) === 1 ? "" : "s"}`
           : "Does not repeat";
+      const registrationContext = getEntryRegistrationContext(candidate);
+      const registrationMarkup =
+        registrationContext && selectedKey === key
+          ? renderRegistrationManager(registrationContext, registrationUiState)
+          : "";
       details.innerHTML = `
         <summary>
           <div class="events-admin-date-item-main">
@@ -876,6 +1095,7 @@
               </label>
             </div>` : ""}
             <p class="events-admin-date-item-note">${escapeHtml(occurrenceNote)}</p>
+            ${registrationMarkup}
           </div>
           <div class="events-admin-date-item-actions">
             <button class="btn primary" type="button" data-events-date-done="${key}">Done</button>
@@ -1413,6 +1633,16 @@
     if (fieldRegistrationEnabled) fieldRegistrationEnabled.checked = Boolean(item.registrationEnabled);
     if (fieldRegistrationCapacity) {
       fieldRegistrationCapacity.value = String(Math.max(0, Number(item.registrationCapacity) || 0));
+    }
+    const registrationContext = getEntryRegistrationContext(entry);
+    if (!registrationContext) {
+      resetRegistrationUiState();
+    } else if (
+      registrationUiState.sourceId !== registrationContext.sourceId ||
+      registrationUiState.eventDate !== registrationContext.eventDate
+    ) {
+      resetRegistrationUiState();
+      if (isAuthed()) loadRegistrationSnapshot(entry);
     }
     if (fieldCtaLabel) fieldCtaLabel.value = item.ctaLabel || "";
     if (fieldCtaHref) fieldCtaHref.value = item.ctaHref || "";
@@ -2494,6 +2724,18 @@
       const deleteButton = event.target.closest("[data-events-date-delete]");
       if (deleteButton) {
         deleteDateTreeEntry(String(deleteButton.getAttribute("data-events-date-delete") || "").trim());
+        return;
+      }
+
+      const refreshRegistrationsButton = event.target.closest("[data-events-registration-refresh]");
+      if (refreshRegistrationsButton) {
+        loadRegistrationSnapshot(getSelectedEntry(), { preserveSnapshot: true });
+        return;
+      }
+
+      const removeRegistrationButton = event.target.closest("[data-events-registration-remove]");
+      if (removeRegistrationButton) {
+        removeRegistration(String(removeRegistrationButton.getAttribute("data-events-registration-remove") || "").trim());
         return;
       }
 

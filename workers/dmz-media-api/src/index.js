@@ -1166,7 +1166,7 @@ function resolveRegistrationConfig(payload, sourceId, eventDate) {
 async function getRegistrationSnapshot(env, sourceId, eventDate, config) {
   await ensureEventRegistrationsV2Table(env);
   const rows = await env.DB.prepare(
-    `SELECT first_name, last_name, additional_guests, party_size, created_at
+    `SELECT id, first_name, last_name, additional_guests, party_size, created_at
      FROM event_registrations_v2
      WHERE source_id = ? AND event_date = ?
      ORDER BY created_at ASC`
@@ -1174,6 +1174,7 @@ async function getRegistrationSnapshot(env, sourceId, eventDate, config) {
     .bind(sourceId, eventDate)
     .all();
   const list = (rows.results || []).map((row) => ({
+    id: String((row && row.id) || "").trim(),
     name: buildRegistrantLabel(row && row.first_name, row && row.last_name),
     additionalGuests: Math.max(0, Number((row && row.additional_guests) || 0) || 0),
     partySize: Math.max(1, Number((row && row.party_size) || 1) || 1),
@@ -1343,6 +1344,48 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
     201,
     { "Cache-Control": "no-store" }
   );
+}
+
+async function handleDeleteEventRegistrationV2(request, env, sourceId, registrationId) {
+  const authed = await requireAuth(request, env);
+  if (!authed.ok) return authed.response;
+
+  const url = new URL(request.url);
+  const eventDate = String(url.searchParams.get("date") || "").trim();
+  const safeRegistrationId = String(registrationId || "").trim();
+  if (!sourceId || !eventDate || !safeRegistrationId) {
+    return jsonResponse({ ok: false, error: "Missing source id, registration id, or date." }, 400, { "Cache-Control": "no-store" });
+  }
+
+  const payload = await getEventsPayloadV2(env);
+  const config = resolveRegistrationConfig(payload, sourceId, eventDate);
+  if (!config) {
+    return jsonResponse({ ok: false, error: "Event not found." }, 404, { "Cache-Control": "no-store" });
+  }
+
+  await ensureEventRegistrationsV2Table(env);
+  const existing = await env.DB.prepare(
+    `SELECT id
+     FROM event_registrations_v2
+     WHERE id = ? AND source_id = ? AND event_date = ?
+     LIMIT 1`
+  )
+    .bind(safeRegistrationId, sourceId, eventDate)
+    .first();
+
+  if (!existing) {
+    return jsonResponse({ ok: false, error: "Registration not found." }, 404, { "Cache-Control": "no-store" });
+  }
+
+  await env.DB.prepare(
+    `DELETE FROM event_registrations_v2
+     WHERE id = ? AND source_id = ? AND event_date = ?`
+  )
+    .bind(safeRegistrationId, sourceId, eventDate)
+    .run();
+
+  const snapshot = await getRegistrationSnapshot(env, sourceId, eventDate, config);
+  return jsonResponse({ ok: true, removedRegistrationId: safeRegistrationId, ...snapshot }, 200, { "Cache-Control": "no-store" });
 }
 
 async function handleGetDestinationsV2(env) {
@@ -1869,6 +1912,11 @@ export default {
     } else if (pathname.startsWith("/api/v2/events/") && pathname.endsWith("/registrations") && request.method === "POST") {
       const sourceId = decodeURIComponent(pathname.split("/")[4] || "").trim().toLowerCase();
       response = await handleCreateEventRegistrationV2(request, env, sourceId);
+    } else if (pathname.startsWith("/api/admin/v2/events/") && pathname.includes("/registrations/") && request.method === "DELETE") {
+      const parts = pathname.split("/");
+      const sourceId = decodeURIComponent(parts[5] || "").trim().toLowerCase();
+      const registrationId = decodeURIComponent(parts[7] || "").trim();
+      response = await handleDeleteEventRegistrationV2(request, env, sourceId, registrationId);
     } else if (pathname === "/api/admin/v2/events" && request.method === "PUT") {
       response = await handlePutEventsV2(request, env);
     } else if (pathname === "/api/admin/v2/events" && request.method === "DELETE") {

@@ -1971,6 +1971,83 @@ body.events-admin-date-mode #eventsAdminPageDetails {
   line-height: 1.5;
 }
 
+.events-admin-registrations {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(85,185,255,0.18);
+  background:
+    radial-gradient(220px 120px at 0% 0%, rgba(85,185,255,0.08), rgba(85,185,255,0)),
+    rgba(255,255,255,0.025);
+}
+
+.events-admin-registrations-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.events-admin-registrations-head h4 {
+  margin: 0 0 4px;
+  color: rgba(245,248,255,0.95);
+  font-size: 13px;
+}
+
+.events-admin-registrations-head p,
+.events-admin-registrations-error,
+.events-admin-registrations-empty {
+  margin: 0;
+  color: rgba(234,242,255,0.74);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.events-admin-registrations-error {
+  color: #ffb3b3;
+}
+
+.events-admin-registrations-list {
+  display: grid;
+  gap: 8px;
+}
+
+.events-admin-registrations-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.18);
+}
+
+.events-admin-registrations-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.events-admin-registrations-copy strong {
+  color: rgba(245,248,255,0.96);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.events-admin-registrations-copy span {
+  color: rgba(234,242,255,0.72);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.events-admin-registrations-remove {
+  min-height: 34px;
+}
+
 .events-admin-date-item-actions {
   display: flex;
   flex-wrap: wrap;
