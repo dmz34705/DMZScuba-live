@@ -1649,7 +1649,20 @@
     }
   }
 
+  function syncEmbedFrameQuery() {
+    if (!embedFrame || !window.location) return;
+    const currentSrc = embedFrame.getAttribute("src") || "./embed.html";
+    const nextUrl = new URL(currentSrc, window.location.href);
+    const pageUrl = new URL(window.location.href);
+    nextUrl.search = pageUrl.search;
+    const nextSrc = `${nextUrl.pathname}${nextUrl.search}`;
+    if (embedFrame.getAttribute("src") !== nextSrc) {
+      embedFrame.setAttribute("src", nextSrc);
+    }
+  }
+
   if (embedFrame) {
+    syncEmbedFrameQuery();
     window.addEventListener("message", (event) => {
       const data = event && event.data;
       if (!data || data.type !== "dmzEventsResize" || !data.height) return;
