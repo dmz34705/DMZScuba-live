@@ -707,10 +707,7 @@
     const hasSelectedDate = Boolean(selectionContext.openedFromDate && selectionContext.requestedDate);
     const selectedDateLabel = hasSelectedDate ? formatDateLabel(selectionContext.requestedDate) : "";
     const addLabel = hasSelectedDate
-      ? `Add One-Time Event On ${selectedDateLabel}`
-      : "Select A Date First";
-    const addRepeatingLabel = hasSelectedDate
-      ? `Add Repeating Event From ${selectedDateLabel}`
+      ? `New Event On ${selectedDateLabel}`
       : "Select A Date First";
     document.body.classList.toggle("events-admin-date-mode", hasSelectedDate);
     if (addForDateBtn) {
@@ -718,20 +715,21 @@
       addForDateBtn.disabled = !hasSelectedDate;
     }
     if (addRepeatingForDateBtn) {
-      addRepeatingForDateBtn.textContent = addRepeatingLabel;
-      addRepeatingForDateBtn.disabled = !hasSelectedDate;
+      addRepeatingForDateBtn.hidden = true;
+      addRepeatingForDateBtn.disabled = true;
     }
     if (addEventBtn) {
-      addEventBtn.textContent = hasSelectedDate ? `Add Event On ${selectedDateLabel}` : "Select A Date First";
+      addEventBtn.textContent = hasSelectedDate ? `New Event On ${selectedDateLabel}` : "Select A Date First";
       addEventBtn.disabled = !hasSelectedDate;
-      addEventBtn.hidden = hasSelectedDate;
+      addEventBtn.hidden = true;
     }
-    if (addTemplateBtn) addTemplateBtn.hidden = hasSelectedDate;
+    if (addTemplateBtn) {
+      addTemplateBtn.textContent = "New Event";
+      addTemplateBtn.hidden = hasSelectedDate;
+    }
     if (dateFocusedEl) dateFocusedEl.hidden = !hasSelectedDate;
-    if (standardEditorEl) standardEditorEl.hidden = hasSelectedDate;
+    if (standardEditorEl) standardEditorEl.hidden = false;
     if (libraryDetails) libraryDetails.hidden = hasSelectedDate;
-    if (advancedDetails) advancedDetails.hidden = hasSelectedDate;
-    if (pageDetails) pageDetails.hidden = hasSelectedDate;
     if (dateFocusTitleEl) {
       dateFocusTitleEl.textContent = hasSelectedDate ? `Events On ${selectedDateLabel}` : "Events On This Date";
     }
@@ -741,7 +739,7 @@
       return;
     }
     if (!candidateKeys.length) {
-      dateTreeEl.innerHTML = `<div class="events-admin-date-empty">No events are scheduled for ${selectedDateLabel}. Use the buttons below to add the first one.</div>`;
+      dateTreeEl.innerHTML = `<div class="events-admin-date-empty">No events are scheduled for ${selectedDateLabel}. Use New Event to create the first one for this date.</div>`;
       return;
     }
     dateTreeEl.innerHTML = "";
@@ -967,15 +965,23 @@
     if (!contextBadgeEl || !contextTitleEl || !contextMetaEl || !contextHintEl) return;
 
     if (!entry) {
-      contextBadgeEl.textContent = "No Selection";
-      contextTitleEl.textContent = "Select an event to start editing.";
-      contextMetaEl.textContent = "Choose a saved entry or click a date in edit mode.";
-      contextHintEl.textContent = "Date-picked recurring items will call out that changes affect future generated dates.";
-      setFocus(editMode ? "Select a date in the calendar to edit it." : "Sign in to enable calendar editing.");
-      setModalNote();
-      if (libraryDetails) libraryDetails.hidden = false;
-      if (advancedDetails) advancedDetails.hidden = false;
-      if (pageDetails) pageDetails.hidden = false;
+      if (isDateFocusedMode()) {
+        const selectedDateLabel = formatDateLabel(selectionContext.requestedDate);
+        contextBadgeEl.textContent = "Selected Date";
+        contextTitleEl.textContent = `No event selected for ${selectedDateLabel}.`;
+        contextMetaEl.textContent = "Use New Event to create an entry for this date, then choose one-time or repeating in the form.";
+        contextHintEl.textContent = "The form below stays ready for the selected date once you create a new event.";
+        setFocus(`Selected date: ${selectionContext.requestedDate}`);
+        setModalNote(`Working on ${selectedDateLabel}. Create a new event or choose an existing event from the list above.`);
+      } else {
+        contextBadgeEl.textContent = "No Selection";
+        contextTitleEl.textContent = "Select an event to start editing.";
+        contextMetaEl.textContent = "Choose a saved entry or click a date in edit mode.";
+        contextHintEl.textContent = "Date-picked recurring items will call out that changes affect future generated dates.";
+        setFocus(editMode ? "Select a date in the calendar to edit it." : "Sign in to enable calendar editing.");
+        setModalNote();
+      }
+      if (libraryDetails) libraryDetails.hidden = isDateFocusedMode();
       updateDatePicker(null);
       updateOccurrenceActions(null);
       return;
@@ -1840,24 +1846,6 @@
     });
   }
 
-  function addRepeatingForSelectedDate() {
-    if (!selectionContext.requestedDate) {
-      createEntry("template", { context: { openedFromDate: false, resolvedFromTemplate: false } });
-      return;
-    }
-    createEntry("template", {
-      date: selectionContext.requestedDate,
-      item: buildTemplateDraft(selectionContext.requestedDate),
-      context: {
-        requestedDate: selectionContext.requestedDate,
-        openedFromDate: true,
-        resolvedFromTemplate: false,
-        candidateKeys: selectionContext.candidateKeys,
-      },
-      message: `A new repeating draft was created starting ${selectionContext.requestedDate}.`,
-    });
-  }
-
   function applyInlineFieldChange(key, field, rawValue) {
     const entry = getEntryByKey(key);
     if (!entry || !entry.item) return false;
@@ -2379,7 +2367,7 @@
   }
 
   if (addTemplateBtn) {
-    addTemplateBtn.addEventListener("click", () => createEntry("template", { context: { openedFromDate: false, resolvedFromTemplate: false } }));
+    addTemplateBtn.addEventListener("click", () => createEntry("event", { context: { openedFromDate: false, resolvedFromTemplate: false } }));
   }
 
   if (addEventBtn) {
@@ -2389,10 +2377,6 @@
     if (addForDateBtn) {
       addForDateBtn.addEventListener("click", addEventForSelectedDate);
     }
-
-  if (addRepeatingForDateBtn) {
-    addRepeatingForDateBtn.addEventListener("click", addRepeatingForSelectedDate);
-  }
 
   if (saveBtn) saveBtn.addEventListener("click", saveAll);
 
@@ -2474,6 +2458,8 @@
             resolvedFromTemplate: Boolean(nextEntry && nextEntry.kind === "template"),
             candidateKeys: selectionContext.candidateKeys,
           });
+          renderList(searchInput ? searchInput.value : "");
+          syncAuthUi();
           showValidation("");
         }
         return;
