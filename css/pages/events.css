@@ -942,7 +942,7 @@ body.events-public-modal-open {
   inset: 0;
   z-index: 58;
   display: grid;
-  align-items: start;
+  place-items: center;
   justify-items: center;
   overflow-y: auto;
   padding:
@@ -950,8 +950,6 @@ body.events-public-modal-open {
     max(18px, env(safe-area-inset-right))
     max(18px, env(safe-area-inset-bottom))
     max(18px, env(safe-area-inset-left));
-  --events-public-modal-offset: 24px;
-  --events-public-modal-max-height: min(calc(100dvh - 48px), 920px);
   background: rgba(5,11,20,0.72);
 }
 
@@ -961,9 +959,8 @@ body.events-public-modal-open {
 
 .events-public-modal-card {
   width: min(760px, 100%);
-  margin-top: var(--events-public-modal-offset);
-  margin-bottom: clamp(16px, 3vh, 32px);
-  max-height: var(--events-public-modal-max-height);
+  margin: 0;
+  max-height: min(calc(100dvh - 48px), 920px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
@@ -1220,7 +1217,7 @@ body.events-public-modal-open {
 
 @media (max-width: 760px) {
   .events-public-modal {
-    align-items: start;
+    place-items: center;
     padding:
       max(8px, env(safe-area-inset-top))
       max(8px, env(safe-area-inset-right))
@@ -1230,9 +1227,8 @@ body.events-public-modal-open {
 
   .events-public-modal-card {
     width: 100%;
-    margin-top: var(--events-public-modal-offset);
-    margin-bottom: max(12px, env(safe-area-inset-bottom));
-    max-height: var(--events-public-modal-max-height);
+    margin: 0;
+    max-height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     border-radius: 16px;
   }
 
