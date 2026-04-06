@@ -942,8 +942,14 @@ body.events-public-modal-open {
   inset: 0;
   z-index: 58;
   display: grid;
-  place-items: center;
-  padding: 20px;
+  align-items: start;
+  justify-items: center;
+  overflow-y: auto;
+  padding:
+    max(18px, env(safe-area-inset-top))
+    max(18px, env(safe-area-inset-right))
+    max(18px, env(safe-area-inset-bottom))
+    max(18px, env(safe-area-inset-left));
   background: rgba(5,11,20,0.72);
 }
 
@@ -953,7 +959,9 @@ body.events-public-modal-open {
 
 .events-public-modal-card {
   width: min(760px, 100%);
-  max-height: min(86vh, 920px);
+  margin-top: clamp(16px, 4vh, 44px);
+  margin-bottom: clamp(16px, 3vh, 32px);
+  max-height: min(calc(100dvh - 48px), 920px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
@@ -972,6 +980,11 @@ body.events-public-modal-open {
   gap: 10px;
   padding: 16px 18px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(7, 19, 37, 0.98), rgba(7, 19, 37, 0.96));
 }
 
 .events-public-modal-copy {
@@ -1205,18 +1218,26 @@ body.events-public-modal-open {
 
 @media (max-width: 760px) {
   .events-public-modal {
-    align-items: end;
-    padding: 10px;
+    align-items: start;
+    padding:
+      max(8px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
   }
 
   .events-public-modal-card {
     width: 100%;
-    max-height: min(92vh, 920px);
+    margin-top: max(8px, env(safe-area-inset-top));
+    margin-bottom: max(12px, env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     border-radius: 16px;
   }
 
   .events-public-modal-head {
-    padding: 14px;
+    gap: 12px;
+    padding: 12px 12px 10px;
+    flex-wrap: wrap;
   }
 
   .events-public-modal-head h3 {
@@ -1228,7 +1249,7 @@ body.events-public-modal-open {
   }
 
   .events-public-modal-body {
-    padding: 12px 14px 14px;
+    padding: 12px 12px 16px;
   }
 
   .events-public-day-row {
@@ -1238,6 +1259,16 @@ body.events-public-modal-open {
   .events-public-day-row .event-card-actions .btn,
   .events-public-actions .btn {
     width: 100%;
+  }
+
+  .events-public-modal-head-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .events-public-modal-close,
+  .events-public-modal-back {
+    min-height: 40px;
   }
 
   .events-page-layout-embed {
