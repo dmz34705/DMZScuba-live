@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="/assets/icons/favicon.png" type="image/png" />
+  <link rel="icon" href="/assets/icons/favicon.ico" sizes="any" />
+  <title>DMZ Scuba | Events Calendar</title>
+  <meta name="description" content="Track upcoming DMZ Scuba training nights, workshops, travel briefings, and local dive meetups in one place." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://www.dmzscuba.com/pages/events/" />
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/pages/events.css?v=20260406a" />
+  <link rel="stylesheet" href="/css/responsive.css" />
+</head>
+
+<body>
+  <div class="page">
+    <header class="site-header">
+      <div class="nav-container">
+        <a class="logo" href="../../index.html" aria-label="DMZ Scuba Home">
+          <img src="../../assets/images/logos/dmz-scuba-logo.png" alt="DMZ Scuba logo" />
+        </a>
+        <div class="site-name">DMZ Scuba</div>
+
+        <nav class="main-nav" aria-label="Primary">
+          <a href="../../index.html">Home</a>
+          <a href="../training/index.html">Training</a>
+          <a href="../travel/index.html">Travel</a>
+          <a href="../media/index.html">Media</a>
+          <a class="is-active" href="./index.html">Events</a>
+          <a href="../contact/index.html">Contact</a>
+          <a href="../about/index.html">About</a>
+          <a class="nav-cta" href="../contact/index.html#dive-now">Dive Now</a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="page-hero page-hero-events">
+      <div class="page-hero-inner">
+        <div class="page-hero-copy">
+          <h1>DMZ Events Calendar</h1>
+          <p class="page-hero-sub">
+            See what is coming up next: training nights, travel briefings, workshops, and community dives built to keep divers moving.
+          </p>
+          <div class="page-hero-actions">
+            <a class="btn primary" href="../contact/index.html#dive-now">Save My Spot</a>
+            <a class="btn secondary" href="../contact/index.html">Ask a Question</a>
+          </div>
+        </div>
+        <div class="page-hero-card training-hero-logo">
+          <img src="../../assets/images/logos/dmz-scuba-logo.png" alt="DMZ Scuba logo" />
+        </div>
+      </div>
+    </section>
+
+    <main class="page-main" data-events-embed-shell data-events-admin-page data-events-fallback="/assets/data/events.json">
+      <section class="events-summary-strip" aria-label="Event calendar summary">
+        <div class="events-summary-card">
+          <h2>Embedded planning calendar</h2>
+          <p>
+            This page uses a single embedded calendar window so visitors can stay in one place, move month to month, and compare training, travel, and community events without jumping between separate pages.
+          </p>
+          <div class="events-meta-row">
+            <div class="events-metric">
+              <strong>30</strong>
+              <span>rolling months in view</span>
+            </div>
+            <div class="events-metric">
+              <strong>Today</strong>
+              <span>current day highlighted automatically</span>
+            </div>
+          </div>
+          <p class="muted small">The embedded view pulls from a rolling DMZ event feed, updates as the date changes, and can still be swapped to an external provider later without rebuilding this page.</p>
+        </div>
+
+        <aside class="events-helper-card">
+          <h2>How to use this calendar</h2>
+          <p>Scroll the embedded calendar for the current schedule, then use the contact form to lock in details or claim a spot.</p>
+          <ul>
+            <li>Training and workshop nights can still be tailored around demand.</li>
+            <li>Travel briefings help you line up certification before trip dates.</li>
+            <li>Community dives may shift with weather or site conditions.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="events-embed-shell-card" aria-labelledby="events-embed-title">
+        <div class="events-embed-head">
+          <div>
+            <h2 id="events-embed-title">Interactive DMZ Calendar</h2>
+            <p class="muted">Scroll inside the calendar to move through the current event window. The agenda below stays focused on the next available dates for quick scanning.</p>
+          </div>
+          <a class="btn secondary" href="../contact/index.html#dive-now">Ask About a Date</a>
+        </div>
+        <section class="events-admin-bar" id="eventsAdminBar" hidden aria-label="Calendar editing controls">
+          <div class="events-admin-bar-copy">
+            <div class="events-admin-bar-title-row">
+              <span class="events-admin-bar-title">Calendar Edit Mode</span>
+              <span class="events-admin-status is-neutral" id="eventsAdminStatus">Signed out</span>
+            </div>
+            <div class="events-admin-focus" id="eventsAdminFocus">Select a date in the calendar to edit it.</div>
+            <p class="events-admin-note">Click a calendar date to open the event editor for that day, or create a new recurring or one-time item below.</p>
+            <div class="events-admin-warning is-clean" id="eventsAdminWarning" aria-live="polite">No unpublished changes yet.</div>
+            <div class="events-admin-validation" id="eventsAdminValidation" aria-live="polite"></div>
+          </div>
+          <div class="events-admin-actions events-admin-actions-bar">
+            <button class="btn secondary events-admin-add-template" type="button">Add Recurring</button>
+            <button class="btn secondary events-admin-add-event" type="button">Add Event To Selected Date</button>
+            <button class="btn primary events-admin-save" type="button">Publish</button>
+            <button class="btn secondary events-admin-refresh" type="button">Reload</button>
+            <button class="btn secondary events-admin-clear-live" type="button">Reset to File</button>
+            <button class="btn secondary events-admin-logout" type="button">Logout</button>
+          </div>
+        </section>
+        <div class="events-embed-frame-wrap">
+          <iframe
+            class="events-embed-frame"
+            src="./embed.html"
+            title="DMZ Scuba events calendar"
+            loading="lazy"
+            scrolling="no"
+            data-events-embed-frame
+          ></iframe>
+        </div>
+        <p class="events-embed-note">If the calendar does not load, use the contact page and we will walk you through current openings.</p>
+      </section>
+
+      <aside class="events-admin-modal" id="eventsAdminPanel" aria-label="Events admin controls" aria-hidden="true">
+        <div class="events-admin-card" role="dialog" aria-modal="true" aria-label="Event calendar edit actions">
+          <div class="events-admin-head">
+            <div>
+              <span class="events-admin-title">Calendar Event Editor</span>
+              <p class="events-admin-modal-note" id="eventsAdminModalNote">Pick a date in the calendar while edit mode is active to jump straight into that event.</p>
+            </div>
+            <div class="events-admin-head-actions">
+              <button class="events-admin-back" type="button" aria-label="Back to selected date events">Back</button>
+              <button class="events-admin-close" type="button" aria-label="Close events admin">Close</button>
+            </div>
+          </div>
+          <div class="events-admin-grid">
+            <details class="events-admin-advanced events-admin-settings" id="eventsAdminSettings">
+              <summary>Calendar Settings</summary>
+              <div class="events-admin-advanced-body">
+                <div class="events-admin-section events-admin-detail-section">
+                  <p class="events-admin-section-note">These control the overall calendar feed. Most day-to-day event edits should not need them.</p>
+                  <div class="events-admin-form-grid">
+                    <label>
+                      Updated
+                      <input type="date" id="eventsConfigUpdated" />
+                    </label>
+                    <label>
+                      Timezone
+                      <input type="text" id="eventsConfigTimezone" placeholder="America/Chicago" />
+                    </label>
+                    <label>
+                      Horizon Months
+                      <input type="number" min="1" max="60" id="eventsConfigHorizon" />
+                    </label>
+                    <label>
+                      Preview Count
+                      <input type="number" min="1" max="12" id="eventsConfigPreview" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </details>
+            <div class="events-admin-shell">
+              <div class="events-admin-editor">
+                <div class="events-admin-section">
+                  <div class="events-admin-subhead">
+                    <h3>Date Editor</h3>
+                  </div>
+                  <div class="events-admin-date-focused" id="eventsAdminDateFocused" hidden>
+                    <div class="events-admin-date-browser-head">
+                      <span class="events-admin-date-browser-label" id="eventsAdminDateFocusTitle">Events On This Date</span>
+                    </div>
+                    <div class="events-admin-date-tree" id="eventsAdminDateTree" aria-live="polite"></div>
+                    <div class="events-admin-actions">
+                      <button class="btn secondary" type="button" id="eventsAdminAddForDate">Add One-Time Event</button>
+                      <button class="btn secondary" type="button" id="eventsAdminAddRepeatingForDate">Add Repeating Event</button>
+                    </div>
+                  </div>
+                  <div class="events-admin-standard-editor" id="eventsAdminStandardEditor">
+                  <div class="events-admin-context" id="eventsAdminContext">
+                    <div class="events-admin-context-head">
+                      <span class="events-admin-context-badge" id="eventsAdminContextBadge">No Selection</span>
+                      <span class="events-admin-context-meta" id="eventsAdminContextMeta">Choose a saved entry or click a date in edit mode.</span>
+                    </div>
+                    <strong class="events-admin-context-title" id="eventsAdminContextTitle">Select an event to start editing.</strong>
+                    <p class="events-admin-context-hint" id="eventsAdminContextHint">Date-picked recurring items will call out that changes affect future generated dates.</p>
+                    <div class="events-admin-context-actions" id="eventsAdminContextActions" hidden>
+                      <button class="btn secondary" type="button" id="eventsAdminMakeOverride">Edit Only This Date</button>
+                      <button class="btn secondary" type="button" id="eventsAdminSkipOccurrence">Cancel This Repeating Date</button>
+                    </div>
+                    <p class="events-admin-context-actions-note" id="eventsAdminContextActionsNote" hidden>
+                      Use these when one repeating occurrence needs its own one-time edit or needs to be removed without changing the whole series.
+                    </p>
+                  </div>
+                  <div class="events-admin-flow">
+                    <strong class="events-admin-flow-title">Editing Flow</strong>
+                    <p class="events-admin-flow-step">Click a date in the calendar first. Then use the event list above to expand that day and choose which event you want to edit.</p>
+                    <p class="events-admin-flow-step">Use Add Event To Selected Date for stacked same-day events, or Edit Only This Date when a repeating date needs its own one-time version.</p>
+                  </div>
+                  <div class="events-admin-section events-admin-detail-section">
+                    <h4>Basic Event Setup</h4>
+                    <p class="events-admin-section-note">Start here: name the current event, choose one-time or repeating, then set the timing and location.</p>
+                    <div class="events-admin-form-grid">
+                      <label>
+                        Schedule Type
+                        <select id="eventsFieldKind">
+                          <option value="event">One-time date or range</option>
+                          <option value="template">Repeats</option>
+                        </select>
+                      </label>
+                      <label class="events-admin-span">
+                        Event Name
+                        <input type="text" id="eventsFieldTitle" placeholder="Trip Planning Q&amp;A" />
+                      </label>
+                      <label>
+                        Status
+                        <input type="text" id="eventsFieldStatus" placeholder="Planned" />
+                      </label>
+                      <label class="events-admin-span">
+                        Location
+                        <input type="text" id="eventsFieldLocation" placeholder="La Grange, IL" />
+                      </label>
+                    </div>
+                  </div>
+                  <div class="events-admin-section events-admin-detail-section">
+                    <h4>When It Happens</h4>
+                    <p class="events-admin-section-note">Use start and end dates for both single-day events and multi-day trips. Repeating schedules also use the same start/end window.</p>
+                    <div class="events-admin-form-grid">
+                      <label>
+                        Start Date
+                        <input type="date" id="eventsFieldDate" />
+                      </label>
+                      <label>
+                        End Date
+                        <input type="date" id="eventsFieldEndDate" />
+                      </label>
+                      <label>
+                        Start Time
+                        <select id="eventsFieldTime"></select>
+                      </label>
+                      <label>
+                        End Time
+                        <select id="eventsFieldEndTime"></select>
+                      </label>
+                      <label>
+                        Tag
+                        <select id="eventsFieldType">
+                          <option value="Training">Training</option>
+                          <option value="Travel">Travel</option>
+                          <option value="Local Dive">Local Dive</option>
+                          <option value="Workshop">Workshop</option>
+                          <option value="Community">Community</option>
+                        </select>
+                      </label>
+                      <label data-events-kind-only="template">
+                        Repeat Every
+                        <input type="number" min="1" max="12" id="eventsFieldIntervalMonths" />
+                      </label>
+                      <label data-events-kind-only="template">
+                        Repeat Unit
+                        <select id="eventsFieldRepeatUnit">
+                          <option value="week">Week</option>
+                          <option value="month" selected>Month</option>
+                          <option value="year">Year</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="events-admin-section events-admin-detail-section">
+                    <h4>Calendar Card</h4>
+                    <p class="events-admin-section-note">This is the short copy people see in the calendar itself.</p>
+                    <div class="events-admin-form-grid">
+                      <label class="events-admin-span">
+                        Short Calendar Description
+                        <textarea id="eventsFieldSummary" rows="4"></textarea>
+                      </label>
+                      <label>
+                        <span>Enable Registration</span>
+                        <input type="checkbox" id="eventsFieldRegistrationEnabled" />
+                      </label>
+                      <label>
+                        Spots Available
+                        <input type="number" min="0" id="eventsFieldRegistrationCapacity" placeholder="0" />
+                      </label>
+                      <label>
+                        Button Text
+                        <input type="text" id="eventsFieldCtaLabel" placeholder="Reserve a Spot" />
+                      </label>
+                      <label>
+                        Button Link
+                        <input type="text" id="eventsFieldCtaHref" placeholder="/pages/contact/index.html#dive-now" />
+                      </label>
+                    </div>
+                  </div>
+                  <div class="events-admin-section events-admin-detail-section">
+                    <h4>Event Page</h4>
+                    <p class="events-admin-section-note">Choose whether this date uses an existing event page or creates a new one. Most edits below are plain visitor-facing copy.</p>
+                    <div class="events-admin-form-grid">
+                      <label class="events-admin-span">
+                        Use Existing Event Page?
+                        <select id="eventsDefinitionSelect"></select>
+                      </label>
+                      <p class="events-admin-section-note events-admin-span" id="eventsDefinitionHelp">Choose an existing page to reuse it, or pick "Create New Event Page" to make a fresh one for this event.</p>
+                      <label class="events-admin-span">
+                        Event Page Title
+                        <input type="text" id="eventsDefinitionTitle" placeholder="Open Water Orientation Night" />
+                      </label>
+                      <label>
+                        Main Button Text
+                        <input type="text" id="eventsDefinitionCtaLabel" placeholder="Reserve a Spot" />
+                      </label>
+                      <label>
+                        Main Button Link
+                        <input type="text" id="eventsDefinitionCtaHref" placeholder="/pages/contact/index.html#dive-now" />
+                      </label>
+                      <label class="events-admin-span">
+                        Short Description
+                        <textarea id="eventsDefinitionHeroSummary" rows="3"></textarea>
+                      </label>
+                    </div>
+                  </div>
+                  <details class="events-admin-advanced" id="eventsAdminPageDetails">
+                    <summary>More Page Details</summary>
+                    <div class="events-admin-advanced-body">
+                      <div class="events-admin-section events-admin-detail-section">
+                        <p class="events-admin-section-note">Only open this when you want to flesh out the full event page. These are optional longer-form details.</p>
+                        <div class="events-admin-form-grid">
+                          <label>
+                            Small Label (Optional)
+                            <input type="text" id="eventsDefinitionEyebrow" placeholder="Training Event" />
+                          </label>
+                          <label>
+                            Page Link Name
+                            <input type="text" id="eventsDefinitionSlug" placeholder="open-water-orientation-night" />
+                          </label>
+                          <label class="events-admin-span">
+                            Full Page Description
+                            <textarea id="eventsDefinitionNarrative" rows="5"></textarea>
+                          </label>
+                          <label class="events-admin-span">
+                            Best For
+                            <textarea id="eventsDefinitionExperience" rows="3"></textarea>
+                          </label>
+                          <label class="events-admin-span">
+                            Helpful Schedule Note
+                            <textarea id="eventsDefinitionScheduleNote" rows="3"></textarea>
+                          </label>
+                          <label class="events-admin-span">
+                            What Visitors Should Expect
+                            <textarea id="eventsDefinitionWhatToExpect" rows="4" placeholder="One item per line"></textarea>
+                          </label>
+                          <label class="events-admin-span">
+                            Highlights / Included
+                            <textarea id="eventsDefinitionIncluded" rows="4" placeholder="One item per line"></textarea>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+                  <details class="events-admin-advanced" id="eventsAdminAdvanced">
+                    <summary>Advanced</summary>
+                    <div class="events-admin-advanced-body">
+                      <div class="events-admin-section events-admin-detail-section">
+                        <h4>Internal Settings</h4>
+                        <p class="events-admin-section-note">You usually should not need these. They are here for special cases only.</p>
+                        <div class="events-admin-form-grid">
+                          <label>
+                            Schedule Entry ID
+                            <input type="text" id="eventsFieldId" placeholder="trip-qna" />
+                          </label>
+                          <label class="events-admin-span" data-events-kind-only="template">
+                            Skipped Repeating Dates
+                            <textarea id="eventsFieldExcludedDates" rows="4" placeholder="One date per line, like 2026-03-18"></textarea>
+                          </label>
+                          <label data-events-kind-only="template">
+                            Allowed months
+                            <input type="text" id="eventsFieldMonths" placeholder="4, 5, 6, 7" />
+                          </label>
+                        </div>
+                        <div class="events-admin-danger-row">
+                          <button class="btn secondary events-admin-delete" type="button">Delete This Schedule</button>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+                  </div>
+                </div>
+              </div>
+              <details class="events-admin-advanced events-admin-library" id="eventsAdminLibrary">
+                <summary>Schedule Library</summary>
+                <div class="events-admin-advanced-body">
+                  <div class="events-admin-section events-admin-list">
+                    <p class="events-admin-section-note">Use the library only when you need to jump to a saved schedule without clicking a calendar date first.</p>
+                    <label class="events-admin-search-wrap">
+                      Find A Saved Item
+                      <div class="events-admin-search-row">
+                        <input type="search" id="eventsAdminSearch" placeholder="Search by event name, category, or schedule type" />
+                        <button class="btn secondary events-admin-search-clear" type="button" id="eventsAdminSearchClear" hidden>Clear</button>
+                      </div>
+                      <p class="events-admin-search-status" id="eventsAdminSearchStatus">Showing all saved items.</p>
+                    </label>
+                    <label>
+                      Saved Schedules
+                      <select id="eventsAdminSelect" size="12" aria-label="Select event entry"></select>
+                    </label>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="cta cta-inline cta-inline-level-up">
+        <h2>Want a date that is not listed yet?</h2>
+        <p>Tell us what you want to do and your ideal window. We can build training, travel, or a local dive plan around it.</p>
+        <div class="page-hero-actions">
+          <a class="btn primary" href="../contact/index.html#dive-now">Build My Dive Plan</a>
+          <a class="btn secondary" href="../training/index.html">See Training Paths</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer events-footer">
+      <small>&copy; <span id="year"></span> DMZ Scuba. All rights reserved.</small>
+      <button class="events-admin-trigger events-login-button" type="button" aria-expanded="false" aria-controls="eventsAdminBar">DMZ Login</button>
+    </footer>
+  </div>
+
+  <script src="/js/main.js?v=20260406a"></script>
+  <script src="/js/events.js?v=20260406a"></script>
+  <script src="/js/events-admin.js?v=20260406a"></script>
+</body>
+</html>

@@ -833,6 +833,392 @@ async function getDestinationByIdV2(env, id) {
   return normalizeDestinationV2(parseJsonSafe(row && row.data_json, null), normalizedId);
 }
 
+async function ensureEventsV2Table(env) {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS events_v2 (
+      calendar_key TEXT PRIMARY KEY,
+      data_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`
+  ).run();
+}
+
+function normalizeEventRule(rule) {
+  if (!rule || typeof rule !== "object") return null;
+  const weekOfMonth = Number(rule.weekOfMonth);
+  const weekday = Number(rule.weekday);
+  if (!Number.isFinite(weekOfMonth) || !Number.isFinite(weekday)) return null;
+  return {
+    weekOfMonth: Math.max(1, Math.min(5, Math.trunc(weekOfMonth))),
+    weekday: Math.max(0, Math.min(6, Math.trunc(weekday))),
+  };
+}
+
+function isValidRepeatUnit(value) {
+  return value === "week" || value === "month" || value === "year";
+}
+
+function deriveLegacyTemplateStartDate(item) {
+  if (!item || !item.startMonth || !item.rule) return "";
+  const parts = String(item.startMonth).split("-");
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) return "";
+  const weekOfMonth = Number(item.rule.weekOfMonth);
+  const weekday = Number(item.rule.weekday);
+  if (!Number.isFinite(weekOfMonth) || !Number.isFinite(weekday)) return "";
+  const first = new Date(year, month - 1, 1);
+  const shift = (7 + weekday - first.getDay()) % 7;
+  const dayNumber = 1 + shift + (weekOfMonth - 1) * 7;
+  const candidate = new Date(year, month - 1, dayNumber);
+  if (candidate.getMonth() !== month - 1) return "";
+  return candidate.toISOString().slice(0, 10);
+}
+
+function normalizeEventDefinition(item) {
+  if (!item || typeof item !== "object") return null;
+  const id = String(item.id || "").trim().toLowerCase();
+  const title = String(item.title || "").trim();
+  if (!id || !title) return null;
+  return {
+    id,
+    slug: String(item.slug || id).trim().toLowerCase(),
+    title,
+    type: String(item.type || "Event").trim() || "Event",
+    eyebrow: String(item.eyebrow || "").trim(),
+    heroSummary: String(item.heroSummary || "").trim(),
+    narrative: String(item.narrative || "").trim(),
+    experience: String(item.experience || "").trim(),
+    scheduleNote: String(item.scheduleNote || "").trim(),
+    whatToExpect: Array.isArray(item.whatToExpect)
+      ? item.whatToExpect.map((value) => String(value || "").trim()).filter(Boolean)
+      : [],
+    included: Array.isArray(item.included)
+      ? item.included.map((value) => String(value || "").trim()).filter(Boolean)
+      : [],
+    primaryCtaLabel: String(item.primaryCtaLabel || "").trim(),
+    primaryCtaHref: String(item.primaryCtaHref || "").trim(),
+  };
+}
+
+function normalizeEventEntry(item, kind = "event") {
+  if (!item || typeof item !== "object") return null;
+  const next = { ...item };
+  const id = String(next.id || "").trim().toLowerCase();
+  const title = String(next.title || "").trim();
+  if (!id || !title) return null;
+  const normalized = {
+    id,
+    title,
+    time: String(next.time || "").trim(),
+    endTime: String(next.endTime || "").trim(),
+    type: String(next.type || "Event").trim() || "Event",
+    status: String(next.status || "").trim(),
+    location: String(next.location || "").trim(),
+    summary: String(next.summary || "").trim(),
+    registrationEnabled: Boolean(next.registrationEnabled),
+    registrationCapacity: Math.max(0, Math.trunc(Number(next.registrationCapacity) || 0)),
+    ctaLabel: String(next.ctaLabel || "").trim(),
+    ctaHref: String(next.ctaHref || "").trim(),
+  };
+  const endDate = String(next.endDate || "").trim();
+
+  if (kind === "template") {
+    const startDate = String(next.startDate || deriveLegacyTemplateStartDate(next) || "").trim();
+    if (!startDate) return null;
+    normalized.startDate = startDate;
+    normalized.repeatInterval = Math.max(
+      1,
+      Math.trunc(Number(next.repeatInterval || next.intervalMonths) || 1)
+    );
+    normalized.repeatUnit = isValidRepeatUnit(String(next.repeatUnit || "").trim())
+      ? String(next.repeatUnit || "").trim()
+      : "month";
+    const explicitEndDate = String(next.endDate || "").trim();
+    if (explicitEndDate && explicitEndDate >= startDate) {
+      normalized.endDate = explicitEndDate;
+    } else {
+      const durationDays = Math.max(1, Math.trunc(Number(next.durationDays) || 1));
+      if (durationDays > 1) normalized.durationDays = durationDays;
+    }
+    if (Array.isArray(next.excludedDates)) {
+      normalized.excludedDates = Array.from(
+        new Set(
+          next.excludedDates
+            .map((value) => String(value || "").trim())
+            .filter(Boolean)
+        )
+      ).sort();
+    }
+    if (Array.isArray(next.months)) {
+      normalized.months = next.months
+        .map((value) => Math.trunc(Number(value)))
+        .filter((value) => Number.isFinite(value) && value >= 1 && value <= 12);
+    }
+    return normalized;
+  }
+
+  const date = String(next.date || "").trim();
+  if (!date) return null;
+  normalized.date = date;
+  if (endDate && endDate >= date) normalized.endDate = endDate;
+  return normalized;
+}
+
+function normalizeEventsPayload(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  const definitions = Array.isArray(payload.definitions)
+    ? payload.definitions.map((item) => normalizeEventDefinition(item)).filter(Boolean)
+    : [];
+  const templates = Array.isArray(payload.templates)
+    ? payload.templates.map((item) => normalizeEventEntry(item, "template")).filter(Boolean)
+    : [];
+  const events = Array.isArray(payload.events)
+    ? payload.events.map((item) => normalizeEventEntry(item, "event")).filter(Boolean)
+    : [];
+  return {
+    updated: String(payload.updated || new Date().toISOString().slice(0, 10)).trim(),
+    timezone: String(payload.timezone || "America/Chicago").trim(),
+    horizonMonths: Math.max(1, Math.min(60, Math.trunc(Number(payload.horizonMonths) || 30))),
+    previewCount: Math.max(1, Math.min(12, Math.trunc(Number(payload.previewCount) || 3))),
+    definitions,
+    events,
+    templates,
+  };
+}
+
+async function getEventsPayloadV2(env) {
+  await ensureEventsV2Table(env);
+  const row = await env.DB.prepare("SELECT data_json FROM events_v2 WHERE calendar_key = ?")
+    .bind("primary")
+    .first();
+  if (!row) return null;
+  return normalizeEventsPayload(parseJsonSafe(row && row.data_json, null));
+}
+
+async function handleGetEventsV2(env) {
+  const payload = await getEventsPayloadV2(env);
+  if (!payload) return jsonResponse({ ok: false, error: "Not found." }, 404, { "Cache-Control": "no-store" });
+  return jsonResponse(payload, 200, {
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+    "CDN-Cache-Control": "no-store",
+    "Cloudflare-CDN-Cache-Control": "no-store",
+  });
+}
+
+async function handlePutEventsV2(request, env) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
+  const body = await request.json().catch(() => ({}));
+  const incoming = body && typeof body.payload === "object" ? body.payload : body;
+  const payload = normalizeEventsPayload(incoming);
+  if (!payload) return jsonResponse({ ok: false, error: "Invalid payload." }, 400);
+
+  await ensureEventsV2Table(env);
+  const now = new Date().toISOString();
+  const existing = await env.DB.prepare("SELECT created_at FROM events_v2 WHERE calendar_key = ?")
+    .bind("primary")
+    .first();
+  const createdAt = (existing && existing.created_at) || now;
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO events_v2 (calendar_key, data_json, created_at, updated_at)
+     VALUES (?, ?, ?, ?)`
+  )
+    .bind("primary", JSON.stringify(payload), createdAt, now)
+    .run();
+  return jsonResponse({ ok: true, payload, updatedAt: now }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleDeleteEventsV2(request, env) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
+  await ensureEventsV2Table(env);
+  await env.DB.prepare("DELETE FROM events_v2 WHERE calendar_key = ?").bind("primary").run();
+  return jsonResponse({ ok: true }, 200, { "Cache-Control": "no-store" });
+}
+
+async function ensureEventRegistrationsV2Table(env) {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS event_registrations_v2 (
+      id TEXT PRIMARY KEY,
+      source_id TEXT NOT NULL,
+      event_date TEXT NOT NULL,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      cert_level TEXT NOT NULL,
+      additional_guests INTEGER NOT NULL DEFAULT 0,
+      party_size INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL
+    )`
+  ).run();
+  await env.DB.prepare(
+    "CREATE INDEX IF NOT EXISTS idx_event_regs_source_date ON event_registrations_v2(source_id, event_date)"
+  ).run();
+}
+
+function normalizeRegistrationText(value, maxLen = 120) {
+  return String(value || "").trim().slice(0, maxLen);
+}
+
+function buildRegistrantLabel(firstName, lastName) {
+  const first = normalizeRegistrationText(firstName, 40);
+  const last = normalizeRegistrationText(lastName, 40);
+  const initial = last ? `${last[0].toUpperCase()}.` : "";
+  return [first, initial].filter(Boolean).join(" ");
+}
+
+function resolveRegistrationConfig(payload, sourceId, eventDate) {
+  if (!payload || !sourceId || !eventDate) return null;
+  const events = Array.isArray(payload.events) ? payload.events : [];
+  const templates = Array.isArray(payload.templates) ? payload.templates : [];
+  const eventMatch = events.find((item) => item && item.id === sourceId && item.date === eventDate);
+  if (eventMatch) {
+    return {
+      sourceId,
+      eventDate,
+      title: String(eventMatch.title || "").trim(),
+      registrationEnabled: Boolean(eventMatch.registrationEnabled),
+      registrationCapacity: Math.max(0, Number(eventMatch.registrationCapacity) || 0),
+    };
+  }
+  const templateMatch = templates.find((item) => item && item.id === sourceId);
+  if (!templateMatch) return null;
+  return {
+    sourceId,
+    eventDate,
+    title: String(templateMatch.title || "").trim(),
+    registrationEnabled: Boolean(templateMatch.registrationEnabled),
+    registrationCapacity: Math.max(0, Number(templateMatch.registrationCapacity) || 0),
+  };
+}
+
+async function getRegistrationSnapshot(env, sourceId, eventDate, config) {
+  await ensureEventRegistrationsV2Table(env);
+  const rows = await env.DB.prepare(
+    `SELECT first_name, last_name, additional_guests, party_size, created_at
+     FROM event_registrations_v2
+     WHERE source_id = ? AND event_date = ?
+     ORDER BY created_at ASC`
+  )
+    .bind(sourceId, eventDate)
+    .all();
+  const list = (rows.results || []).map((row) => ({
+    name: buildRegistrantLabel(row && row.first_name, row && row.last_name),
+    additionalGuests: Math.max(0, Number((row && row.additional_guests) || 0) || 0),
+    partySize: Math.max(1, Number((row && row.party_size) || 1) || 1),
+    createdAt: String((row && row.created_at) || ""),
+  }));
+  const usedSpots = list.reduce((sum, entry) => sum + Math.max(1, Number(entry.partySize) || 1), 0);
+  const capacity = Math.max(0, Number((config && config.registrationCapacity) || 0) || 0);
+  const remainingSpots = capacity > 0 ? Math.max(0, capacity - usedSpots) : 0;
+  return {
+    sourceId,
+    eventDate,
+    registrationEnabled: Boolean(config && config.registrationEnabled),
+    registrationCapacity: capacity,
+    usedSpots,
+    remainingSpots,
+    registrants: list,
+  };
+}
+
+async function handleGetEventRegistrationsV2(request, env, sourceId) {
+  const url = new URL(request.url);
+  const eventDate = String(url.searchParams.get("date") || "").trim();
+  if (!sourceId || !eventDate) {
+    return jsonResponse({ ok: false, error: "Missing source id or date." }, 400, { "Cache-Control": "no-store" });
+  }
+  const payload = await getEventsPayloadV2(env);
+  const config = resolveRegistrationConfig(payload, sourceId, eventDate);
+  if (!config) {
+    return jsonResponse({ ok: false, error: "Event not found." }, 404, { "Cache-Control": "no-store" });
+  }
+  const snapshot = await getRegistrationSnapshot(env, sourceId, eventDate, config);
+  return jsonResponse({ ok: true, ...snapshot }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleCreateEventRegistrationV2(request, env, sourceId) {
+  const body = await request.json().catch(() => ({}));
+  const eventDate = normalizeRegistrationText(body && body.eventDate, 20);
+  if (!sourceId || !eventDate) {
+    return jsonResponse({ ok: false, error: "Missing source id or date." }, 400, { "Cache-Control": "no-store" });
+  }
+  const payload = await getEventsPayloadV2(env);
+  const config = resolveRegistrationConfig(payload, sourceId, eventDate);
+  if (!config) {
+    return jsonResponse({ ok: false, error: "Event not found." }, 404, { "Cache-Control": "no-store" });
+  }
+  if (!config.registrationEnabled || config.registrationCapacity <= 0) {
+    return jsonResponse({ ok: false, error: "Registration is not enabled for this event." }, 400, { "Cache-Control": "no-store" });
+  }
+
+  const firstName = normalizeRegistrationText(body && body.firstName, 60);
+  const lastName = normalizeRegistrationText(body && body.lastName, 60);
+  const email = normalizeRegistrationText(body && body.email, 160).toLowerCase();
+  const phone = normalizeRegistrationText(body && body.phone, 40);
+  const certLevel = normalizeRegistrationText(body && body.certificationLevel, 80);
+  const additionalGuests = Math.max(0, Math.min(20, Math.trunc(Number((body && body.additionalGuests) || 0) || 0)));
+  const partySize = 1 + additionalGuests;
+
+  if (!firstName || !lastName || !email || !phone || !certLevel) {
+    return jsonResponse({ ok: false, error: "Missing required registration fields." }, 400, { "Cache-Control": "no-store" });
+  }
+  if (!email.includes("@")) {
+    return jsonResponse({ ok: false, error: "Email address is invalid." }, 400, { "Cache-Control": "no-store" });
+  }
+
+  const snapshotBefore = await getRegistrationSnapshot(env, sourceId, eventDate, config);
+  if (snapshotBefore.remainingSpots < partySize) {
+    return jsonResponse(
+      { ok: false, error: "Not enough spots remaining for that party size.", remainingSpots: snapshotBefore.remainingSpots },
+      409,
+      { "Cache-Control": "no-store" }
+    );
+  }
+
+  const now = new Date().toISOString();
+  const registrationId = crypto.randomUUID();
+  await env.DB.prepare(
+    `INSERT INTO event_registrations_v2
+     (id, source_id, event_date, first_name, last_name, email, phone, cert_level, additional_guests, party_size, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  )
+    .bind(
+      registrationId,
+      sourceId,
+      eventDate,
+      firstName,
+      lastName,
+      email,
+      phone,
+      certLevel,
+      additionalGuests,
+      partySize,
+      now
+    )
+    .run();
+
+  const snapshotAfter = await getRegistrationSnapshot(env, sourceId, eventDate, config);
+  return jsonResponse(
+    {
+      ok: true,
+      registration: {
+        id: registrationId,
+        name: buildRegistrantLabel(firstName, lastName),
+        additionalGuests,
+        partySize,
+        createdAt: now,
+      },
+      ...snapshotAfter,
+    },
+    201,
+    { "Cache-Control": "no-store" }
+  );
+}
+
 async function handleGetDestinationsV2(env) {
   const items = await listDestinationsV2(env);
   return jsonResponse(
@@ -1349,6 +1735,18 @@ export default {
       response = await handleBulkUpsert(request, env);
     } else if (pathname === "/api/admin/stream-date-sync" && request.method === "POST") {
       response = await handleStreamDateSync(request, env);
+    } else if (pathname === "/api/v2/events" && request.method === "GET") {
+      response = await handleGetEventsV2(env);
+    } else if (pathname.startsWith("/api/v2/events/") && pathname.endsWith("/registrations") && request.method === "GET") {
+      const sourceId = decodeURIComponent(pathname.split("/")[4] || "").trim().toLowerCase();
+      response = await handleGetEventRegistrationsV2(request, env, sourceId);
+    } else if (pathname.startsWith("/api/v2/events/") && pathname.endsWith("/registrations") && request.method === "POST") {
+      const sourceId = decodeURIComponent(pathname.split("/")[4] || "").trim().toLowerCase();
+      response = await handleCreateEventRegistrationV2(request, env, sourceId);
+    } else if (pathname === "/api/admin/v2/events" && request.method === "PUT") {
+      response = await handlePutEventsV2(request, env);
+    } else if (pathname === "/api/admin/v2/events" && request.method === "DELETE") {
+      response = await handleDeleteEventsV2(request, env);
     } else if (pathname === "/api/v2/destinations" && request.method === "GET") {
       response = await handleGetDestinationsV2(env);
     } else if (pathname.startsWith("/api/v2/destinations/") && request.method === "GET") {

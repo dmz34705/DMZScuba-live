@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex,follow" />
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/pages/events.css?v=20260406a" />
+</head>
+
+<body class="events-embed-shell">
+  <main class="events-embed-main" data-events-page data-events-src="/api/v2/events" data-events-fallback-src="/assets/data/events.json">
+    <section class="events-page-layout events-page-layout-embed events-page-layout-stacked">
+      <div class="events-month-stack" data-events-calendar aria-live="polite"></div>
+
+      <div class="events-list-block">
+        <div class="events-list-intro">
+          <h2>Upcoming Agenda</h2>
+          <p class="muted">The next available dates, ordered from soonest to latest, so the best options are easy to compare.</p>
+        </div>
+        <div class="events-list-stack" data-events-list aria-live="polite"></div>
+      </div>
+    </section>
+
+    <div class="events-empty-state" data-events-empty hidden>
+      No events are posted yet. Use the contact page and we will help you plan the right next step.
+    </div>
+  </main>
+
+  <script src="/js/events.js?v=20260406a"></script>
+</body>
+</html>
