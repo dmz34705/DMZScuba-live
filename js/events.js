@@ -48,6 +48,7 @@
     publicModal: null,
     registrationSnapshotByKey: new Map(),
     lastDateModalContext: null,
+    activeEventShareUrl: "",
     adminCanEditDate: false,
     openDateModalRequestKey: "",
     calendarView: {
@@ -377,6 +378,59 @@
     return button;
   }
 
+  function buildEventShareUrl(eventItem, options = {}) {
+    const key = normalizeText(eventItem && eventItem.id);
+    if (!key) return "";
+    const url = new URL("/pages/events/index.html", window.location.origin);
+    url.searchParams.set("event", key);
+    if (eventItem && eventItem.date) url.searchParams.set("date", String(eventItem.date).trim());
+    if (options.register) url.searchParams.set("register", "1");
+    return url.toString();
+  }
+
+  function syncEventShareUrl(eventItem, options = {}) {
+    if (!pageRoot || !window.history || !window.location) return;
+    const nextUrl = buildEventShareUrl(eventItem, options);
+    if (!nextUrl) return;
+    state.activeEventShareUrl = nextUrl;
+    window.history.replaceState({ eventId: normalizeText(eventItem && eventItem.id) }, "", nextUrl);
+  }
+
+  function clearEventShareUrl() {
+    state.activeEventShareUrl = "";
+    if (!pageRoot || !window.history || !window.location) return;
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete("event");
+    cleanUrl.searchParams.delete("register");
+    window.history.replaceState({}, "", `${cleanUrl.pathname}${cleanUrl.search}`);
+  }
+
+  async function shareEventLink(url, title) {
+    const shareUrl = String(url || "").trim();
+    if (!shareUrl) return { ok: false, message: "Share link unavailable right now." };
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title || "DMZ Scuba Event",
+          text: "Sign up for this DMZ Scuba event.",
+          url: shareUrl,
+        });
+        return { ok: true, message: "Share sheet opened." };
+      } catch (error) {
+        if (error && error.name === "AbortError") return { ok: false, message: "" };
+      }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        return { ok: true, message: "Direct event link copied." };
+      } catch (_error) {
+        // Fall through to manual copy guidance.
+      }
+    }
+    return { ok: false, message: shareUrl };
+  }
+
   function ensurePublicModal() {
     if (state.publicModal) return state.publicModal;
     const modal = document.createElement("div");
@@ -523,6 +577,9 @@
     if (!key) return;
     const eventItem = state.eventsById.get(key);
     if (!eventItem) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoOpenRegistration =
+      urlParams.get("register") === "1" && normalizeText(urlParams.get("event")) === key;
     const definition = getEventDefinition(eventItem);
     const typeMeta = getEventTypeMeta(eventItem.type);
     const summary = normalizeText(eventItem.summary || (definition && definition.heroSummary));
@@ -539,9 +596,12 @@
         (definition && definition.primaryCtaHref) ||
         "/pages/contact/index.html#dive-now"
     );
+    const registrationEnabled = isRegistrationEnabled(eventItem);
     const whatToExpect = normalizeList(definition && definition.whatToExpect);
     const included = normalizeList(definition && definition.included);
     const modal = ensurePublicModal();
+    const shareUrl = buildEventShareUrl(eventItem, { register: registrationEnabled });
+    syncEventShareUrl(eventItem, { register: autoOpenRegistration && registrationEnabled });
 
     openPublicModal({
       kicker: eventItem.type || "Event",
@@ -610,8 +670,12 @@
         actionLink.href = ctaHref;
         actionLink.textContent = ctaLabel || "Reserve a Spot";
         actions.appendChild(actionLink);
+        const shareBtn = document.createElement("button");
+        shareBtn.type = "button";
+        shareBtn.className = "btn secondary";
+        shareBtn.textContent = registrationEnabled ? "Share Sign-Up Link" : "Share Event Link";
+        actions.appendChild(shareBtn);
         let registerBtn = null;
-        const registrationEnabled = isRegistrationEnabled(eventItem);
         if (registrationEnabled) {
           registerBtn = document.createElement("button");
           registerBtn.type = "button";
@@ -620,6 +684,17 @@
           actions.appendChild(registerBtn);
         }
         body.appendChild(actions);
+        const shareFeedback = document.createElement("p");
+        shareFeedback.className = "events-registration-feedback";
+        shareFeedback.hidden = true;
+        body.appendChild(shareFeedback);
+
+        shareBtn.addEventListener("click", async () => {
+          const result = await shareEventLink(shareUrl, eventItem.title || "DMZ Scuba Event");
+          if (!result.message) return;
+          shareFeedback.hidden = false;
+          shareFeedback.textContent = result.ok ? result.message : `Copy this link: ${result.message}`;
+        });
 
         if (isRegistrationEnabled(eventItem)) {
           const sourceId = getRegistrationSourceId(eventItem);
@@ -725,6 +800,7 @@
             if (registerBtn) {
               registerBtn.addEventListener("click", () => {
                 regWrap.hidden = false;
+                syncEventShareUrl(eventItem, { register: true });
                 regWrap.scrollIntoView({ behavior: "smooth", block: "start" });
                 const firstInput = formEl && formEl.querySelector("input[name='firstName']");
                 if (firstInput) firstInput.focus();
@@ -732,6 +808,15 @@
             }
 
             loadSnapshot();
+            if (autoOpenRegistration) {
+              regWrap.hidden = false;
+              const firstInput = formEl && formEl.querySelector("input[name='firstName']");
+              if (firstInput) {
+                requestAnimationFrame(() => {
+                  firstInput.focus();
+                });
+              }
+            }
           }
         }
       },
@@ -773,6 +858,7 @@
     if (!state.publicModal) return;
     state.publicModal.root.setAttribute("aria-hidden", "true");
     document.body.classList.remove("events-public-modal-open");
+    clearEventShareUrl();
   }
 
   function buildLegendMarkup() {
@@ -1588,6 +1674,8 @@
   if (pageRoot || previewRoot) {
     bindDetailTriggers(document.body);
     const applyPayload = (payload) => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedEventKey = normalizeText(urlParams.get("event"));
       const safePayload = payload && typeof payload === "object" ? payload : {};
       const events = expandTemplateEvents(safePayload);
       indexEvents(events, safePayload);
@@ -1595,6 +1683,9 @@
       renderPreview(events, safePayload);
       renderCalendar(events, safePayload);
       resizeEmbedFrame();
+      if (requestedEventKey && state.eventsById.has(requestedEventKey)) {
+        openEventDetailModalById(requestedEventKey);
+      }
     };
 
     window.addEventListener("message", (event) => {
