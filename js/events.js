@@ -1141,6 +1141,22 @@
       );
     }
 
+    function requestParentEditDate(selectedDate, selectedItems) {
+      const dateValue = String(selectedDate || "").trim();
+      if (window.parent === window || !dateValue) return false;
+      window.parent.postMessage(
+        {
+          type: "dmzEventsAdminEditDate",
+          date: dateValue,
+          eventIds: Array.isArray(selectedItems)
+            ? selectedItems.map((item) => item.sourceId || item.id).filter(Boolean)
+            : [],
+        },
+        "*"
+      );
+      return true;
+    }
+
     function renderMonth() {
       const group = monthGroups[activeMonthIndex];
       if (!group) return;
@@ -1315,9 +1331,15 @@
         }
         button.addEventListener("click", () => {
           selectedDateKey = currentKey;
-          pendingDateModal = currentKey;
-          pendingDateItems = items;
           shouldNotifyParentSelection = true;
+          if (state.adminCanEditDate) {
+            pendingDateModal = "";
+            pendingDateItems = [];
+            requestParentEditDate(currentKey, items);
+          } else {
+            pendingDateModal = currentKey;
+            pendingDateItems = items;
+          }
           renderMonth();
         });
         cell.appendChild(button);
