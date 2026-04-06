@@ -950,6 +950,8 @@ body.events-public-modal-open {
     max(18px, env(safe-area-inset-right))
     max(18px, env(safe-area-inset-bottom))
     max(18px, env(safe-area-inset-left));
+  --events-public-modal-offset: 24px;
+  --events-public-modal-max-height: min(calc(100dvh - 48px), 920px);
   background: rgba(5,11,20,0.72);
 }
 
@@ -959,9 +961,9 @@ body.events-public-modal-open {
 
 .events-public-modal-card {
   width: min(760px, 100%);
-  margin-top: clamp(16px, 4vh, 44px);
+  margin-top: var(--events-public-modal-offset);
   margin-bottom: clamp(16px, 3vh, 32px);
-  max-height: min(calc(100dvh - 48px), 920px);
+  max-height: var(--events-public-modal-max-height);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
@@ -1228,9 +1230,9 @@ body.events-public-modal-open {
 
   .events-public-modal-card {
     width: 100%;
-    margin-top: max(8px, env(safe-area-inset-top));
+    margin-top: var(--events-public-modal-offset);
     margin-bottom: max(12px, env(safe-area-inset-bottom));
-    max-height: calc(100dvh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: var(--events-public-modal-max-height);
     border-radius: 16px;
   }
 

@@ -456,6 +456,8 @@
     const close = () => {
       modal.setAttribute("aria-hidden", "true");
       document.body.classList.remove("events-public-modal-open");
+      modal.style.removeProperty("--events-public-modal-offset");
+      modal.style.removeProperty("--events-public-modal-max-height");
     };
     const closeBtn = modal.querySelector(".events-public-modal-close");
     if (closeBtn) closeBtn.addEventListener("click", close);
@@ -477,6 +479,28 @@
     return state.publicModal;
   }
 
+  function positionPublicModal() {
+    const modal = state.publicModal;
+    if (!modal || !modal.root || modal.root.getAttribute("aria-hidden") === "true") return;
+    const card = modal.root.querySelector(".events-public-modal-card");
+    if (!card) return;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const computed = window.getComputedStyle(modal.root);
+    const paddingTop = parseFloat(computed.paddingTop) || 0;
+    const paddingBottom = parseFloat(computed.paddingBottom) || 0;
+    const availableHeight = Math.max(320, viewportHeight - paddingTop - paddingBottom);
+    const maxHeight = Math.min(920, availableHeight);
+    modal.root.style.setProperty("--events-public-modal-max-height", `${maxHeight}px`);
+
+    const mobile = viewportWidth <= 760;
+    const cardHeight = Math.min(card.scrollHeight || 0, maxHeight);
+    const minimumTopGap = mobile ? Math.max(8, paddingTop) : Math.max(18, paddingTop);
+    const centeredOffset = paddingTop + Math.max(0, (availableHeight - cardHeight) / 2);
+    const preferredOffset = mobile ? minimumTopGap : Math.max(minimumTopGap, centeredOffset);
+    modal.root.style.setProperty("--events-public-modal-offset", `${Math.round(preferredOffset)}px`);
+  }
+
   function openPublicModal({ kicker, title, subtitle, bodyBuilder }) {
     const modal = ensurePublicModal();
     if (!modal || !modal.body || !modal.kicker || !modal.title || !modal.subtitle) return;
@@ -491,6 +515,10 @@
     if (typeof bodyBuilder === "function") bodyBuilder(modal.body);
     modal.root.setAttribute("aria-hidden", "false");
     document.body.classList.add("events-public-modal-open");
+    requestAnimationFrame(() => {
+      positionPublicModal();
+      requestAnimationFrame(positionPublicModal);
+    });
   }
 
   function openDateEventsModal(dateValue, items) {
@@ -1682,6 +1710,7 @@
     });
 
     window.addEventListener("resize", resizeEmbedFrame, { passive: true });
+    window.addEventListener("resize", positionPublicModal, { passive: true });
   }
 
   if (pageRoot || previewRoot) {
