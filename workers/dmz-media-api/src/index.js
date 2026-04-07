@@ -1366,7 +1366,7 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
 
 async function handleDeleteEventRegistrationV2(request, env, sourceId, registrationId) {
   const authed = await requireAuth(request, env);
-  if (!authed.ok) return authed.response;
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
 
   const url = new URL(request.url);
   const eventDate = String(url.searchParams.get("date") || "").trim();
