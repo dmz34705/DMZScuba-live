@@ -582,8 +582,10 @@
       urlParams.get("register") === "1" && normalizeText(urlParams.get("event")) === key;
     const definition = getEventDefinition(eventItem);
     const typeMeta = getEventTypeMeta(eventItem.type);
-    const summary = normalizeText(eventItem.summary || (definition && definition.heroSummary));
+    const summary = normalizeText(eventItem.summary || "");
+    const heroSummary = normalizeText((definition && definition.heroSummary) || "");
     const narrative = normalizeText((definition && definition.narrative) || "");
+    const primaryDescription = narrative || summary || heroSummary;
     const locationText = normalizeText(eventItem.location) || "Location announced soon";
     const whenText = eventDateLabel(eventItem);
     const ctaLabel = normalizeText(
@@ -619,18 +621,11 @@
         `;
         body.appendChild(meta);
 
-        if (summary) {
+        if (primaryDescription) {
           const intro = document.createElement("p");
           intro.className = "events-public-summary";
-          intro.textContent = summary;
+          intro.textContent = primaryDescription;
           body.appendChild(intro);
-        }
-
-        if (narrative && normalizeCompareText(narrative) !== normalizeCompareText(summary)) {
-          const details = document.createElement("p");
-          details.className = "events-public-copy";
-          details.textContent = narrative;
-          body.appendChild(details);
         }
 
         if (whatToExpect.length) {
