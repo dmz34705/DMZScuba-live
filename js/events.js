@@ -500,6 +500,11 @@
   }
 
   function openDateEventsModal(dateValue, items) {
+    const modal = ensurePublicModal();
+    if (modal && modal.registerJumpBtn) {
+      modal.registerJumpBtn.hidden = true;
+      modal.registerJumpBtn.onclick = null;
+    }
     const selectedDate = parseDateKey(dateValue) || new Date();
     const eventItems = Array.isArray(items) ? items : [];
     state.lastDateModalContext = {
