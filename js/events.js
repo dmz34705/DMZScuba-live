@@ -585,7 +585,12 @@
     const summary = normalizeText(eventItem.summary || "");
     const heroSummary = normalizeText((definition && definition.heroSummary) || "");
     const narrative = normalizeText((definition && definition.narrative) || "");
-    const primaryDescription = narrative || summary || heroSummary;
+    const explicitDefinitionId = normalizeText(eventItem && eventItem.eventId);
+    const eventItemKey = normalizeText(eventItem && eventItem.id);
+    const hasSeparateDefinition = Boolean(explicitDefinitionId && explicitDefinitionId !== eventItemKey);
+    const primaryDescription = hasSeparateDefinition
+      ? (narrative || summary || heroSummary)
+      : (summary || narrative || heroSummary);
     const locationText = normalizeText(eventItem.location) || "Location announced soon";
     const whenText = eventDateLabel(eventItem);
     const ctaLabel = normalizeText(
