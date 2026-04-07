@@ -591,7 +591,7 @@
     const ctaLabel = normalizeText(
       eventItem.ctaLabel ||
         (definition && definition.primaryCtaLabel) ||
-        "Reserve a Spot"
+        "Contact Us"
     );
     const ctaHref = normalizeText(
       eventItem.ctaHref ||
@@ -663,7 +663,7 @@
         const actionLink = document.createElement("a");
         actionLink.className = "btn primary";
         actionLink.href = ctaHref;
-        actionLink.textContent = ctaLabel || "Reserve a Spot";
+        actionLink.textContent = ctaLabel || "Contact Us";
         actions.appendChild(actionLink);
         const shareBtn = document.createElement("button");
         shareBtn.type = "button";
