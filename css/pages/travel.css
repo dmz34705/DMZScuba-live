@@ -491,6 +491,132 @@ body .page .destination-card:hover {
   background: rgba(10, 18, 30, 0.5);
 }
 
+.travel-upcoming-events{
+  max-width: var(--max);
+  margin: 10px auto 0;
+  padding: 22px 24px 18px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.10);
+  background:
+    radial-gradient(720px 260px at 0% 0%, rgba(60,170,255,0.12), rgba(60,170,255,0) 58%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+  box-shadow: 0 18px 44px rgba(0,0,0,0.36);
+}
+
+.travel-upcoming-events .events-preview-head{
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.travel-upcoming-events .events-preview-head h2{
+  max-width: 720px;
+  font-size: clamp(24px, 2.4vw, 32px);
+  line-height: 1.08;
+}
+
+.travel-upcoming-events .events-preview-eyebrow{
+  margin-bottom: 10px;
+}
+
+.travel-upcoming-events .events-preview-actions{
+  align-self: flex-end;
+  gap: 12px;
+}
+
+.travel-upcoming-events .events-preview-sub{
+  margin-top: 10px;
+  max-width: 700px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.travel-upcoming-events .events-preview-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.travel-upcoming-events .event-card{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.10);
+  background:
+    radial-gradient(220px 120px at 0% 0%, rgba(85,185,255,0.10), rgba(85,185,255,0)),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
+  box-shadow: 0 16px 38px rgba(0,0,0,0.35);
+}
+
+.travel-upcoming-events .event-card h3{
+  margin: 12px 0 10px;
+  font-size: 24px;
+  line-height: 1.12;
+}
+
+.travel-upcoming-events .event-card-meta{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.travel-upcoming-events .event-chip,
+.travel-upcoming-events .event-status{
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+
+.travel-upcoming-events .event-chip{
+  background: rgba(85,185,255,0.12);
+  color: rgba(197,232,255,0.96);
+}
+
+.travel-upcoming-events .event-status{
+  background: rgba(226,27,35,0.12);
+  color: rgba(255,197,200,0.94);
+}
+
+.travel-upcoming-events .event-card-date,
+.travel-upcoming-events .event-card-location{
+  margin: 0 0 9px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.travel-upcoming-events .event-card-location{
+  color: rgba(234,242,255,0.78);
+}
+
+.travel-upcoming-events .event-card-summary{
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+  flex: 1 1 auto;
+}
+
+.travel-upcoming-events .event-card-actions{
+  margin-top: 18px;
+}
+
+.travel-upcoming-events .events-preview-empty,
+.travel-upcoming-events .events-preview-stamp{
+  margin: 14px 0 0;
+}
+
+.travel-upcoming-events .events-preview-stamp{
+  color: rgba(234,242,255,0.6);
+  font-size: 13px;
+}
+
 /* =========================
    Destinations Admin
    ========================= */
@@ -610,6 +736,52 @@ body.dest-admin-open .dest-admin-panel {
   font-size: 12px;
 }
 
+.dest-admin-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dest-admin-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 11, 20, 0.48);
+}
+
+.dest-admin-step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(85, 185, 255, 0.16);
+  color: rgba(210, 238, 255, 0.96);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dest-admin-step strong,
+.dest-admin-current h3,
+.dest-admin-form-head h3 {
+  display: block;
+  margin: 0;
+  font-size: 14px;
+  color: rgba(234, 242, 255, 0.95);
+}
+
+.dest-admin-step span {
+  display: block;
+  margin-top: 4px;
+  color: rgba(234, 242, 255, 0.62);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .dest-admin-grid--actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -696,6 +868,34 @@ body.dest-edit-mode .dest-admin-shell {
   gap: 10px;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   padding-right: 10px;
+}
+
+.dest-admin-current {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background:
+    radial-gradient(280px 120px at 0% 0%, rgba(85, 185, 255, 0.10), rgba(85, 185, 255, 0)),
+    rgba(8, 16, 28, 0.72);
+}
+
+.dest-admin-current-kicker {
+  margin: 0 0 6px;
+  color: rgba(85, 185, 255, 0.9);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.dest-admin-current p:last-child,
+.dest-admin-form-summary,
+.dest-admin-list-status,
+.dest-admin-panel-note {
+  margin: 6px 0 0;
+  color: rgba(234, 242, 255, 0.62);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .dest-admin-search,
@@ -852,6 +1052,18 @@ body.dest-edit-mode #destination [contenteditable="true"] {
   border: 1px dashed rgba(255, 255, 255, 0.18);
   text-align: center;
   color: rgba(234, 242, 255, 0.6);
+  display: grid;
+  gap: 6px;
+}
+
+.dest-admin-empty strong {
+  font-size: 15px;
+  color: rgba(234, 242, 255, 0.9);
+}
+
+.dest-admin-empty span {
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .dest-admin-form {
@@ -860,8 +1072,27 @@ body.dest-edit-mode #destination [contenteditable="true"] {
   gap: 12px;
 }
 
+.dest-admin-form-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 11, 20, 0.42);
+}
+
+.dest-admin-actions--form-head {
+  min-width: 160px;
+}
+
 .dest-admin-card .dest-admin-section h3 {
   margin-bottom: 0;
+}
+
+.dest-admin-panel-note {
+  margin-top: 2px;
 }
 
 .dest-admin-tabs {
@@ -944,6 +1175,7 @@ body.dest-edit-mode #destination [contenteditable="true"] {
   margin-top: 6px;
   font-size: 12px;
   color: rgba(255, 214, 153, 0.85);
+  padding: 0 2px;
 }
 
 .dest-admin-validation.is-error {
@@ -993,6 +1225,10 @@ body.dest-edit-mode #destination [contenteditable="true"] {
 }
 
 @media (max-width: 900px) {
+  .dest-admin-steps {
+    grid-template-columns: 1fr;
+  }
+
   .dest-admin-shell {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1002,6 +1238,32 @@ body.dest-edit-mode #destination [contenteditable="true"] {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding-right: 0;
     padding-bottom: 12px;
+  }
+
+  .dest-admin-form-head {
+    flex-direction: column;
+  }
+
+  .dest-admin-actions--form-head {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .travel-upcoming-events .events-preview-head{
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .travel-upcoming-events{
+    padding: 20px 18px 16px;
+  }
+
+  .travel-upcoming-events .events-preview-actions{
+    align-self: stretch;
+  }
+
+  .travel-upcoming-events .events-preview-grid{
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1151,6 +1413,7 @@ body.travel-page .site-footer {
 }
 
 body.travel-page #destination-list {
+  padding-top: 20px;
   padding-bottom: 12px;
 }
 

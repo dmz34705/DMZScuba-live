@@ -993,11 +993,6 @@ body.events-public-modal-open {
   min-width: 0;
 }
 
-.events-public-modal-register-jump {
-  justify-self: flex-start;
-  min-height: 38px;
-}
-
 .events-public-modal-kicker {
   color: rgba(85,185,255,0.92);
   font-size: 10px;
@@ -1133,9 +1128,24 @@ body.events-public-modal-open {
   font-size: 13px;
 }
 
+.events-registration-closed {
+  margin: 0;
+  border: 1px solid rgba(245,178,62,0.24);
+  border-radius: 10px;
+  background: rgba(245,178,62,0.10);
+  color: #ffe5b3;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px 12px;
+}
+
 .events-registration-form {
   display: grid;
   gap: 8px;
+}
+
+.events-registration-form[hidden] {
+  display: none;
 }
 
 .events-registration-form label {
@@ -1250,10 +1260,6 @@ body.events-public-modal-open {
 
   .events-public-modal-head p {
     font-size: 12px;
-  }
-
-  .events-public-modal-register-jump {
-    width: 100%;
   }
 
   .events-public-modal-body {

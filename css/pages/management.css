@@ -1,0 +1,2581 @@
+.management-page {
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(226, 27, 35, 0.14), rgba(5, 11, 20, 0) 34%),
+    radial-gradient(900px 460px at 85% 5%, rgba(66, 185, 156, 0.16), rgba(5, 11, 20, 0) 58%),
+    var(--bg);
+}
+
+.management-page [hidden] {
+  display: none !important;
+}
+
+.management-editor-open {
+  overflow: hidden;
+}
+
+.management-field-hidden,
+.management-form-grid.management-field-hidden,
+.management-extra-fields.management-field-hidden {
+  display: none !important;
+}
+
+.management-shell {
+  width: min(1420px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 44px;
+}
+
+.management-login {
+  min-height: calc(100vh - 72px);
+  display: grid;
+  place-items: center;
+}
+
+.management-login-card,
+.management-panel,
+.management-list-panel,
+.management-site-tools,
+.management-metrics article {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(7, 19, 37, 0.86);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.34);
+}
+
+.management-login-card {
+  width: min(420px, 100%);
+  border-radius: 8px;
+  padding: 30px;
+}
+
+.management-login-card img {
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 18px;
+}
+
+.management-kicker {
+  margin: 0 0 4px;
+  color: rgba(147, 211, 255, 0.86);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.management-login-card h1,
+.management-header h1,
+.management-panel h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.management-login-form,
+.management-record-form,
+.management-ticker-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+  min-width: 0;
+}
+
+.management-login-form label,
+.management-record-form label,
+.management-ticker-form label,
+.management-search label,
+.management-sort {
+  display: grid;
+  gap: 7px;
+  color: rgba(234, 242, 255, 0.72);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.management-login-form input,
+.management-record-form input,
+.management-record-form select,
+.management-record-form textarea,
+.management-ticker-form textarea,
+.management-search input,
+.management-sort select {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  padding: 12px 12px;
+  outline: none;
+}
+
+.management-copy-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.management-copy-field button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.management-copy-field button:hover {
+  border-color: rgba(85, 185, 255, 0.52);
+  background: rgba(85, 185, 255, 0.13);
+}
+
+.management-checkbox-field {
+  min-height: 47px;
+  align-content: center;
+}
+
+.management-checkbox-field input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.management-record-form select option {
+  background: #071325;
+  color: var(--text);
+}
+
+.management-record-form textarea,
+.management-ticker-form textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+
+.management-ticker-form textarea {
+  min-height: 260px;
+  line-height: 1.55;
+}
+
+.management-ticker-hint {
+  color: rgba(234, 242, 255, 0.48);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.management-login-form input:focus,
+.management-record-form input:focus,
+.management-record-form select:focus,
+.management-record-form textarea:focus,
+.management-ticker-form textarea:focus,
+.management-search input:focus,
+.management-sort select:focus {
+  border-color: rgba(85, 185, 255, 0.72);
+  box-shadow: 0 0 0 3px rgba(85, 185, 255, 0.13);
+}
+
+.management-sort select option {
+  background: #071325;
+  color: var(--text);
+}
+
+.management-form-status {
+  min-height: 20px;
+  margin: 0;
+  color: rgba(234, 242, 255, 0.68);
+  font-size: 13px;
+}
+
+.management-form-status.is-error {
+  color: #ffb3b8;
+}
+
+.management-form-status.is-success {
+  color: #9ff0ce;
+}
+
+.management-registration-manager {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 14px;
+}
+
+.management-registration-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.management-registration-head h3,
+.management-registration-head p {
+  margin: 0;
+}
+
+.management-registration-head h3 {
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.management-registration-head p {
+  margin-top: 4px;
+  color: rgba(234, 242, 255, 0.64);
+  font-size: 13px;
+}
+
+.management-registration-list {
+  display: grid;
+  gap: 8px;
+}
+
+.management-registration-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(5, 11, 20, 0.36);
+}
+
+.management-registration-item div {
+  display: grid;
+  gap: 3px;
+}
+
+.management-registration-item strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.management-registration-item span {
+  color: rgba(234, 242, 255, 0.62);
+  font-size: 12px;
+}
+
+.management-registration-item button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.management-registration-item button:hover:not(:disabled) {
+  border-color: rgba(226, 27, 35, 0.58);
+  background: rgba(226, 27, 35, 0.14);
+}
+
+.management-registration-item .management-registration-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.management-registration-actions button:first-child:hover:not(:disabled) {
+  border-color: rgba(85, 185, 255, 0.58);
+  background: rgba(85, 185, 255, 0.14);
+}
+
+.management-class-schedule,
+.management-class-roster,
+.management-contact-classes {
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.management-class-schedule[open],
+.management-class-roster[open],
+.management-contact-classes[open] {
+  display: grid;
+  gap: 14px;
+}
+
+.management-class-schedule > summary,
+.management-class-roster > summary,
+.management-contact-classes > summary,
+.management-record-details > summary {
+  cursor: pointer;
+  list-style-position: outside;
+}
+
+.management-class-schedule > summary::marker,
+.management-class-roster > summary::marker,
+.management-contact-classes > summary::marker,
+.management-record-details > summary::marker {
+  color: rgba(85, 185, 255, 0.82);
+}
+
+.management-class-schedule-head h3,
+.management-class-schedule-head p,
+.management-class-roster-head h3,
+.management-class-roster-head p,
+.management-class-session-head h4 {
+  margin: 0;
+}
+
+.management-class-schedule-head p,
+.management-class-roster-head p,
+.management-class-registration-review p {
+  margin-top: 4px;
+  color: rgba(234, 242, 255, 0.62);
+  font-size: 13px;
+}
+
+.management-class-session-group {
+  display: grid;
+  gap: 8px;
+}
+
+.management-class-session-head,
+.management-class-session-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.management-class-session-head h4 {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.management-class-session-head button,
+.management-class-session-row button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.management-class-session-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(5, 11, 20, 0.3);
+  min-width: 0;
+}
+
+.management-class-session-row label {
+  display: grid;
+  gap: 5px;
+  color: rgba(234, 242, 255, 0.68);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.management-class-session-row label span {
+  line-height: 1;
+}
+
+.management-class-session-row input,
+.management-class-session-row select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  padding: 10px;
+  outline: none;
+}
+
+.management-class-session-location {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
+.management-class-session-row button {
+  grid-column: 1 / -1;
+  justify-self: end;
+  min-height: 38px;
+}
+
+.management-class-contact-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.management-contact-classes .management-class-contact-add {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.management-contact-classes .management-class-contact-add select[multiple] {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.management-class-contact-add select,
+.management-class-contact-add button,
+.management-class-contact-item button,
+.management-class-registration-item button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 9px 10px;
+}
+
+.management-class-contact-add select[multiple] {
+  min-height: 104px;
+}
+
+.management-contact-classes .management-class-contact-add select:not([multiple]),
+.management-contact-classes .management-class-contact-add button {
+  min-height: 42px;
+  align-self: start;
+}
+
+.management-class-contact-list,
+.management-class-registration-review,
+[data-class-registration-list] {
+  display: grid;
+  gap: 8px;
+}
+
+.management-class-contact-item,
+.management-class-registration-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(5, 11, 20, 0.3);
+}
+
+.management-class-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.management-class-contact-item strong,
+.management-class-registration-item strong {
+  display: block;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.management-class-contact-item span,
+.management-class-registration-item span {
+  display: block;
+  margin-top: 3px;
+  color: rgba(234, 242, 255, 0.62);
+  font-size: 12px;
+}
+
+.management-dashboard {
+  display: grid;
+  gap: 18px;
+}
+
+.management-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px 0 2px;
+}
+
+.management-header h1 {
+  font-size: clamp(32px, 5vw, 58px);
+  line-height: 1;
+}
+
+.management-header-actions,
+.management-form-actions,
+.management-panel-head,
+.management-list-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.management-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.management-metrics article {
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.management-metrics span {
+  display: block;
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 850;
+}
+
+.management-metrics p {
+  margin: 8px 0 0;
+  color: rgba(234, 242, 255, 0.66);
+  font-size: 13px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.management-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  min-width: 0;
+}
+
+.management-site-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.management-site-tools h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0;
+}
+
+.management-calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.management-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(234, 242, 255, 0.78);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.management-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.management-calendar-item {
+  display: grid;
+  grid-template-columns: minmax(116px, 0.12fr) minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  border: 1px solid rgba(85, 185, 255, 0.14);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(85, 185, 255, 0.10), rgba(85, 185, 255, 0) 44%),
+    rgba(255, 255, 255, 0.045);
+  padding: 14px;
+  cursor: pointer;
+}
+
+.management-calendar-item:hover {
+  border-color: rgba(85, 185, 255, 0.38);
+  background:
+    linear-gradient(90deg, rgba(85, 185, 255, 0.16), rgba(85, 185, 255, 0.03) 50%),
+    rgba(85, 185, 255, 0.06);
+}
+
+.management-calendar-item.is-past {
+  opacity: 0.72;
+}
+
+.management-calendar-date-block {
+  border: 1px solid rgba(85, 185, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(5, 11, 20, 0.34);
+  padding: 10px;
+}
+
+.management-calendar-date-block strong {
+  display: block;
+  color: rgba(234, 242, 255, 0.92);
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.management-calendar-date-block span {
+  display: block;
+  margin-top: 6px;
+  color: rgba(155, 211, 255, 0.74);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.management-calendar-main {
+  min-width: 0;
+}
+
+.management-calendar-item h3 {
+  margin: 8px 0 0;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.management-calendar-item p {
+  margin: 10px 0 0;
+  color: rgba(234, 242, 255, 0.68);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.management-calendar-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.management-calendar-stat-grid span {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(5, 11, 20, 0.26);
+  color: rgba(234, 242, 255, 0.82);
+  font-size: 13px;
+  padding: 9px 10px;
+}
+
+.management-calendar-stat-grid strong {
+  display: block;
+  margin-bottom: 3px;
+  color: rgba(155, 211, 255, 0.74);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.management-calendar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.management-calendar-actions a {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.management-calendar-actions a:hover {
+  border-color: rgba(85, 185, 255, 0.52);
+  background: rgba(85, 185, 255, 0.13);
+}
+
+.management-site-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: flex-end;
+}
+
+.management-site-links a,
+.management-site-links button {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 9px 11px;
+  cursor: pointer;
+}
+
+.management-site-links a:hover,
+.management-site-links button:hover {
+  border-color: rgba(85, 185, 255, 0.52);
+  background: rgba(85, 185, 255, 0.13);
+}
+
+.management-ticker-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 7, 14, 0.74);
+  backdrop-filter: blur(6px);
+}
+
+.management-ticker-card {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border: 1px solid rgba(85, 185, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(7, 19, 37, 0.96);
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.42);
+  padding: 20px;
+}
+
+.management-ticker-card .management-panel-head {
+  top: -20px;
+  margin: -20px -20px 18px;
+}
+
+.management-panel,
+.management-list-panel {
+  border-radius: 8px;
+  padding: 18px;
+  min-width: 0;
+}
+
+.management-panel {
+  position: fixed;
+  inset: 24px;
+  z-index: 40;
+  display: none;
+  width: min(920px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  margin: 0 auto;
+  overflow: auto;
+  border-color: rgba(85, 185, 255, 0.28);
+}
+
+.is-editor-open .management-panel {
+  display: block;
+}
+
+.is-editor-open .management-workspace::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: rgba(2, 7, 14, 0.74);
+  backdrop-filter: blur(6px);
+}
+
+.management-panel-head {
+  position: sticky;
+  top: -18px;
+  z-index: 2;
+  justify-content: space-between;
+  margin: -18px -18px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(7, 19, 37, 0.96);
+  padding: 18px;
+}
+
+.management-panel-head button,
+.management-new-record,
+.management-filters button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  padding: 9px 11px;
+  cursor: pointer;
+}
+
+.management-panel-head button:hover,
+.management-new-record:hover,
+.management-filters button:hover,
+.management-filters button.is-active {
+  border-color: rgba(85, 185, 255, 0.52);
+  background: rgba(85, 185, 255, 0.13);
+}
+
+.management-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.management-extra-fields {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  min-width: 0;
+}
+
+.management-form-actions {
+  flex-wrap: wrap;
+}
+
+.management-list-panel {
+  min-height: 640px;
+}
+
+.management-list-tools {
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.management-search {
+  flex: 1 1 300px;
+}
+
+.management-sort {
+  flex: 0 1 220px;
+}
+
+.management-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.management-records {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.management-empty,
+.management-record {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.management-empty {
+  padding: 22px;
+  color: rgba(234, 242, 255, 0.68);
+}
+
+.management-empty-compact {
+  padding: 12px;
+  font-size: 13px;
+}
+
+.management-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.management-record.is-contact {
+  display: block;
+  position: relative;
+  padding: 16px 18px 14px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(90deg, rgba(85, 185, 255, 0.13), rgba(85, 185, 255, 0) 46%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.management-record.is-contact::before {
+  content: "";
+  position: absolute;
+  inset: 14px auto 14px 0;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: rgba(85, 185, 255, 0.78);
+}
+
+.management-record.is-class {
+  display: block;
+  padding: 12px 14px;
+  border-color: rgba(66, 185, 156, 0.18);
+  background:
+    linear-gradient(90deg, rgba(66, 185, 156, 0.10), rgba(66, 185, 156, 0) 42%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.management-record:hover,
+.management-record.is-selected {
+  border-color: rgba(85, 185, 255, 0.48);
+  background: rgba(85, 185, 255, 0.10);
+}
+
+.management-record.is-contact:hover,
+.management-record.is-contact.is-selected {
+  background:
+    linear-gradient(90deg, rgba(85, 185, 255, 0.18), rgba(85, 185, 255, 0.04) 50%),
+    rgba(85, 185, 255, 0.08);
+}
+
+.management-record.is-class:hover,
+.management-record.is-class.is-selected {
+  border-color: rgba(66, 185, 156, 0.42);
+  background:
+    linear-gradient(90deg, rgba(66, 185, 156, 0.16), rgba(66, 185, 156, 0.03) 48%),
+    rgba(66, 185, 156, 0.06);
+}
+
+.management-record.is-registration {
+  cursor: default;
+  border-color: rgba(245, 178, 62, 0.18);
+  background:
+    linear-gradient(90deg, rgba(245, 178, 62, 0.10), rgba(245, 178, 62, 0) 42%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.management-record.is-registration:hover {
+  border-color: rgba(245, 178, 62, 0.36);
+  background:
+    linear-gradient(90deg, rgba(245, 178, 62, 0.14), rgba(245, 178, 62, 0.03) 48%),
+    rgba(245, 178, 62, 0.06);
+}
+
+.management-registration-card-event {
+  display: grid;
+  gap: 3px;
+  margin-top: 12px;
+  color: rgba(234, 242, 255, 0.7);
+  font-size: 13px;
+}
+
+.management-registration-card-event strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.management-registration-card-event span {
+  overflow-wrap: anywhere;
+}
+
+.management-record-site {
+  border-style: dashed;
+}
+
+.management-record h3 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.management-record.is-contact h3 {
+  margin-top: 6px;
+  font-size: 18px;
+}
+
+.management-record.is-class h3 {
+  margin-top: 4px;
+  font-size: 18px;
+}
+
+.management-record p {
+  margin: 8px 0 0;
+  color: rgba(234, 242, 255, 0.68);
+}
+
+.management-record.is-contact p {
+  max-width: 86ch;
+  color: rgba(234, 242, 255, 0.72);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.management-record-meta,
+.management-record-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.management-record-meta {
+  margin-top: 10px;
+  color: rgba(234, 242, 255, 0.6);
+  font-size: 13px;
+}
+
+.management-record.is-contact .management-record-meta {
+  margin-top: 10px;
+  color: rgba(234, 242, 255, 0.62);
+}
+
+.management-contact-card-lines {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.management-contact-copy-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 48px;
+  border: 1px solid rgba(85, 185, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(5, 11, 20, 0.34);
+  padding: 8px 10px 8px 12px;
+}
+
+.management-contact-copy-line span {
+  min-width: 0;
+}
+
+.management-contact-copy-line strong {
+  display: block;
+  margin: 0 0 3px;
+  color: rgba(155, 211, 255, 0.74);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.management-contact-detail-grid strong {
+  display: block;
+  margin-bottom: 3px;
+  color: rgba(234, 242, 255, 0.68);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.management-contact-copy-line a,
+.management-contact-copy-line em {
+  color: rgba(234, 242, 255, 0.9);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.management-contact-copy-line.is-empty a,
+.management-contact-copy-line.is-empty em {
+  color: rgba(234, 242, 255, 0.46);
+}
+
+.management-contact-copy-line button {
+  border: 1px solid rgba(85, 185, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(85, 185, 255, 0.10);
+  color: #cfeeff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  padding: 7px 10px;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.management-contact-copy-line button:hover:not(:disabled) {
+  border-color: rgba(85, 185, 255, 0.52);
+  background: rgba(85, 185, 255, 0.18);
+}
+
+.management-contact-copy-line button:disabled {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(234, 242, 255, 0.36);
+  cursor: not-allowed;
+}
+
+.management-record-details {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 10px;
+}
+
+.management-record.is-contact .management-record-details {
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.management-record-details summary {
+  color: rgba(234, 242, 255, 0.82);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.management-record.is-contact .management-record-details summary {
+  color: #cfeeff;
+}
+
+.management-class-card-detail {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.management-contact-detail-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.management-contact-detail-grid div {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(5, 11, 20, 0.28);
+  padding: 10px;
+}
+
+.management-contact-detail-grid span {
+  display: block;
+  color: rgba(234, 242, 255, 0.82);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.management-inquiry-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.management-inquiry-detail-grid section {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(5, 11, 20, 0.28);
+  padding: 10px;
+}
+
+.management-inquiry-detail-grid h4 {
+  margin: 0 0 8px;
+  color: rgba(155, 211, 255, 0.82);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.management-inquiry-detail-grid section > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.management-inquiry-detail-grid strong {
+  display: block;
+  margin-bottom: 2px;
+  color: rgba(234, 242, 255, 0.58);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.management-inquiry-detail-grid span,
+.management-inquiry-detail-grid p {
+  display: block;
+  margin: 0;
+  color: rgba(234, 242, 255, 0.84);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.management-inquiry-detail-grid .management-inquiry-notes {
+  grid-column: 1 / -1;
+}
+
+.management-class-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.management-class-detail-grid span,
+.management-class-detail-section {
+  border: 1px solid rgba(66, 185, 156, 0.15);
+  border-radius: 8px;
+  background: rgba(5, 11, 20, 0.32);
+  padding: 8px 10px;
+}
+
+.management-class-detail-grid span {
+  color: rgba(234, 242, 255, 0.9);
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.management-class-detail-grid strong,
+.management-class-detail-section strong {
+  display: block;
+  margin-bottom: 3px;
+  color: rgba(159, 240, 206, 0.78);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.management-class-detail-section p {
+  margin: 4px 0 0;
+  color: rgba(234, 242, 255, 0.82);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.management-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(234, 242, 255, 0.78);
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.management-badge.is-urgent,
+.management-badge.is-high {
+  background: rgba(226, 27, 35, 0.18);
+  color: #ffd7d9;
+}
+
+.management-badge.is-complete {
+  background: rgba(66, 185, 156, 0.18);
+  color: #c5ffe9;
+}
+
+.management-badge.is-waiting {
+  background: rgba(245, 178, 62, 0.18);
+  color: #ffe5b3;
+}
+
+.management-badge.is-to_contact,
+.management-badge.is-reached_out {
+  background: rgba(85, 185, 255, 0.16);
+  color: #cfeeff;
+}
+
+.management-badge.is-gathering_details,
+.management-badge.is-planning,
+.management-badge.is-payment,
+.management-badge.is-timing {
+  background: rgba(245, 178, 62, 0.18);
+  color: #ffe5b3;
+}
+
+.management-badge.is-dead_end,
+.management-badge.is-not_fit,
+.management-badge.is-archived {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(234, 242, 255, 0.66);
+}
+
+.management-record-actions {
+  display: flex;
+  align-items: start;
+}
+
+.management-record-actions select {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: #071325;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 8px;
+}
+
+.management-registration-card-actions {
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.management-registration-card-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.management-registration-card-actions button:hover:not(:disabled) {
+  border-color: rgba(226, 27, 35, 0.58);
+  background: rgba(226, 27, 35, 0.14);
+}
+
+.management-registration-card-actions button:first-child:hover:not(:disabled) {
+  border-color: rgba(85, 185, 255, 0.58);
+  background: rgba(85, 185, 255, 0.14);
+}
+
+@media (max-width: 980px) {
+  .management-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .management-panel {
+    inset: 14px;
+    width: calc(100vw - 28px);
+    max-height: calc(100vh - 28px);
+  }
+
+  .management-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .management-site-tools {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .management-calendar-item {
+    align-items: stretch;
+    flex-direction: column;
+    display: flex;
+  }
+
+  .management-calendar-controls {
+    justify-content: flex-start;
+  }
+
+  .management-site-links {
+    justify-content: flex-start;
+  }
+
+  .management-class-session-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .management-shell {
+    width: min(100% - 20px, 1420px);
+    padding-top: 14px;
+  }
+
+  .management-header,
+  .management-record {
+    grid-template-columns: 1fr;
+  }
+
+  .management-header {
+    display: grid;
+  }
+
+  .management-header-actions,
+  .management-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .management-form-grid {
+    display: grid;
+  }
+
+  .management-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-record {
+    display: grid;
+  }
+
+  .management-class-session-row {
+    grid-template-columns: 1fr;
+  }
+
+  .management-class-contact-add,
+  .management-class-contact-item,
+  .management-class-contact-actions,
+  .management-class-registration-item,
+  .management-registration-item,
+  .management-class-detail-grid,
+  .management-inquiry-detail-grid,
+  .management-inquiry-detail-grid section > div {
+    grid-template-columns: 1fr;
+  }
+
+  .management-registration-item .management-registration-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* ============================================================
+   Visual & Layout Improvements
+   ============================================================ */
+
+/* ---- Two-row toolbar: grid replaces flat flex ---- */
+.management-list-tools {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: end;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.management-new-record {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+  border-color: rgba(226, 27, 35, 0.42);
+  background: rgba(226, 27, 35, 0.13);
+  font-weight: 800;
+}
+
+.management-new-record:hover {
+  border-color: rgba(226, 27, 35, 0.72);
+  background: rgba(226, 27, 35, 0.24);
+}
+
+.management-search {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.management-sort {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: end;
+}
+
+.management-filters {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  align-self: center;
+}
+
+.management-calendar-controls {
+  grid-column: 3;
+  grid-row: 2;
+  align-self: center;
+  justify-self: end;
+}
+
+/* ---- Filter buttons: pill tabs ---- */
+.management-filters button {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.management-filters button:hover {
+  border-color: rgba(85, 185, 255, 0.38);
+  background: rgba(85, 185, 255, 0.10);
+}
+
+.management-filters button.is-active {
+  border-color: rgba(85, 185, 255, 0.56);
+  background: rgba(85, 185, 255, 0.20);
+  color: #cfeeff;
+}
+
+/* ---- Metric tiles: colored left accents per category ---- */
+.management-metrics article:nth-child(1) { border-left: 3px solid rgba(226, 27, 35, 0.65); }
+.management-metrics article:nth-child(2) { border-left: 3px solid rgba(85, 185, 255, 0.65); }
+.management-metrics article:nth-child(3) { border-left: 3px solid rgba(245, 178, 62, 0.65); }
+.management-metrics article:nth-child(4) { border-left: 3px solid rgba(66, 185, 156, 0.65); }
+.management-metrics article:nth-child(5) { border-left: 3px solid rgba(85, 210, 230, 0.65); }
+.management-metrics article:nth-child(6) { border-left: 3px solid rgba(226, 27, 35, 0.45); }
+
+/* ---- Inquiry records: amber left bar ---- */
+.management-record.is-inquiry {
+  border-color: rgba(245, 178, 62, 0.22);
+  border-left: 3px solid rgba(245, 178, 62, 0.72);
+  background:
+    linear-gradient(90deg, rgba(245, 178, 62, 0.07), rgba(245, 178, 62, 0) 40%),
+    rgba(255, 255, 255, 0.045);
+  padding-left: 14px;
+}
+
+.management-record.is-inquiry:hover,
+.management-record.is-inquiry.is-selected {
+  border-color: rgba(245, 178, 62, 0.42);
+  border-left-color: rgba(245, 178, 62, 0.88);
+  background:
+    linear-gradient(90deg, rgba(245, 178, 62, 0.13), rgba(245, 178, 62, 0.02) 46%),
+    rgba(245, 178, 62, 0.055);
+}
+
+/* ---- Task records: violet left bar ---- */
+.management-record.is-task {
+  border-color: rgba(149, 117, 205, 0.22);
+  border-left: 3px solid rgba(149, 117, 205, 0.72);
+  background:
+    linear-gradient(90deg, rgba(149, 117, 205, 0.07), rgba(149, 117, 205, 0) 40%),
+    rgba(255, 255, 255, 0.045);
+  padding-left: 14px;
+}
+
+.management-record.is-task:hover,
+.management-record.is-task.is-selected {
+  border-color: rgba(149, 117, 205, 0.42);
+  border-left-color: rgba(149, 117, 205, 0.88);
+  background:
+    linear-gradient(90deg, rgba(149, 117, 205, 0.13), rgba(149, 117, 205, 0.02) 46%),
+    rgba(149, 117, 205, 0.055);
+}
+
+/* ---- Trip records: cyan left bar ---- */
+.management-record.is-trip {
+  border-color: rgba(85, 210, 230, 0.22);
+  border-left: 3px solid rgba(85, 210, 230, 0.72);
+  background:
+    linear-gradient(90deg, rgba(85, 210, 230, 0.07), rgba(85, 210, 230, 0) 40%),
+    rgba(255, 255, 255, 0.045);
+  padding-left: 14px;
+}
+
+.management-record.is-trip:hover,
+.management-record.is-trip.is-selected {
+  border-color: rgba(85, 210, 230, 0.42);
+  border-left-color: rgba(85, 210, 230, 0.88);
+  background:
+    linear-gradient(90deg, rgba(85, 210, 230, 0.13), rgba(85, 210, 230, 0.02) 46%),
+    rgba(85, 210, 230, 0.055);
+}
+
+/* ---- Type badge colors ---- */
+.management-badge.is-contact { background: rgba(85, 185, 255, 0.16); color: #cfeeff; }
+.management-badge.is-inquiry { background: rgba(245, 178, 62, 0.18); color: #ffe5b3; }
+.management-badge.is-class   { background: rgba(66, 185, 156, 0.18); color: #c5ffe9; }
+.management-badge.is-trip    { background: rgba(85, 210, 230, 0.16); color: #b3f0ff; }
+.management-badge.is-task    { background: rgba(149, 117, 205, 0.18); color: #dfd0ff; }
+.management-badge.is-registration { background: rgba(245, 178, 62, 0.18); color: #ffe5b3; }
+
+/* ---- Status badge fills (previously unstyled values) ---- */
+.management-badge.is-new       { background: rgba(85, 185, 255, 0.11); color: #cfeeff; }
+.management-badge.is-active    { background: rgba(66, 185, 156, 0.15); color: #c5ffe9; }
+.management-badge.is-scheduled { background: rgba(66, 185, 156, 0.13); color: #c5ffe9; }
+.management-badge.is-normal    { background: rgba(255, 255, 255, 0.05); color: rgba(234, 242, 255, 0.62); }
+.management-badge.is-low       { background: rgba(255, 255, 255, 0.04); color: rgba(234, 242, 255, 0.48); }
+
+/* ---- Quick-status select: pill style ---- */
+.management-record-actions select {
+  border-radius: 20px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 130px;
+  cursor: pointer;
+}
+
+/* ---- Extra-fields section label via pseudo-element ---- */
+.management-extra-fields:not(.management-field-hidden)::before {
+  content: "Additional Details";
+  display: block;
+  color: rgba(155, 211, 255, 0.74);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: -2px;
+}
+
+/* ---- Responsive: single-column toolbar on narrow screens ---- */
+@media (max-width: 680px) {
+  .management-list-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .management-new-record       { grid-column: 1; grid-row: 1; }
+  .management-search           { grid-column: 1; grid-row: 2; }
+  .management-sort             { grid-column: 1; grid-row: 3; }
+  .management-filters          { grid-column: 1; grid-row: 4; }
+  .management-calendar-controls { grid-column: 1; grid-row: 5; justify-self: start; }
+}
+
+/* ============================================================
+   Inquiry Progress Visualization
+   ============================================================ */
+
+/* ---- Pipeline step bar ---- */
+.management-inquiry-pipeline {
+  display: flex;
+  gap: 3px;
+  margin: 10px 0 4px;
+}
+
+.management-inquiry-stage {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(234, 242, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 5px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.management-inquiry-stage.is-done {
+  color: rgba(245, 178, 62, 0.65);
+  background: rgba(245, 178, 62, 0.09);
+  border-color: rgba(245, 178, 62, 0.18);
+}
+
+.management-inquiry-stage.is-current {
+  color: #ffe5b3;
+  background: rgba(245, 178, 62, 0.20);
+  border-color: rgba(245, 178, 62, 0.40);
+  box-shadow: 0 0 0 1px rgba(245, 178, 62, 0.18);
+}
+
+.management-inquiry-stage.is-dead {
+  color: #ffb3b8;
+  background: rgba(226, 27, 35, 0.16);
+  border-color: rgba(226, 27, 35, 0.32);
+  box-shadow: 0 0 0 1px rgba(226, 27, 35, 0.14);
+}
+
+/* ---- Next step + meta callout ---- */
+.management-inquiry-callout {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.management-inquiry-next-step {
+  display: block;
+  padding: 7px 10px;
+  border: 1px solid rgba(245, 178, 62, 0.22);
+  border-left: 3px solid rgba(245, 178, 62, 0.65);
+  border-radius: 6px;
+  background: rgba(245, 178, 62, 0.06);
+  color: rgba(234, 242, 255, 0.88);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.management-inquiry-callout-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  align-items: center;
+}
+
+.management-inquiry-callout-meta span {
+  color: rgba(234, 242, 255, 0.60);
+  font-size: 12px;
+}
+
+.management-inquiry-due {
+  color: rgba(245, 178, 62, 0.82) !important;
+  font-weight: 800;
+}
+
+.management-inquiry-due.is-due-soon {
+  color: #ffb3b8 !important;
+}
+
+.management-inquiry-balance {
+  color: rgba(245, 178, 62, 0.82) !important;
+  font-weight: 800;
+}
+
+@media (max-width: 680px) {
+  .management-inquiry-stage {
+    font-size: 9px;
+    padding: 4px 3px;
+    letter-spacing: 0;
+  }
+}
+
+/* ---- Overdue badge ---- */
+.management-badge.is-overdue {
+  background: rgba(226, 27, 35, 0.22);
+  color: #ffb3b8;
+  border: 1px solid rgba(226, 27, 35, 0.38);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Pin button on cards ---- */
+.management-pin-btn {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: rgba(234, 242, 255, 0.30);
+  font-size: 16px;
+  line-height: 1;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: color 0.15s, transform 0.1s;
+  border-radius: 6px;
+}
+.management-pin-btn:hover {
+  color: rgba(245, 178, 62, 0.80);
+  background: rgba(245, 178, 62, 0.10);
+}
+.management-pin-btn.is-pinned {
+  color: #f5b23e;
+}
+.management-record.is-pinned {
+  border-color: rgba(245, 178, 62, 0.30);
+  background: rgba(245, 178, 62, 0.05);
+}
+
+/* ---- Quick-add task bar ---- */
+.management-quick-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+.management-quick-add.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.management-quick-add-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.042);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  outline: none;
+}
+.management-quick-add-input:focus {
+  border-color: rgba(85, 185, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(85, 185, 255, 0.11);
+}
+.management-quick-add-btn {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  padding: 10px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.management-quick-add-btn:hover {
+  border-color: rgba(85, 185, 255, 0.52);
+  background: rgba(85, 185, 255, 0.13);
+}
+
+/* ---- Timestamp button in notes label ---- */
+.management-notes-label {
+  position: relative;
+}
+.management-timestamp-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(234, 242, 255, 0.60);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  padding: 3px 8px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.management-timestamp-btn:hover {
+  border-color: rgba(85, 185, 255, 0.45);
+  background: rgba(85, 185, 255, 0.10);
+  color: var(--text);
+}
+
+/* ---- Filter count badge ---- */
+.management-filters button [data-filter-count] {
+  color: rgba(234, 242, 255, 0.50);
+  font-size: 11px;
+  font-weight: 700;
+}
+.management-filters button.is-active [data-filter-count] {
+  color: rgba(85, 185, 255, 0.75);
+}
+
+/* ============================================================
+   Mobile enhancements - up to 767px
+   Everything above this point is the unchanged desktop layout.
+   ============================================================ */
+
+@keyframes mgmt-sheet-up {
+  from { transform: translateY(36px); opacity: 0.5; }
+  to   { transform: translateY(0);    opacity: 1;   }
+}
+
+@media (max-width: 767px) {
+
+  /* Shell */
+  .management-shell {
+    width: calc(100% - 20px);
+    padding: 14px 0 max(env(safe-area-inset-bottom, 0px), 40px);
+  }
+
+  .management-dashboard {
+    gap: 14px;
+  }
+
+  /* Header */
+  .management-header {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0 0;
+  }
+
+  .management-header h1 {
+    font-size: 26px;
+  }
+
+  .management-header-actions {
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    gap: 7px;
+  }
+
+  .management-header-actions button {
+    min-height: 40px;
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+
+  /* Metrics: 3 columns by 2 rows */
+  .management-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .management-metrics article {
+    padding: 10px 10px 12px;
+  }
+
+  .management-metrics span {
+    font-size: 22px;
+  }
+
+  .management-metrics p {
+    font-size: 9px;
+    margin-top: 5px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Site tools */
+  .management-site-tools {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .management-site-tools h2 {
+    font-size: 17px;
+  }
+
+  .management-site-links {
+    justify-content: flex-start;
+    gap: 7px;
+  }
+
+  .management-site-links a,
+  .management-site-links button {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* List toolbar: New and Sort, then Search, then Filters */
+  .management-list-tools {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto auto auto;
+    gap: 9px;
+    padding-bottom: 12px;
+  }
+
+  .management-new-record {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .management-sort {
+    grid-column: 2;
+    grid-row: 1;
+    flex: none;
+    align-self: stretch;
+    min-width: 0;
+  }
+
+  .management-sort select {
+    height: 100%;
+    min-height: 44px;
+    padding: 0 8px;
+    font-size: 12px;
+    max-width: 130px;
+  }
+
+  .management-search {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex: none;
+  }
+
+  /* 16px prevents iOS auto-zoom on focus */
+  .management-search input,
+  .management-search input[type="search"] {
+    font-size: 16px;
+    min-height: 44px;
+    padding: 12px;
+  }
+
+  /* Filter pills become a horizontal scroll strip */
+  .management-filters {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    /* Fade right edge to hint at more pills */
+    mask-image: linear-gradient(to right, black 0%, black calc(100% - 22px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 22px), transparent 100%);
+  }
+
+  .management-filters::-webkit-scrollbar { display: none; }
+
+  .management-filters button {
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-height: 38px;
+    padding: 5px 12px;
+    touch-action: manipulation;
+  }
+
+  .management-calendar-controls {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Quick-add bar */
+  .management-quick-add-input {
+    font-size: 16px; /* iOS zoom prevention */
+    min-height: 44px;
+  }
+
+  .management-quick-add-btn {
+    min-height: 44px;
+  }
+
+  /* Record cards */
+  .management-record {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 12px 12px;
+    touch-action: manipulation;
+  }
+
+  .management-record.is-contact,
+  .management-record.is-class {
+    padding: 14px 14px 12px;
+  }
+
+  .management-record-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    padding-top: 2px;
+  }
+
+  .management-record-actions select {
+    min-width: 100px;
+    font-size: 11px;
+    padding: 5px 7px;
+  }
+
+  .management-pin-btn {
+    padding: 3px 6px;
+    min-height: 30px;
+    font-size: 15px;
+  }
+
+  /* Bottom-sheet editor panel */
+  .management-panel {
+    inset: auto 0 0 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 92vh;
+    max-height: 92dvh;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    margin: 0;
+    padding: 0 16px max(env(safe-area-inset-bottom, 0px), 24px);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .is-editor-open .management-panel {
+    display: block;
+    animation: mgmt-sheet-up 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  /* Panel head: re-anchor to top, add drag handle */
+  .management-panel .management-panel-head {
+    top: 0;
+    margin: 0 -16px 16px;
+    padding: 24px 16px 14px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  /* Drag-handle indicator (position: sticky is a containing block) */
+  .management-panel .management-panel-head::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    pointer-events: none;
+  }
+
+  /* Inputs: 16px font-size prevents iOS auto-zoom */
+  .management-record-form input,
+  .management-record-form select,
+  .management-record-form textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  .management-record-form textarea {
+    min-height: 100px;
+  }
+
+  /* Form labels slightly larger for readability */
+  .management-record-form label,
+  .management-ticker-form label {
+    font-size: 14px;
+  }
+
+  /* Form actions: full-width stacked buttons */
+  .management-form-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .management-form-actions button {
+    width: 100%;
+    min-height: 50px;
+    font-size: 15px;
+    touch-action: manipulation;
+  }
+
+  /* Ticker modal as bottom sheet */
+  .management-ticker-modal {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .management-ticker-card {
+    width: 100%;
+    max-height: 90vh;
+    max-height: 90dvh;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    padding: 0 16px max(env(safe-area-inset-bottom, 0px), 24px);
+    animation: mgmt-sheet-up 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  .management-ticker-card .management-panel-head {
+    top: 0;
+    margin: 0 -16px 16px;
+    padding: 24px 16px 14px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .management-ticker-card .management-panel-head::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    pointer-events: none;
+  }
+
+  .management-ticker-form textarea {
+    font-size: 16px;
+    min-height: 200px;
+  }
+
+  /* Calendar items */
+  .management-calendar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .management-calendar-date-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .management-calendar-date-block strong {
+    font-size: 17px;
+  }
+
+  /* Contact copy lines */
+  .management-contact-card-lines {
+    grid-template-columns: 1fr;
+  }
+
+  /* Class session dates */
+  .management-class-session-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Registration items: stack actions below info */
+  .management-registration-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .management-registration-item .management-registration-actions {
+    justify-content: flex-start;
+  }
+
+  /* Inquiry pipeline: compact */
+  .management-inquiry-stage {
+    font-size: 9px;
+    padding: 4px 3px;
+    letter-spacing: 0;
+  }
+
+  /* Login card */
+  .management-login-card {
+    padding: 24px 20px;
+  }
+
+}
+
+/* Extra-small phones, up to 390px */
+@media (max-width: 390px) {
+  .management-metrics span    { font-size: 19px; }
+  .management-metrics p       { font-size: 8px; letter-spacing: 0; }
+  .management-metrics article { padding: 8px 8px 10px; }
+
+  .management-panel,
+  .management-ticker-card {
+    max-height: 96dvh;
+    max-height: 96vh;
+  }
+}
+
+/* ============================================================
+   Mobile polish pass
+   These overrides only apply to the management console on
+   phone-sized screens. Desktop layout and behavior stay intact.
+   ============================================================ */
+
+@media (max-width: 767px) {
+  .management-page {
+    overflow-x: hidden;
+  }
+
+  .management-shell {
+    width: 100%;
+    padding: 12px 10px max(env(safe-area-inset-bottom, 0px), 32px);
+  }
+
+  .management-login {
+    min-height: calc(100dvh - 24px);
+  }
+
+  .management-login-card {
+    width: 100%;
+    padding: 22px 18px;
+  }
+
+  .management-login-card img {
+    width: 70px;
+    height: 70px;
+  }
+
+  .management-header {
+    align-items: start;
+  }
+
+  .management-header-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-header-actions button {
+    white-space: nowrap;
+  }
+
+  .management-kicker {
+    font-size: 10px;
+  }
+
+  .management-site-tools,
+  .management-list-panel {
+    padding: 12px;
+  }
+
+  .management-site-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-site-links a,
+  .management-site-links button {
+    justify-content: center;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .management-list-tools {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    margin: -12px -12px 0;
+    padding: 12px;
+    border-radius: 8px 8px 0 0;
+    background: rgba(7, 19, 37, 0.97);
+    backdrop-filter: blur(10px);
+  }
+
+  .management-sort {
+    min-width: 128px;
+  }
+
+  .management-sort select {
+    max-width: none;
+  }
+
+  .management-filters {
+    margin-right: -12px;
+    padding-right: 28px;
+  }
+
+  .management-calendar-controls {
+    display: flex;
+    width: 100%;
+  }
+
+  .management-toggle {
+    min-height: 36px;
+  }
+
+  .management-records {
+    gap: 12px;
+  }
+
+  .management-record {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .management-record-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .management-record-actions select {
+    width: 100%;
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  .management-pin-btn {
+    justify-self: start;
+    width: 44px;
+    min-height: 38px;
+  }
+
+  .management-record h3,
+  .management-record.is-contact h3,
+  .management-record.is-class h3 {
+    font-size: 17px;
+    line-height: 1.25;
+  }
+
+  .management-record-badges,
+  .management-record-meta,
+  .management-inquiry-callout-meta {
+    gap: 6px;
+  }
+
+  .management-badge {
+    min-height: 24px;
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+
+  .management-contact-copy-line {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .management-contact-copy-line button,
+  .management-copy-field button {
+    min-height: 42px;
+  }
+
+  .management-inquiry-pipeline {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .management-inquiry-stage {
+    min-height: 30px;
+    display: grid;
+    place-items: center;
+    white-space: normal;
+    line-height: 1.1;
+  }
+
+  .management-inquiry-next-step {
+    font-size: 13px;
+  }
+
+  .management-calendar-stat-grid,
+  .management-class-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-calendar-actions,
+  .management-registration-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .management-calendar-actions a,
+  .management-registration-actions button {
+    flex: 1 1 auto;
+    min-height: 42px;
+    text-align: center;
+  }
+
+  .management-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: min(92dvh, 760px);
+    overflow-y: auto;
+  }
+
+  .management-panel-head {
+    align-items: start;
+  }
+
+  .management-panel-head h2 {
+    font-size: 20px;
+    line-height: 1.2;
+  }
+
+  .management-panel-head button {
+    min-height: 42px;
+  }
+
+  .management-record-form {
+    gap: 12px;
+  }
+
+  .management-record-form input,
+  .management-record-form select,
+  .management-record-form textarea,
+  .management-ticker-form textarea,
+  .management-class-contact-add select {
+    font-size: 16px;
+  }
+
+  .management-copy-field {
+    grid-template-columns: 1fr;
+  }
+
+  .management-extra-fields,
+  .management-class-schedule,
+  .management-class-roster,
+  .management-contact-classes,
+  .management-registration-manager {
+    padding: 12px;
+  }
+
+  .management-class-session-head {
+    align-items: start;
+  }
+
+  .management-class-session-row,
+  .management-class-contact-add,
+  .management-contact-classes .management-class-contact-add,
+  .management-class-contact-item,
+  .management-class-registration-item {
+    grid-template-columns: 1fr;
+  }
+
+  .management-class-session-row button,
+  .management-class-contact-add button,
+  .management-class-contact-item button,
+  .management-class-registration-item button {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .management-contact-classes .management-class-contact-add select[multiple] {
+    min-height: 148px;
+  }
+
+  .management-inquiry-detail-grid,
+  .management-inquiry-detail-grid section > div,
+  .management-contact-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .management-timestamp-btn {
+    position: static;
+    width: max-content;
+    margin-top: 6px;
+  }
+
+  .management-ticker-card {
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .management-header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .management-header-actions {
+    width: 100%;
+  }
+
+  .management-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-site-links {
+    grid-template-columns: 1fr;
+  }
+
+  .management-list-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .management-new-record,
+  .management-sort,
+  .management-search,
+  .management-filters,
+  .management-calendar-controls {
+    grid-column: 1 / -1;
+  }
+
+  .management-new-record { grid-row: 1; }
+  .management-sort { grid-row: 2; }
+  .management-search { grid-row: 3; }
+  .management-filters { grid-row: 4; }
+  .management-calendar-controls { grid-row: 5; }
+
+  .management-sort select {
+    width: 100%;
+  }
+
+  .management-calendar-stat-grid,
+  .management-class-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .management-inquiry-pipeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .management-panel,
+  .management-ticker-card {
+    max-height: 96dvh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .management-panel .management-panel-head,
+  .management-ticker-card .management-panel-head {
+    border-radius: 16px 16px 0 0;
+  }
+}

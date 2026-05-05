@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="/assets/icons/favicon.png" type="image/png" />
+  <link rel="icon" href="/assets/icons/favicon.ico" sizes="any" />
+  <title>DMZ Scuba | Management</title>
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/pages/management.css?v=20260429d" />
+</head>
+
+<body class="management-page">
+  <main class="management-shell" data-management-app>
+    <section class="management-login" data-management-login>
+      <div class="management-login-card">
+        <img src="/assets/images/logos/dmz-scuba-logo.png" alt="DMZ Scuba logo" />
+        <p class="management-kicker">Internal management</p>
+        <h1>Sign in</h1>
+        <form class="management-login-form" data-login-form>
+          <label>
+            Username
+            <input type="text" name="user" autocomplete="username" required />
+          </label>
+          <label>
+            Password
+            <input type="password" name="pass" autocomplete="current-password" required />
+          </label>
+          <button class="btn primary" type="submit">Log In</button>
+          <p class="management-form-status" data-login-status aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <section class="management-dashboard" data-management-dashboard hidden>
+      <header class="management-header">
+        <div>
+          <p class="management-kicker">DMZ Scuba</p>
+          <h1>Management</h1>
+        </div>
+        <div class="management-header-actions">
+          <button class="btn secondary" type="button" data-refresh-records>Refresh</button>
+          <button class="btn secondary" type="button" data-logout>Log Out</button>
+        </div>
+      </header>
+
+      <section class="management-metrics" aria-label="Management summary">
+        <article>
+          <span data-metric="open">0</span>
+          <p>Open Items</p>
+        </article>
+        <article>
+          <span data-metric="contact">0</span>
+          <p>Contacts</p>
+        </article>
+        <article>
+          <span data-metric="inquiry">0</span>
+          <p>Inquiries</p>
+        </article>
+        <article>
+          <span data-metric="class">0</span>
+          <p>Classes</p>
+        </article>
+        <article>
+          <span data-metric="trip">0</span>
+          <p>Calendar</p>
+        </article>
+        <article>
+          <span data-metric="owed">$0</span>
+          <p>Open Balance</p>
+        </article>
+      </section>
+
+      <section class="management-site-tools" aria-label="Site editing shortcuts">
+        <div>
+          <p class="management-kicker">Site tools</p>
+          <h2>Editable Site Areas</h2>
+        </div>
+        <div class="management-site-links">
+          <button type="button" data-open-home-ticker>Edit Home Ticker</button>
+          <a href="/pages/events/" target="_blank" rel="noopener">Events + Registration</a>
+          <a href="/pages/media/" target="_blank" rel="noopener">Media Library</a>
+          <a href="/pages/travel/" target="_blank" rel="noopener">Travel Destinations</a>
+          <a href="/pages/training/" target="_blank" rel="noopener">Training Pages</a>
+        </div>
+      </section>
+
+      <section class="management-workspace">
+        <aside class="management-panel" role="dialog" aria-modal="true" aria-labelledby="managementEditorTitle">
+          <div class="management-panel-head">
+            <h2 id="managementEditorTitle" data-editor-title>New Item</h2>
+            <button type="button" data-cancel-edit>Cancel</button>
+          </div>
+          <form class="management-record-form" data-record-form>
+            <input type="hidden" name="id" />
+            <label data-field="recordType">
+              Type
+              <select name="recordType">
+                <option value="contact">Customer / Contact Profile</option>
+                <option value="inquiry">Inquiry</option>
+                <option value="class">Class</option>
+                <option value="trip">Calendar</option>
+                <option value="task">Business Task</option>
+              </select>
+            </label>
+            <label data-field="title">
+              Title
+              <input type="text" name="title" maxlength="180" required placeholder="Open Water student follow-up" />
+            </label>
+            <div class="management-form-grid">
+              <label data-field="status">
+                Status
+                <select name="status">
+                  <option value="new">New</option>
+                  <option value="active">Active</option>
+                  <option value="waiting">Waiting</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="complete">Complete</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </label>
+              <label data-field="priority">
+                Priority
+                <select name="priority">
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="low">Low</option>
+                </select>
+              </label>
+            </div>
+            <label data-field="owner">
+              Owner
+              <input type="text" name="owner" maxlength="120" placeholder="Zachary" />
+            </label>
+            <div class="management-form-grid">
+              <label data-field="firstName">
+                First Name
+                <input type="text" name="firstName" maxlength="80" />
+              </label>
+              <label data-field="lastName">
+                Last Name
+                <input type="text" name="lastName" maxlength="80" />
+              </label>
+            </div>
+            <div class="management-form-grid">
+              <label data-field="contactName">
+                Contact Name
+                <input type="text" name="contactName" maxlength="160" />
+              </label>
+              <label data-field="contactEmail">
+                Contact Email
+                <span class="management-copy-field">
+                  <input type="email" name="contactEmail" maxlength="180" />
+                  <button type="button" data-copy-field="contactEmail">Copy</button>
+                </span>
+              </label>
+            </div>
+            <div class="management-form-grid">
+              <label data-field="contactPhone">
+                Contact Phone
+                <span class="management-copy-field">
+                  <input type="tel" name="contactPhone" maxlength="60" />
+                  <button type="button" data-copy-field="contactPhone">Copy</button>
+                </span>
+              </label>
+              <label data-field="dueDate">
+                Due Date
+                <input type="date" name="dueDate" />
+              </label>
+            </div>
+            <label data-field="relatedEvent">
+              Related Class, Trip, or Event
+              <input type="text" name="relatedEvent" maxlength="180" />
+            </label>
+            <section class="management-extra-fields" aria-label="Operational details">
+              <div class="management-form-grid">
+                <label data-field="stage">
+                  Stage
+                  <select name="stage">
+                    <option value="">Not Set</option>
+                    <option value="lead">Lead</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="quoted">Quoted</option>
+                    <option value="deposit">Deposit / Commitment</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </label>
+                <label data-field="inquiryDirection">
+                  Direction
+                  <select name="inquiryDirection">
+                    <option value="">Not Set</option>
+                    <option value="outgoing">Outgoing Outreach</option>
+                    <option value="incoming">Incoming Inquiry</option>
+                  </select>
+                </label>
+              </div>
+              <div class="management-form-grid">
+                <label data-field="inquiryCategory">
+                  Inquiry Category
+                  <select name="inquiryCategory">
+                    <option value="">Not Set</option>
+                    <option value="pool">Pool / Facility</option>
+                    <option value="program_manager">Program Manager</option>
+                    <option value="agency">Agency</option>
+                    <option value="vendor">Vendor</option>
+                    <option value="customer">Customer / Student</option>
+                    <option value="travel_partner">Travel Partner</option>
+                    <option value="community_partner">Community Partner</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+                <label data-field="source">
+                  Source
+                  <input type="text" name="source" maxlength="120" placeholder="Website, referral, phone, Facebook" />
+                </label>
+              </div>
+              <div class="management-form-grid">
+                <label data-field="startDate">
+                  Start Date
+                  <input type="date" name="startDate" />
+                </label>
+                <label data-field="endDate">
+                  End Date
+                  <input type="date" name="endDate" />
+                </label>
+              </div>
+              <div class="management-form-grid">
+                <label data-field="startTime">
+                  Start Time
+                  <select name="startTime" data-time-select></select>
+                </label>
+                <label data-field="endTime">
+                  End Time
+                  <select name="endTime" data-time-select></select>
+                </label>
+              </div>
+              <div class="management-form-grid">
+                <label data-field="eventTag">
+                  Tag
+                  <select name="eventTag">
+                    <option value="Training">Training</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Local Dive">Local Dive</option>
+                    <option value="Workshop">Workshop</option>
+                    <option value="Community">Community</option>
+                  </select>
+                </label>
+                <label data-field="eventLocation">
+                  Location
+                  <input type="text" name="eventLocation" maxlength="180" />
+                </label>
+              </div>
+              <label data-field="classId">
+                Class ID
+                <input type="text" name="classId" maxlength="80" placeholder="open-water-may-2026" />
+              </label>
+              <details class="management-class-schedule" data-field="classSchedule" data-class-schedule>
+                <summary class="management-class-schedule-head">
+                  <div>
+                    <h3>Class Schedule</h3>
+                    <p>Each date can have its own time and location. The first class date is the registration date on the public calendar.</p>
+                  </div>
+                </summary>
+                <div class="management-class-session-group">
+                  <div class="management-class-session-head">
+                    <h4>Classroom Dates</h4>
+                    <button type="button" data-add-class-session="classroom">Add Date</button>
+                  </div>
+                  <div data-class-session-list="classroom"></div>
+                </div>
+                <div class="management-class-session-group">
+                  <div class="management-class-session-head">
+                    <h4>Pool Dates</h4>
+                    <button type="button" data-add-class-session="pool">Add Date</button>
+                  </div>
+                  <div data-class-session-list="pool"></div>
+                </div>
+                <div class="management-class-session-group">
+                  <div class="management-class-session-head">
+                    <h4>Open Water Dates</h4>
+                    <button type="button" data-add-class-session="openWater">Add Date</button>
+                  </div>
+                  <div data-class-session-list="openWater"></div>
+                </div>
+              </details>
+              <details class="management-class-roster" data-field="classRoster" data-class-roster>
+                <summary class="management-class-roster-head">
+                  <div>
+                    <h3>Class Roster</h3>
+                    <p>Uses the same management contact records. Imports from registration escrow are tagged as self-registered.</p>
+                  </div>
+                </summary>
+                <div class="management-class-contact-add">
+                  <select data-class-contact-select aria-label="Select contact to add"></select>
+                  <button type="button" data-add-class-contact>Add Contact</button>
+                </div>
+                <div class="management-class-contact-list" data-class-contact-list></div>
+                <div class="management-class-registration-review">
+                  <div class="management-class-session-head">
+                    <h4>Registration Escrow</h4>
+                    <button type="button" data-refresh-class-registrations>Refresh Registrations</button>
+                  </div>
+                  <p data-class-registration-summary>No registration data loaded.</p>
+                  <div data-class-registration-list></div>
+                </div>
+              </details>
+              <div class="management-form-grid">
+                <label data-field="capacity">
+                  Capacity / Roster Size
+                  <input type="number" min="0" step="1" name="capacity" />
+                </label>
+                <label data-field="registrationEnabled" class="management-checkbox-field">
+                  <span>Enable Registration</span>
+                  <input type="checkbox" name="registrationEnabled" value="1" />
+                </label>
+                <label data-field="registrationClosed" class="management-checkbox-field">
+                  <span>Close Registration</span>
+                  <input type="checkbox" name="registrationClosed" value="1" />
+                </label>
+                <label data-field="certification">
+                  Certification / Level
+                  <input type="text" name="certification" maxlength="120" placeholder="Open Water, Nitrox, AOW..." />
+                </label>
+              </div>
+              <details class="management-contact-classes" data-field="contactClasses" data-contact-classes>
+                <summary class="management-class-roster-head">
+                  <div>
+                    <h3>Student Classes</h3>
+                    <p>Add one or more class records to this contact. The class roster updates from the same enrollment record.</p>
+                  </div>
+                </summary>
+                <div class="management-class-contact-add">
+                  <select data-contact-class-select aria-label="Select classes to add" multiple size="6"></select>
+                  <select data-contact-class-status aria-label="Class enrollment status">
+                    <option value="enrolled">Enrolled</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                  <button type="button" data-add-contact-classes>Add Classes</button>
+                </div>
+                <div class="management-class-contact-list" data-contact-class-list></div>
+              </details>
+              <section class="management-registration-manager" data-registration-manager hidden>
+                <div class="management-registration-head">
+                  <div>
+                    <h3>Registration Escrow</h3>
+                    <p data-registration-summary>No signup data loaded.</p>
+                  </div>
+                  <button class="btn secondary" type="button" data-refresh-registrations>Refresh Signups</button>
+                </div>
+                <div class="management-registration-list" data-registration-list></div>
+              </section>
+              <div class="management-form-grid">
+                <label data-field="amountOwed">
+                  Total Owed
+                  <input type="number" min="0" step="0.01" name="amountOwed" />
+                </label>
+                <label data-field="amountPaid">
+                  Amount Paid
+                  <input type="number" min="0" step="0.01" name="amountPaid" />
+                </label>
+              </div>
+              <label data-field="nextStep">
+                Next Step
+                <input type="text" name="nextStep" maxlength="220" placeholder="Send forms, confirm dates, collect balance..." />
+              </label>
+              <label data-field="outcomeReason">
+                Close Reason
+                <select name="outcomeReason">
+                  <option value="">Not Closed</option>
+                  <option value="no_response">No Response / No-Show</option>
+                  <option value="not_a_fit">Not a Good Fit</option>
+                  <option value="completed">Completed / Won</option>
+                  <option value="paused">Paused for Later</option>
+                  <option value="duplicate">Duplicate</option>
+                </select>
+              </label>
+            </section>
+            <label data-field="notes" class="management-notes-label">
+              Notes / Progress
+              <button type="button" class="management-timestamp-btn" data-insert-timestamp title="Insert today's date">Stamp Date</button>
+              <textarea name="notes" rows="8" maxlength="4000" placeholder="Last contact, next step, payment status, forms needed, roster notes..."></textarea>
+            </label>
+            <div class="management-form-actions">
+              <button class="btn primary" type="submit">Save Item</button>
+              <button class="btn secondary" type="button" data-duplicate-record hidden>Duplicate</button>
+              <button class="btn secondary" type="button" data-delete-record hidden>Delete</button>
+            </div>
+            <p class="management-form-status" data-record-status aria-live="polite"></p>
+          </form>
+        </aside>
+
+        <section class="management-list-panel">
+          <div class="management-list-tools">
+            <button class="management-new-record" type="button" data-new-record>New Item</button>
+            <div class="management-search">
+              <label for="managementSearch">Search</label>
+              <input id="managementSearch" type="search" data-search-records placeholder="Name, email, class, trip, note..." />
+            </div>
+            <label class="management-sort" for="managementSort">
+              Sort
+              <select id="managementSort" data-sort-records>
+                <option value="newest">Newest Created</option>
+                <option value="oldest">Oldest Created</option>
+                <option value="alpha">Alphabetical A-Z</option>
+                <option value="alpha_desc">Alphabetical Z-A</option>
+                <option value="updated">Recently Updated</option>
+                <option value="priority">Priority / Urgency</option>
+                <option value="due">Follow-Up Due Soon</option>
+                <option value="progress">Progress</option>
+                <option value="balance">Balance Owed</option>
+              </select>
+            </label>
+            <div class="management-filters" role="group" aria-label="Record filters">
+              <button type="button" class="is-active" data-filter-type="all">Agenda<span data-filter-count></span></button>
+              <button type="button" data-filter-type="registration">Registrations<span data-filter-count></span></button>
+              <button type="button" data-filter-type="contact">Contacts<span data-filter-count></span></button>
+              <button type="button" data-filter-type="inquiry">Inquiries<span data-filter-count></span></button>
+              <button type="button" data-filter-type="class">Classes<span data-filter-count></span></button>
+              <button type="button" data-filter-type="trip">Calendar<span data-filter-count></span></button>
+              <button type="button" data-filter-type="task">Tasks<span data-filter-count></span></button>
+            </div>
+            <div class="management-calendar-controls">
+              <label class="management-toggle">
+                <input type="checkbox" data-show-past-calendar />
+                <span>Show past calendar</span>
+              </label>
+              <button class="btn secondary" type="button" data-refresh-calendar>Refresh Calendar</button>
+            </div>
+          </div>
+          <form class="management-quick-add" data-quick-add-task aria-label="Quick add task">
+            <input type="text" class="management-quick-add-input" data-quick-task-input maxlength="180" placeholder="Quick add task… press Enter to save" autocomplete="off" />
+            <button class="management-quick-add-btn" type="submit">Add Task</button>
+          </form>
+          <div class="management-records" data-record-list aria-live="polite"></div>
+        </section>
+      </section>
+
+      <section class="management-ticker-modal" data-home-ticker-modal role="dialog" aria-modal="true" aria-labelledby="managementTickerTitle" hidden>
+        <div class="management-ticker-card">
+          <div class="management-panel-head">
+            <div>
+              <p class="management-kicker">Home page</p>
+              <h2 id="managementTickerTitle">News Ticker</h2>
+            </div>
+            <button type="button" data-close-home-ticker>Cancel</button>
+          </div>
+          <form class="management-ticker-form" data-home-ticker-form>
+            <label>
+              Ticker Lines
+              <span class="management-ticker-hint">One line per update. Saves immediately to the live site.</span>
+              <textarea rows="10" data-home-ticker-lines placeholder="Open Water seats available this month.&#10;April pool sessions are filling now.&#10;Reach out early for travel briefings."></textarea>
+            </label>
+            <p class="management-form-status" data-home-ticker-status aria-live="polite"></p>
+            <div class="management-form-actions">
+              <button class="btn primary" type="submit">Save to Site</button>
+              <button class="btn secondary" type="button" data-close-home-ticker>Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/js/management.js?v=20260429c" defer></script>
+</body>
+</html>

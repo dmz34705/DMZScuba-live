@@ -336,6 +336,16 @@
     return enabled && capacity > 0;
   }
 
+  function isRegistrationClosed(eventItem) {
+    return Boolean(eventItem && eventItem.registrationClosed);
+  }
+
+  function getRegistrationApprovalStatus(registrant) {
+    const source = normalizeText(registrant && registrant.source);
+    if (source === "management_roster" || normalizeText(registrant && registrant.contactId)) return "approved";
+    return normalizeText(registrant && registrant.approvalStatus) === "approved" ? "approved" : "pending";
+  }
+
   function registrationSnapshotCacheKey(sourceId, eventDate) {
     return `${String(sourceId || "").trim().toLowerCase()}|${String(eventDate || "").trim()}`;
   }
@@ -454,7 +464,6 @@
           <div class="events-public-modal-copy">
             <span class="events-public-modal-kicker" data-events-modal-kicker></span>
             <h3 data-events-modal-title></h3>
-            <button class="btn primary events-public-modal-register-jump" type="button" data-events-modal-register-jump hidden>Register For Event</button>
             <p data-events-modal-subtitle></p>
           </div>
           <div class="events-public-modal-head-actions">
@@ -485,7 +494,6 @@
       kicker: modal.querySelector("[data-events-modal-kicker]"),
       title: modal.querySelector("[data-events-modal-title]"),
       subtitle: modal.querySelector("[data-events-modal-subtitle]"),
-      registerJumpBtn: modal.querySelector("[data-events-modal-register-jump]"),
       backBtn,
     };
     return state.publicModal;
@@ -501,10 +509,6 @@
       modal.backBtn.hidden = true;
       modal.backBtn.onclick = null;
     }
-    if (modal.registerJumpBtn) {
-      modal.registerJumpBtn.hidden = true;
-      modal.registerJumpBtn.onclick = null;
-    }
     modal.body.innerHTML = "";
     if (typeof bodyBuilder === "function") bodyBuilder(modal.body);
     modal.root.setAttribute("aria-hidden", "false");
@@ -513,10 +517,6 @@
 
   function openDateEventsModal(dateValue, items) {
     const modal = ensurePublicModal();
-    if (modal && modal.registerJumpBtn) {
-      modal.registerJumpBtn.hidden = true;
-      modal.registerJumpBtn.onclick = null;
-    }
     const selectedDate = parseDateKey(dateValue) || new Date();
     const eventItems = Array.isArray(items) ? items : [];
     state.lastDateModalContext = {
@@ -582,9 +582,10 @@
                     spots.textContent = " | Spots unavailable";
                     return;
                   }
+                  const closed = Boolean(snapshot.registrationClosed || isRegistrationClosed(eventItem));
                   const remaining = Math.max(0, Number(snapshot.remainingSpots) || 0);
                   const capacity = Math.max(0, Number(snapshot.registrationCapacity) || 0);
-                  spots.textContent = ` | ${remaining}/${capacity} open`;
+                  spots.textContent = closed ? " | registration closed" : ` | ${remaining}/${capacity} open`;
                 });
               }
             }
@@ -650,6 +651,34 @@
         `;
         body.appendChild(meta);
 
+        const actions = document.createElement("div");
+        actions.className = "events-public-actions";
+        const shareBtn = document.createElement("button");
+        shareBtn.type = "button";
+        shareBtn.className = "btn secondary";
+        shareBtn.textContent = registrationEnabled ? "Share Sign-Up Link" : "Share Event Link";
+        let registerBtn = null;
+        if (registrationEnabled) {
+          registerBtn = document.createElement("button");
+          registerBtn.type = "button";
+          registerBtn.className = "btn primary";
+          registerBtn.textContent = "Register For Event";
+          actions.appendChild(registerBtn);
+        }
+        if (!registrationEnabled) {
+          const actionLink = document.createElement("a");
+          actionLink.className = "btn secondary";
+          actionLink.href = ctaHref;
+          actionLink.textContent = ctaLabel || "Contact Us";
+          actions.appendChild(actionLink);
+        }
+        actions.appendChild(shareBtn);
+        body.appendChild(actions);
+        const shareFeedback = document.createElement("p");
+        shareFeedback.className = "events-registration-feedback";
+        shareFeedback.hidden = true;
+        body.appendChild(shareFeedback);
+
         if (primaryDescription) {
           const intro = document.createElement("p");
           intro.className = "events-public-summary";
@@ -687,32 +716,6 @@
           body.appendChild(list);
         }
 
-        const actions = document.createElement("div");
-        actions.className = "events-public-actions";
-        const actionLink = document.createElement("a");
-        actionLink.className = "btn secondary";
-        actionLink.href = ctaHref;
-        actionLink.textContent = ctaLabel || "Contact Us";
-        const shareBtn = document.createElement("button");
-        shareBtn.type = "button";
-        shareBtn.className = "btn secondary";
-        shareBtn.textContent = registrationEnabled ? "Share Sign-Up Link" : "Share Event Link";
-        let registerBtn = null;
-        if (registrationEnabled) {
-          registerBtn = document.createElement("button");
-          registerBtn.type = "button";
-          registerBtn.className = "btn primary";
-          registerBtn.textContent = "Register For Event";
-          actions.appendChild(registerBtn);
-        }
-        actions.appendChild(actionLink);
-        actions.appendChild(shareBtn);
-        body.appendChild(actions);
-        const shareFeedback = document.createElement("p");
-        shareFeedback.className = "events-registration-feedback";
-        shareFeedback.hidden = true;
-        body.appendChild(shareFeedback);
-
         shareBtn.addEventListener("click", async () => {
           const result = await shareEventLink(shareUrl, eventItem.title || "DMZ Scuba Event");
           if (!result.message) return;
@@ -730,6 +733,11 @@
             regWrap.innerHTML = `
               <h4 class="events-public-list-title">Event Registration</h4>
               <p class="events-registration-meta" data-events-registration-meta>Loading registration status...</p>
+              <div class="events-registration-list-wrap">
+                <h5>Currently Registered</h5>
+                <ul class="events-registration-list" data-events-registration-list></ul>
+              </div>
+              <p class="events-registration-closed" data-events-registration-closed hidden>Registration has closed for this event.</p>
               <form class="events-registration-form" data-events-registration-form>
                 <label><span>First Name</span><input type="text" name="firstName" required /></label>
                 <label><span>Last Name</span><input type="text" name="lastName" required /></label>
@@ -752,10 +760,6 @@
                 </div>
               </form>
               <p class="events-registration-feedback" data-events-registration-feedback aria-live="polite"></p>
-              <div class="events-registration-list-wrap">
-                <h5>Currently Registered</h5>
-                <ul class="events-registration-list" data-events-registration-list></ul>
-              </div>
             `;
             body.appendChild(regWrap);
 
@@ -763,23 +767,36 @@
             const feedbackEl = regWrap.querySelector("[data-events-registration-feedback]");
             const listEl = regWrap.querySelector("[data-events-registration-list]");
             const formEl = regWrap.querySelector("[data-events-registration-form]");
+            const closedEl = regWrap.querySelector("[data-events-registration-closed]");
 
             const renderSnapshot = (snapshot) => {
               if (!snapshot || !metaEl || !listEl) return;
               const capacity = Math.max(0, Number(snapshot.registrationCapacity) || 0);
               const remaining = Math.max(0, Number(snapshot.remainingSpots) || 0);
-              metaEl.textContent = `${remaining} of ${capacity} spots remaining`;
-              const registrants = Array.isArray(snapshot.registrants) ? snapshot.registrants : [];
+              const isClosed = Boolean(snapshot.registrationClosed || isRegistrationClosed(eventItem));
+              const isFull = capacity > 0 && remaining <= 0;
+              const isUnavailable = isClosed || isFull;
+              metaEl.textContent = isClosed
+                ? "Registration is closed for this event."
+                : isFull
+                  ? "This event is fully booked."
+                  : `${remaining} of ${capacity} spots remaining`;
+              if (formEl) formEl.hidden = isUnavailable;
+              if (closedEl) closedEl.hidden = !isUnavailable;
+              const registrants = Array.isArray(snapshot.registeredDivers)
+                ? snapshot.registeredDivers
+                : (Array.isArray(snapshot.registrants) ? snapshot.registrants : []);
               listEl.innerHTML = "";
               if (!registrants.length) {
                 const li = document.createElement("li");
-                li.textContent = "No registrations yet.";
+                li.textContent = "No registered divers yet.";
                 listEl.appendChild(li);
                 return;
               }
               registrants.forEach((entry) => {
                 const li = document.createElement("li");
-                li.textContent = entry && entry.name ? entry.name : "Registered diver";
+                const name = entry && entry.name ? entry.name : "Registered diver";
+                li.textContent = getRegistrationApprovalStatus(entry) === "pending" ? `${name} (registration pending)` : name;
                 listEl.appendChild(li);
               });
             };
@@ -827,19 +844,8 @@
                 syncEventShareUrl(eventItem, { register: true });
                 regWrap.scrollIntoView({ behavior: "smooth", block: "start" });
                 const firstInput = formEl && formEl.querySelector("input[name='firstName']");
-                if (firstInput) firstInput.focus();
+                if (firstInput && !formEl.hidden) firstInput.focus();
               });
-            }
-
-            if (modal && modal.registerJumpBtn) {
-              modal.registerJumpBtn.hidden = false;
-              modal.registerJumpBtn.onclick = () => {
-                regWrap.hidden = false;
-                syncEventShareUrl(eventItem, { register: true });
-                regWrap.scrollIntoView({ behavior: "smooth", block: "start" });
-                const firstInput = formEl && formEl.querySelector("input[name='firstName']");
-                if (firstInput) firstInput.focus();
-              };
             }
 
             loadSnapshot();
@@ -848,7 +854,7 @@
               const firstInput = formEl && formEl.querySelector("input[name='firstName']");
               if (firstInput) {
                 requestAnimationFrame(() => {
-                  firstInput.focus();
+                  if (!formEl.hidden) firstInput.focus();
                 });
               }
             }
@@ -938,7 +944,7 @@
     meta.className = "event-card-meta";
     const metaParts = [`
       <span class="event-chip">
-        <span class="event-chip-icon" aria-hidden="true">${typeMeta.icon}</span>
+        ${showTypeIcon ? `<span class="event-chip-icon" aria-hidden="true">${typeMeta.icon}</span>` : ""}
         <span>${eventItem.type || "Event"}</span>
       </span>
     `];
@@ -1211,12 +1217,14 @@
               title: item.title || "Event",
               remaining: Math.max(0, Number(snapshot.remainingSpots) || 0),
               capacity: Math.max(0, Number(snapshot.registrationCapacity) || 0),
+              closed: Boolean(snapshot.registrationClosed || isRegistrationClosed(item)),
             };
           }
           return {
             title: item.title || "Event",
             remaining: -1,
             capacity: fallbackCapacity,
+            closed: isRegistrationClosed(item),
           };
         })
       );
@@ -1235,7 +1243,9 @@
         const li = document.createElement("li");
         li.className = "events-selected-registration-item";
         const countText =
-          row.remaining >= 0
+          row.closed
+            ? "registration closed"
+            : row.remaining >= 0
             ? `${row.remaining}/${row.capacity} open`
             : `${row.capacity} spots configured`;
         li.textContent = `${row.title}: ${countText}`;

@@ -489,6 +489,64 @@ async function handleLogin(request, env) {
   return jsonResponse({ ok: true, token });
 }
 
+function buildPublicInquiryManagementRecord({ body, fields, lines, name, email, formName, subject, pageUrl, submittedAt }) {
+  const phone =
+    String(body.phone || "").trim() ||
+    getFieldValue(fields, "phone") ||
+    getFieldValue(fields, "contact-phone") ||
+    getFieldValue(fields, "tel");
+  const relatedEvent =
+    getFieldValue(fields, "course") ||
+    getFieldValue(fields, "class") ||
+    getFieldValue(fields, "trip") ||
+    getFieldValue(fields, "destination") ||
+    getFieldValue(fields, "location") ||
+    getFieldValue(fields, "interest") ||
+    "";
+  const messageText = String(body.message || "").trim();
+  const notes = [
+    `Form: ${formName}`,
+    `Submitted: ${submittedAt}`,
+    pageUrl ? `Page: ${pageUrl}` : "",
+    "",
+    ...lines,
+    messageText ? `\nMessage:\n${messageText}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const titleSource = subject || formName || relatedEvent || "Website inquiry";
+  const titleContact = name || email || "";
+  return {
+    recordType: "inquiry",
+    title: titleContact ? `${titleSource} - ${titleContact}` : titleSource,
+    status: "new",
+    priority: "normal",
+    contactName: name,
+    contactEmail: email,
+    contactPhone: phone,
+    relatedEvent,
+    notes,
+    extras: {
+      source: "Public site form",
+      formName,
+      pageUrl,
+      submittedAt,
+      subject,
+      autoReplyType: String(body.autoReplyType || getFieldValue(fields, "autoReplyType") || "").trim(),
+    },
+  };
+}
+
+async function savePublicInquiryManagementRecord(env, recordInput) {
+  try {
+    const saved = await createManagementRecord(env, recordInput);
+    return saved && saved.id ? saved : null;
+  } catch (error) {
+    console.log("Management inquiry save error", error && error.message ? error.message : error);
+    return null;
+  }
+}
+
 async function handleContact(request, env) {
   const body = await request.json().catch(() => ({}));
   const honey = String(body.honey || body.website || "").trim();
@@ -504,6 +562,17 @@ async function handleContact(request, env) {
   const subject = String(body.subject || "").trim() || `${formName} Inquiry`;
   const pageUrl = String(body.pageUrl || "").trim();
   const submittedAt = new Date().toISOString();
+  const managementRecord = buildPublicInquiryManagementRecord({
+    body,
+    fields,
+    lines,
+    name,
+    email,
+    formName,
+    subject,
+    pageUrl,
+    submittedAt,
+  });
 
   const message = [
     `Form: ${formName}`,
@@ -698,7 +767,8 @@ async function handleContact(request, env) {
         502
       );
     }
-    return jsonResponse({ ok: true, autoReplySent: true, notifySent: true });
+    const savedRecord = await savePublicInquiryManagementRecord(env, managementRecord);
+    return jsonResponse({ ok: true, autoReplySent: true, notifySent: true, managementRecordSaved: Boolean(savedRecord) });
   }
 
   const payload = {
@@ -779,7 +849,8 @@ async function handleContact(request, env) {
     generalAutoReplySent = true;
   }
 
-  return jsonResponse({ ok: true, generalAutoReplySent });
+  const savedRecord = await savePublicInquiryManagementRecord(env, managementRecord);
+  return jsonResponse({ ok: true, generalAutoReplySent, managementRecordSaved: Boolean(savedRecord) });
 }
 
 function normalizeItem(row) {
@@ -916,6 +987,294 @@ async function ensureEventsV2Table(env) {
   ).run();
 }
 
+async function ensureSiteSettingsTable(env) {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS site_settings (
+      setting_key TEXT PRIMARY KEY,
+      data_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`
+  ).run();
+}
+
+async function ensureManagementRecordsTable(env) {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS management_records (
+      id TEXT PRIMARY KEY,
+      record_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      status TEXT NOT NULL,
+      priority TEXT NOT NULL,
+      owner TEXT,
+      contact_name TEXT,
+      contact_email TEXT,
+      contact_phone TEXT,
+      due_date TEXT,
+      related_event TEXT,
+      notes TEXT,
+      data_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`
+  ).run();
+  await env.DB.prepare(
+    "CREATE INDEX IF NOT EXISTS idx_management_type_status ON management_records(record_type, status)"
+  ).run();
+  await env.DB.prepare(
+    "CREATE INDEX IF NOT EXISTS idx_management_due_date ON management_records(due_date)"
+  ).run();
+}
+
+function normalizeManagementText(value, maxLen = 300) {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLen);
+}
+
+function normalizeManagementLongText(value, maxLen = 4000) {
+  return String(value || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim().slice(0, maxLen);
+}
+
+function normalizeManagementChoice(value, fallback, allowed) {
+  const normalized = normalizeManagementText(value, 60).toLowerCase();
+  return allowed.includes(normalized) ? normalized : fallback;
+}
+
+function normalizeManagementRecord(input = {}, existing = {}) {
+  const source = input && typeof input === "object" ? input : {};
+  const allowedTypes = ["contact", "inquiry", "class", "trip", "task"];
+  const allowedStatuses = [
+    "new",
+    "active",
+    "waiting",
+    "scheduled",
+    "complete",
+    "archived",
+    "to_contact",
+    "reached_out",
+    "gathering_details",
+    "planning",
+    "payment",
+    "timing",
+    "dead_end",
+    "not_fit",
+  ];
+  const allowedPriorities = ["low", "normal", "high", "urgent"];
+  const recordType = normalizeManagementChoice(source.recordType || source.type, existing.recordType || "inquiry", allowedTypes);
+  const status = normalizeManagementChoice(source.status, existing.status || "new", allowedStatuses);
+  const priority = normalizeManagementChoice(source.priority, existing.priority || "normal", allowedPriorities);
+  const title = normalizeManagementText(source.title, 180);
+  if (!title) return null;
+
+  const extras = source.extras && typeof source.extras === "object" && !Array.isArray(source.extras)
+    ? source.extras
+    : {};
+  return {
+    id: normalizeManagementText(source.id || existing.id, 80),
+    recordType,
+    title,
+    status,
+    priority,
+    owner: normalizeManagementText(source.owner, 120),
+    contactName: normalizeManagementText(source.contactName, 160),
+    contactEmail: normalizeManagementText(source.contactEmail, 180).toLowerCase(),
+    contactPhone: normalizeManagementText(source.contactPhone, 60),
+    dueDate: normalizeManagementText(source.dueDate, 20),
+    relatedEvent: normalizeManagementText(source.relatedEvent, 180),
+    notes: normalizeManagementLongText(source.notes, 4000),
+    extras,
+  };
+}
+
+async function createManagementRecord(env, input) {
+  const record = normalizeManagementRecord(input);
+  if (!record) return null;
+
+  await ensureManagementRecordsTable(env);
+  const now = new Date().toISOString();
+  const id = record.id || crypto.randomUUID();
+  await env.DB.prepare(
+    `INSERT INTO management_records
+     (id, record_type, title, status, priority, owner, contact_name, contact_email, contact_phone, due_date, related_event, notes, data_json, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  )
+    .bind(
+      id,
+      record.recordType,
+      record.title,
+      record.status,
+      record.priority,
+      record.owner,
+      record.contactName,
+      record.contactEmail,
+      record.contactPhone,
+      record.dueDate,
+      record.relatedEvent,
+      record.notes,
+      JSON.stringify({ extras: record.extras }),
+      now,
+      now
+    )
+    .run();
+
+  return { ...record, id, createdAt: now, updatedAt: now };
+}
+
+function managementRecordFromRow(row) {
+  const data = parseJsonSafe(row && row.data_json, {});
+  return {
+    id: String((row && row.id) || ""),
+    recordType: String((row && row.record_type) || "inquiry"),
+    title: String((row && row.title) || ""),
+    status: String((row && row.status) || "new"),
+    priority: String((row && row.priority) || "normal"),
+    owner: String((row && row.owner) || ""),
+    contactName: String((row && row.contact_name) || ""),
+    contactEmail: String((row && row.contact_email) || ""),
+    contactPhone: String((row && row.contact_phone) || ""),
+    dueDate: String((row && row.due_date) || ""),
+    relatedEvent: String((row && row.related_event) || ""),
+    notes: String((row && row.notes) || ""),
+    extras: data && typeof data.extras === "object" && !Array.isArray(data.extras) ? data.extras : {},
+    createdAt: String((row && row.created_at) || ""),
+    updatedAt: String((row && row.updated_at) || ""),
+  };
+}
+
+async function handleListManagementRecords(request, env) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401, { "Cache-Control": "no-store" });
+
+  await ensureManagementRecordsTable(env);
+  const url = new URL(request.url);
+  const type = normalizeManagementText(url.searchParams.get("type"), 40).toLowerCase();
+  const status = normalizeManagementText(url.searchParams.get("status"), 40).toLowerCase();
+  const allowedTypes = ["contact", "inquiry", "class", "trip", "task"];
+  const allowedStatuses = [
+    "new",
+    "active",
+    "waiting",
+    "scheduled",
+    "complete",
+    "archived",
+    "to_contact",
+    "reached_out",
+    "gathering_details",
+    "planning",
+    "payment",
+    "timing",
+    "dead_end",
+    "not_fit",
+  ];
+  let sql = "SELECT * FROM management_records";
+  const conditions = [];
+  const bindings = [];
+  if (allowedTypes.includes(type)) {
+    conditions.push("record_type = ?");
+    bindings.push(type);
+  }
+  if (allowedStatuses.includes(status)) {
+    conditions.push("status = ?");
+    bindings.push(status);
+  }
+  if (conditions.length) sql += ` WHERE ${conditions.join(" AND ")}`;
+  sql += " ORDER BY CASE WHEN due_date = '' THEN 1 ELSE 0 END, due_date ASC, updated_at DESC";
+
+  const stmt = env.DB.prepare(sql);
+  const rows = bindings.length ? await stmt.bind(...bindings).all() : await stmt.all();
+  const items = (rows.results || []).map(managementRecordFromRow);
+  return jsonResponse({ ok: true, items }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleCreateManagementRecord(request, env) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401, { "Cache-Control": "no-store" });
+
+  const body = await request.json().catch(() => ({}));
+  const incoming = body && typeof body.record === "object" ? body.record : body;
+  const record = await createManagementRecord(env, incoming);
+  if (!record) return jsonResponse({ ok: false, error: "Title is required." }, 400, { "Cache-Control": "no-store" });
+
+  return jsonResponse({ ok: true, item: record }, 201, { "Cache-Control": "no-store" });
+}
+
+async function handleUpdateManagementRecord(request, env, id) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401, { "Cache-Control": "no-store" });
+
+  const safeId = normalizeManagementText(id, 80);
+  if (!safeId) return jsonResponse({ ok: false, error: "Missing record id." }, 400, { "Cache-Control": "no-store" });
+
+  await ensureManagementRecordsTable(env);
+  const existingRow = await env.DB.prepare("SELECT * FROM management_records WHERE id = ?").bind(safeId).first();
+  if (!existingRow) return jsonResponse({ ok: false, error: "Not found." }, 404, { "Cache-Control": "no-store" });
+
+  const body = await request.json().catch(() => ({}));
+  const incoming = body && typeof body.record === "object" ? body.record : body;
+  const existing = managementRecordFromRow(existingRow);
+  const record = normalizeManagementRecord({ ...existing, ...incoming, id: safeId }, existing);
+  if (!record) return jsonResponse({ ok: false, error: "Title is required." }, 400, { "Cache-Control": "no-store" });
+
+  const now = new Date().toISOString();
+  await env.DB.prepare(
+    `UPDATE management_records
+     SET record_type = ?, title = ?, status = ?, priority = ?, owner = ?, contact_name = ?, contact_email = ?, contact_phone = ?, due_date = ?, related_event = ?, notes = ?, data_json = ?, updated_at = ?
+     WHERE id = ?`
+  )
+    .bind(
+      record.recordType,
+      record.title,
+      record.status,
+      record.priority,
+      record.owner,
+      record.contactName,
+      record.contactEmail,
+      record.contactPhone,
+      record.dueDate,
+      record.relatedEvent,
+      record.notes,
+      JSON.stringify({ extras: record.extras }),
+      now,
+      safeId
+    )
+    .run();
+
+  return jsonResponse({ ok: true, item: { ...record, id: safeId, createdAt: existing.createdAt, updatedAt: now } }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleDeleteManagementRecord(request, env, id) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401, { "Cache-Control": "no-store" });
+
+  const safeId = normalizeManagementText(id, 80);
+  if (!safeId) return jsonResponse({ ok: false, error: "Missing record id." }, 400, { "Cache-Control": "no-store" });
+  await ensureManagementRecordsTable(env);
+  const result = await env.DB.prepare("DELETE FROM management_records WHERE id = ?").bind(safeId).run();
+  if (!result || !result.meta || !result.meta.changes) {
+    return jsonResponse({ ok: false, error: "Not found." }, 404, { "Cache-Control": "no-store" });
+  }
+  return jsonResponse({ ok: true, id: safeId }, 200, { "Cache-Control": "no-store" });
+}
+
+function normalizeHomeTickerPayload(payload) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  const rawLines = Array.isArray(source.lines) ? source.lines : [];
+  const lines = rawLines
+    .map((entry) => String(entry || "").replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .slice(0, 24)
+    .map((entry) => entry.slice(0, 220));
+  return { lines };
+}
+
+async function getHomeTickerPayload(env) {
+  await ensureSiteSettingsTable(env);
+  const row = await env.DB.prepare("SELECT data_json FROM site_settings WHERE setting_key = ?")
+    .bind("home_ticker")
+    .first();
+  if (!row) return null;
+  return normalizeHomeTickerPayload(parseJsonSafe(row && row.data_json, null));
+}
+
 function normalizeEventRule(rule) {
   if (!rule || typeof rule !== "object") return null;
   const weekOfMonth = Number(rule.weekOfMonth);
@@ -974,6 +1333,28 @@ function normalizeEventDefinition(item) {
   };
 }
 
+function normalizeEventRosterEntry(item) {
+  if (!item || typeof item !== "object") return null;
+  const contactId = String(item.contactId || "").trim();
+  const email = String(item.email || "").trim().toLowerCase();
+  const name = String(item.name || "").trim();
+  const firstName = String(item.firstName || "").trim();
+  const lastName = String(item.lastName || "").trim();
+  if (!contactId && !email && !name && !firstName) return null;
+  return {
+    contactId,
+    firstName,
+    lastName,
+    name,
+    email,
+    phone: String(item.phone || "").trim(),
+    certificationLevel: String(item.certificationLevel || "").trim(),
+    source: String(item.source || "").trim(),
+    sourceRegistrationId: String(item.sourceRegistrationId || "").trim(),
+    status: String(item.status || "").trim(),
+  };
+}
+
 function normalizeEventEntry(item, kind = "event") {
   if (!item || typeof item !== "object") return null;
   const next = { ...item };
@@ -990,9 +1371,27 @@ function normalizeEventEntry(item, kind = "event") {
     location: String(next.location || "").trim(),
     summary: String(next.summary || "").trim(),
     registrationEnabled: Boolean(next.registrationEnabled),
+    registrationClosed: Boolean(next.registrationClosed),
     registrationCapacity: Math.max(0, Math.trunc(Number(next.registrationCapacity) || 0)),
     ctaLabel: String(next.ctaLabel || "").trim(),
     ctaHref: String(next.ctaHref || "").trim(),
+    managementPriority: String(next.managementPriority || "").trim(),
+    managementOwner: String(next.managementOwner || "").trim(),
+    managementContactName: String(next.managementContactName || "").trim(),
+    managementContactEmail: String(next.managementContactEmail || "").trim(),
+    managementContactPhone: String(next.managementContactPhone || "").trim(),
+    managementDueDate: String(next.managementDueDate || "").trim(),
+    managementAmountOwed: String(next.managementAmountOwed || "").trim(),
+    managementAmountPaid: String(next.managementAmountPaid || "").trim(),
+    managementNextStep: String(next.managementNextStep || "").trim(),
+    managementNotes: String(next.managementNotes || "").trim(),
+    managementClassId: String(next.managementClassId || "").trim().toLowerCase(),
+    managementClassSessionType: String(next.managementClassSessionType || "").trim(),
+    managementClassSessionIndex: Math.max(0, Math.trunc(Number(next.managementClassSessionIndex) || 0)),
+    managementClassPrimary: Boolean(next.managementClassPrimary),
+    managementClassRoster: Array.isArray(next.managementClassRoster)
+      ? next.managementClassRoster.map((entry) => normalizeEventRosterEntry(entry)).filter(Boolean).slice(0, 200)
+      : [],
   };
   const endDate = String(next.endDate || "").trim();
 
@@ -1123,9 +1522,13 @@ async function ensureEventRegistrationsV2Table(env) {
       cert_level TEXT NOT NULL,
       additional_guests INTEGER NOT NULL DEFAULT 0,
       party_size INTEGER NOT NULL DEFAULT 1,
+      approval_status TEXT NOT NULL DEFAULT 'pending',
       created_at TEXT NOT NULL
     )`
   ).run();
+  await env.DB.prepare("ALTER TABLE event_registrations_v2 ADD COLUMN approval_status TEXT NOT NULL DEFAULT 'pending'")
+    .run()
+    .catch(() => {});
   await env.DB.prepare(
     "CREATE INDEX IF NOT EXISTS idx_event_regs_source_date ON event_registrations_v2(source_id, event_date)"
   ).run();
@@ -1164,7 +1567,10 @@ function resolveRegistrationConfig(payload, sourceId, eventDate) {
       title: String(eventMatch.title || "").trim(),
       description: getDescriptionForItem(eventMatch),
       registrationEnabled: Boolean(eventMatch.registrationEnabled),
+      registrationClosed: Boolean(eventMatch.registrationClosed),
       registrationCapacity: Math.max(0, Number(eventMatch.registrationCapacity) || 0),
+      managementClassId: String(eventMatch.managementClassId || "").trim().toLowerCase(),
+      managementClassRoster: Array.isArray(eventMatch.managementClassRoster) ? eventMatch.managementClassRoster : [],
     };
   }
   const templateMatch = templates.find((item) => item && item.id === sourceId);
@@ -1175,14 +1581,67 @@ function resolveRegistrationConfig(payload, sourceId, eventDate) {
     title: String(templateMatch.title || "").trim(),
     description: getDescriptionForItem(templateMatch),
     registrationEnabled: Boolean(templateMatch.registrationEnabled),
+    registrationClosed: Boolean(templateMatch.registrationClosed),
     registrationCapacity: Math.max(0, Number(templateMatch.registrationCapacity) || 0),
+    managementClassId: String(templateMatch.managementClassId || "").trim().toLowerCase(),
+    managementClassRoster: Array.isArray(templateMatch.managementClassRoster) ? templateMatch.managementClassRoster : [],
   };
+}
+
+function getManagementRecordExtras(row) {
+  try {
+    const parsed = JSON.parse(String((row && row.data_json) || "{}"));
+    return parsed && parsed.extras && typeof parsed.extras === "object" ? parsed.extras : {};
+  } catch (_error) {
+    return {};
+  }
+}
+
+function getContactClassEnrollmentsFromRow(row) {
+  const extras = getManagementRecordExtras(row);
+  return Array.isArray(extras.classEnrollments) ? extras.classEnrollments : [];
+}
+
+async function getManagementClassRoster(env, classId) {
+  const safeClassId = String(classId || "").trim().toLowerCase();
+  if (!safeClassId) return [];
+  await ensureManagementRecordsTable(env);
+  const rows = await env.DB.prepare(
+    `SELECT id, title, contact_name, contact_email, contact_phone, data_json
+     FROM management_records
+     WHERE record_type = 'contact' AND data_json LIKE ?`
+  )
+    .bind(`%"classId":"${safeClassId}"%`)
+    .all();
+  return (rows.results || [])
+    .map((row) => {
+      const extras = getManagementRecordExtras(row);
+      const enrollment = getContactClassEnrollmentsFromRow(row).find((entry) =>
+        String((entry && entry.classId) || "").trim().toLowerCase() === safeClassId
+      );
+      if (!enrollment) return null;
+      const contactName = String((row && (row.contact_name || row.title)) || "").trim();
+      const nameParts = contactName.split(/\s+/).filter(Boolean);
+      return {
+        contactId: String((row && row.id) || "").trim(),
+        firstName: String(extras.firstName || nameParts[0] || "").trim(),
+        lastName: String(extras.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(" ") : "") || "").trim(),
+        name: contactName || String((row && row.contact_email) || "").trim() || "Registered diver",
+        email: String((row && row.contact_email) || "").trim().toLowerCase(),
+        phone: String((row && row.contact_phone) || "").trim(),
+        certificationLevel: String(extras.certification || "").trim(),
+        source: String((enrollment && enrollment.source) || "in_house").trim(),
+        sourceRegistrationId: String((enrollment && enrollment.sourceRegistrationId) || "").trim(),
+        status: String((enrollment && enrollment.status) || "enrolled").trim(),
+      };
+    })
+    .filter(Boolean);
 }
 
 async function getRegistrationSnapshot(env, sourceId, eventDate, config) {
   await ensureEventRegistrationsV2Table(env);
   const rows = await env.DB.prepare(
-    `SELECT id, first_name, last_name, additional_guests, party_size, created_at
+    `SELECT id, first_name, last_name, email, phone, cert_level, additional_guests, party_size, approval_status, created_at
      FROM event_registrations_v2
      WHERE source_id = ? AND event_date = ?
      ORDER BY created_at ASC`
@@ -1191,22 +1650,79 @@ async function getRegistrationSnapshot(env, sourceId, eventDate, config) {
     .all();
   const list = (rows.results || []).map((row) => ({
     id: String((row && row.id) || "").trim(),
+    firstName: String((row && row.first_name) || "").trim(),
+    lastName: String((row && row.last_name) || "").trim(),
     name: buildRegistrantLabel(row && row.first_name, row && row.last_name),
+    email: String((row && row.email) || "").trim(),
+    phone: String((row && row.phone) || "").trim(),
+    certificationLevel: String((row && row.cert_level) || "").trim(),
     additionalGuests: Math.max(0, Number((row && row.additional_guests) || 0) || 0),
     partySize: Math.max(1, Number((row && row.party_size) || 1) || 1),
+    approvalStatus: String((row && row.approval_status) || "pending").trim() === "approved" ? "approved" : "pending",
     createdAt: String((row && row.created_at) || ""),
+    source: "online_registration",
   }));
-  const usedSpots = list.reduce((sum, entry) => sum + Math.max(1, Number(entry.partySize) || 1), 0);
+  const liveRoster = await getManagementClassRoster(env, config && config.managementClassId);
+  const configuredRoster = Array.isArray(config && config.managementClassRoster) ? config.managementClassRoster : [];
+  const rosterSource = liveRoster.length ? liveRoster : configuredRoster;
+  const rosterList = rosterSource
+    .map((entry) => {
+      const firstName = String((entry && entry.firstName) || "").trim();
+      const lastName = String((entry && entry.lastName) || "").trim();
+      const displayName = String((entry && entry.name) || "").trim();
+      return {
+        id: String((entry && entry.sourceRegistrationId) || (entry && entry.contactId) || "").trim(),
+        contactId: String((entry && entry.contactId) || "").trim(),
+        firstName,
+        lastName,
+        name: buildRegistrantLabel(firstName || displayName, firstName ? lastName : ""),
+        email: String((entry && entry.email) || "").trim(),
+        phone: String((entry && entry.phone) || "").trim(),
+        certificationLevel: String((entry && entry.certificationLevel) || "").trim(),
+        additionalGuests: 0,
+        partySize: 1,
+        createdAt: "",
+        source: "management_roster",
+        approvalStatus: "approved",
+        sourceRegistrationId: String((entry && entry.sourceRegistrationId) || "").trim(),
+      };
+    })
+    .filter((entry) => entry.name || entry.email || entry.contactId);
+  const rosterRegistrationIds = new Set(
+    rosterList.map((entry) => String(entry.sourceRegistrationId || "").trim()).filter(Boolean)
+  );
+  const rosterEmails = new Set(
+    rosterList.map((entry) => String(entry.email || "").trim().toLowerCase()).filter(Boolean)
+  );
+  const uniqueOnlineList = list.filter((entry) => {
+    const id = String(entry.id || "").trim();
+    const email = String(entry.email || "").trim().toLowerCase();
+    if (id && rosterRegistrationIds.has(id)) return false;
+    if (email && rosterEmails.has(email)) return false;
+    return true;
+  });
+  const approvedOnlineList = uniqueOnlineList.filter((entry) => entry.approvalStatus === "approved");
+  const registeredDivers = [...rosterList, ...uniqueOnlineList];
+  const usedSpots = registeredDivers.reduce((sum, entry) => sum + Math.max(1, Number(entry.partySize) || 1), 0);
   const capacity = Math.max(0, Number((config && config.registrationCapacity) || 0) || 0);
   const remainingSpots = capacity > 0 ? Math.max(0, capacity - usedSpots) : 0;
   return {
     sourceId,
     eventDate,
     registrationEnabled: Boolean(config && config.registrationEnabled),
+    registrationClosed: Boolean(config && config.registrationClosed),
     registrationCapacity: capacity,
     usedSpots,
     remainingSpots,
+    rosterSpots: rosterList.length,
+    onlineSpots: uniqueOnlineList.reduce((sum, entry) => sum + Math.max(1, Number(entry.partySize) || 1), 0),
+    approvedOnlineSpots: approvedOnlineList.reduce((sum, entry) => sum + Math.max(1, Number(entry.partySize) || 1), 0),
+    pendingSpots: uniqueOnlineList
+      .filter((entry) => entry.approvalStatus !== "approved")
+      .reduce((sum, entry) => sum + Math.max(1, Number(entry.partySize) || 1), 0),
     registrants: list,
+    rosterRegistrants: rosterList,
+    registeredDivers,
   };
 }
 
@@ -1239,6 +1755,9 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
   if (!config.registrationEnabled || config.registrationCapacity <= 0) {
     return jsonResponse({ ok: false, error: "Registration is not enabled for this event." }, 400, { "Cache-Control": "no-store" });
   }
+  if (config.registrationClosed) {
+    return jsonResponse({ ok: false, error: "Registration has closed for this event." }, 409, { "Cache-Control": "no-store" });
+  }
 
   const firstName = normalizeRegistrationText(body && body.firstName, 60);
   const lastName = normalizeRegistrationText(body && body.lastName, 60);
@@ -1268,8 +1787,8 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
   const registrationId = crypto.randomUUID();
   await env.DB.prepare(
     `INSERT INTO event_registrations_v2
-     (id, source_id, event_date, first_name, last_name, email, phone, cert_level, additional_guests, party_size, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     (id, source_id, event_date, first_name, last_name, email, phone, cert_level, additional_guests, party_size, approval_status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       registrationId,
@@ -1282,6 +1801,7 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
       certLevel,
       additionalGuests,
       partySize,
+      "pending",
       now
     )
     .run();
@@ -1404,6 +1924,75 @@ async function handleDeleteEventRegistrationV2(request, env, sourceId, registrat
 
   const snapshot = await getRegistrationSnapshot(env, sourceId, eventDate, config);
   return jsonResponse({ ok: true, removedRegistrationId: safeRegistrationId, ...snapshot }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleUpdateEventRegistrationApprovalV2(request, env, sourceId, registrationId) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
+
+  const url = new URL(request.url);
+  const body = await request.json().catch(() => ({}));
+  const eventDate = String(url.searchParams.get("date") || body.eventDate || "").trim();
+  const safeRegistrationId = String(registrationId || "").trim();
+  const nextStatus = String(body.status || "approved").trim() === "approved" ? "approved" : "pending";
+  if (!sourceId || !eventDate || !safeRegistrationId) {
+    return jsonResponse({ ok: false, error: "Missing source id, registration id, or date." }, 400, { "Cache-Control": "no-store" });
+  }
+
+  const payload = await getEventsPayloadV2(env);
+  const config = resolveRegistrationConfig(payload, sourceId, eventDate);
+  if (!config) {
+    return jsonResponse({ ok: false, error: "Event not found." }, 404, { "Cache-Control": "no-store" });
+  }
+
+  await ensureEventRegistrationsV2Table(env);
+  const result = await env.DB.prepare(
+    `UPDATE event_registrations_v2
+     SET approval_status = ?
+     WHERE id = ? AND source_id = ? AND event_date = ?`
+  )
+    .bind(nextStatus, safeRegistrationId, sourceId, eventDate)
+    .run();
+
+  const changed = result && result.meta ? Number(result.meta.changes || 0) : 0;
+  if (!changed) {
+    return jsonResponse({ ok: false, error: "Registration not found." }, 404, { "Cache-Control": "no-store" });
+  }
+
+  const snapshot = await getRegistrationSnapshot(env, sourceId, eventDate, config);
+  return jsonResponse({ ok: true, updatedRegistrationId: safeRegistrationId, approvalStatus: nextStatus, ...snapshot }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleGetHomeTicker(env) {
+  const payload = await getHomeTickerPayload(env);
+  if (!payload) return jsonResponse({ ok: false, error: "Not found." }, 404, { "Cache-Control": "no-store" });
+  return jsonResponse(payload, 200, {
+    "Cache-Control": "no-store, no-cache, must-revalidate",
+    "CDN-Cache-Control": "no-store",
+    "Cloudflare-CDN-Cache-Control": "no-store",
+  });
+}
+
+async function handlePutHomeTicker(request, env) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
+  const body = await request.json().catch(() => ({}));
+  const incoming = body && typeof body.payload === "object" ? body.payload : body;
+  const payload = normalizeHomeTickerPayload(incoming);
+
+  await ensureSiteSettingsTable(env);
+  const now = new Date().toISOString();
+  const existing = await env.DB.prepare("SELECT created_at FROM site_settings WHERE setting_key = ?")
+    .bind("home_ticker")
+    .first();
+  const createdAt = (existing && existing.created_at) || now;
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO site_settings (setting_key, data_json, created_at, updated_at)
+     VALUES (?, ?, ?, ?)`
+  )
+    .bind("home_ticker", JSON.stringify(payload), createdAt, now)
+    .run();
+  return jsonResponse({ ok: true, payload, updatedAt: now }, 200, { "Cache-Control": "no-store" });
 }
 
 async function handleGetDestinationsV2(env) {
@@ -1908,6 +2497,16 @@ export default {
       response = await handleClientTelemetry(request);
     } else if (pathname === "/api/admin/login" && request.method === "POST") {
       response = await handleLogin(request, env);
+    } else if (pathname === "/api/admin/management" && request.method === "GET") {
+      response = await handleListManagementRecords(request, env);
+    } else if (pathname === "/api/admin/management" && request.method === "POST") {
+      response = await handleCreateManagementRecord(request, env);
+    } else if (pathname.startsWith("/api/admin/management/") && request.method === "PUT") {
+      const id = decodeURIComponent(pathname.split("/").pop() || "");
+      response = await handleUpdateManagementRecord(request, env, id);
+    } else if (pathname.startsWith("/api/admin/management/") && request.method === "DELETE") {
+      const id = decodeURIComponent(pathname.split("/").pop() || "");
+      response = await handleDeleteManagementRecord(request, env, id);
     } else if (pathname === "/api/admin/stream-direct-upload" && request.method === "POST") {
       response = await handleStreamDirectUpload(request, env);
     } else if (pathname === "/api/admin/stream-tus-upload" && request.method === "POST") {
@@ -1930,6 +2529,11 @@ export default {
     } else if (pathname.startsWith("/api/v2/events/") && pathname.endsWith("/registrations") && request.method === "POST") {
       const sourceId = decodeURIComponent(pathname.split("/")[4] || "").trim().toLowerCase();
       response = await handleCreateEventRegistrationV2(request, env, sourceId);
+    } else if (pathname.startsWith("/api/admin/v2/events/") && pathname.endsWith("/approval") && request.method === "PUT") {
+      const parts = pathname.split("/");
+      const sourceId = decodeURIComponent(parts[5] || "").trim().toLowerCase();
+      const registrationId = decodeURIComponent(parts[7] || "").trim();
+      response = await handleUpdateEventRegistrationApprovalV2(request, env, sourceId, registrationId);
     } else if (pathname.startsWith("/api/admin/v2/events/") && pathname.includes("/registrations/") && request.method === "DELETE") {
       const parts = pathname.split("/");
       const sourceId = decodeURIComponent(parts[5] || "").trim().toLowerCase();
@@ -1939,6 +2543,10 @@ export default {
       response = await handlePutEventsV2(request, env);
     } else if (pathname === "/api/admin/v2/events" && request.method === "DELETE") {
       response = await handleDeleteEventsV2(request, env);
+    } else if (pathname === "/api/v2/home-ticker" && request.method === "GET") {
+      response = await handleGetHomeTicker(env);
+    } else if (pathname === "/api/admin/v2/home-ticker" && request.method === "PUT") {
+      response = await handlePutHomeTicker(request, env);
     } else if (pathname === "/api/v2/destinations" && request.method === "GET") {
       response = await handleGetDestinationsV2(env);
     } else if (pathname.startsWith("/api/v2/destinations/") && request.method === "GET") {

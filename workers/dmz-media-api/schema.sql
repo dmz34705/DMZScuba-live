@@ -70,8 +70,40 @@ CREATE TABLE IF NOT EXISTS event_registrations_v2 (
   cert_level TEXT NOT NULL,
   additional_guests INTEGER NOT NULL DEFAULT 0,
   party_size INTEGER NOT NULL DEFAULT 1,
+  approval_status TEXT NOT NULL DEFAULT 'pending',
   created_at TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_event_regs_source_date
   ON event_registrations_v2(source_id, event_date);
+
+CREATE TABLE IF NOT EXISTS site_settings (
+  setting_key TEXT PRIMARY KEY,
+  data_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS management_records (
+  id TEXT PRIMARY KEY,
+  record_type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL,
+  priority TEXT NOT NULL,
+  owner TEXT,
+  contact_name TEXT,
+  contact_email TEXT,
+  contact_phone TEXT,
+  due_date TEXT,
+  related_event TEXT,
+  notes TEXT,
+  data_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_management_type_status
+  ON management_records(record_type, status);
+
+CREATE INDEX IF NOT EXISTS idx_management_due_date
+  ON management_records(due_date);
