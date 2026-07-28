@@ -92,6 +92,13 @@
   const fieldSummary = document.getElementById("eventsFieldSummary");
   const fieldRegistrationEnabled = document.getElementById("eventsFieldRegistrationEnabled");
   const fieldRegistrationCapacity = document.getElementById("eventsFieldRegistrationCapacity");
+  const fieldRegistrationEmailSubject = document.getElementById("eventsFieldRegistrationEmailSubject");
+  const fieldRegistrationEmailUseTemplate = document.getElementById("eventsFieldRegistrationEmailUseTemplate");
+  const fieldRegistrationEmailTemplateId = document.getElementById("eventsFieldRegistrationEmailTemplateId");
+  const fieldRegistrationEmailIsHtml = document.getElementById("eventsFieldRegistrationEmailIsHtml");
+  const fieldRegistrationEmailContent = document.getElementById("eventsFieldRegistrationEmailContent");
+  const fieldRegistrationEmailUseFullHtml = document.getElementById("eventsFieldRegistrationEmailUseFullHtml");
+  const fieldRegistrationEmailFullHtml = document.getElementById("eventsFieldRegistrationEmailFullHtml");
   const fieldCtaLabel = document.getElementById("eventsFieldCtaLabel");
   const fieldCtaHref = document.getElementById("eventsFieldCtaHref");
   const fieldInterval = document.getElementById("eventsFieldIntervalMonths");
@@ -151,16 +158,16 @@
   }
 
   function getToken() {
-    return window.sessionStorage.getItem(tokenStorageKey) || "";
+    return window.localStorage.getItem(tokenStorageKey) || "";
   }
 
   function setToken(token) {
     if (!token) {
-      window.sessionStorage.removeItem(tokenStorageKey);
+      window.localStorage.removeItem(tokenStorageKey);
       clearUiState();
       return;
     }
-    window.sessionStorage.setItem(tokenStorageKey, token);
+    window.localStorage.setItem(tokenStorageKey, token);
   }
 
   function isAuthed() {
@@ -465,7 +472,8 @@
     }
 
     if (triggerBtn) {
-      triggerBtn.textContent = authed ? "Edit Calendar" : "DMZ Login";
+      triggerBtn.style.display = authed ? "" : "none";
+      triggerBtn.textContent = "Edit Calendar";
       triggerBtn.setAttribute("aria-expanded", editMode ? "true" : "false");
     }
 
@@ -1376,6 +1384,8 @@
     if (fieldSummary) fieldSummary.value = "";
     if (fieldRegistrationEnabled) fieldRegistrationEnabled.checked = false;
     if (fieldRegistrationCapacity) fieldRegistrationCapacity.value = "0";
+    if (fieldRegistrationEmailSubject) fieldRegistrationEmailSubject.value = "";
+    if (fieldRegistrationEmailContent) fieldRegistrationEmailContent.value = "";
     if (fieldCtaLabel) fieldCtaLabel.value = "";
     if (fieldCtaHref) fieldCtaHref.value = "";
     if (fieldInterval) fieldInterval.value = "1";
@@ -1634,6 +1644,27 @@
     if (fieldRegistrationCapacity) {
       fieldRegistrationCapacity.value = String(Math.max(0, Number(item.registrationCapacity) || 0));
     }
+    if (fieldRegistrationEmailSubject) {
+      fieldRegistrationEmailSubject.value = item.registrationEmailSubject || "";
+    }
+    if (fieldRegistrationEmailUseTemplate) {
+      fieldRegistrationEmailUseTemplate.checked = Boolean(item.registrationEmailUseTemplate);
+    }
+    if (fieldRegistrationEmailTemplateId) {
+      fieldRegistrationEmailTemplateId.value = item.registrationEmailTemplateId || "";
+    }
+    if (fieldRegistrationEmailIsHtml) {
+      fieldRegistrationEmailIsHtml.checked = Boolean(item.registrationEmailIsHtml);
+    }
+    if (fieldRegistrationEmailContent) {
+      fieldRegistrationEmailContent.value = item.registrationEmailContent || "";
+    }
+    if (fieldRegistrationEmailUseFullHtml) {
+      fieldRegistrationEmailUseFullHtml.checked = Boolean(item.registrationEmailUseFullHtml);
+    }
+    if (fieldRegistrationEmailFullHtml) {
+      fieldRegistrationEmailFullHtml.value = item.registrationEmailFullHtml || "";
+    }
     const registrationContext = getEntryRegistrationContext(entry);
     if (!registrationContext) {
       resetRegistrationUiState();
@@ -1689,6 +1720,14 @@
       summary: String((fieldSummary && fieldSummary.value) || "").trim(),
       registrationEnabled: Boolean(fieldRegistrationEnabled && fieldRegistrationEnabled.checked),
       registrationCapacity: Math.max(0, Number((fieldRegistrationCapacity && fieldRegistrationCapacity.value) || 0) || 0),
+      registrationEmailSubject: String((fieldRegistrationEmailSubject && fieldRegistrationEmailSubject.value) || "").trim(),
+      registrationEmailTemplateId: String((fieldRegistrationEmailTemplateId && fieldRegistrationEmailTemplateId.value) || "").trim(),
+      registrationEmailUseTemplate: Boolean(fieldRegistrationEmailUseTemplate && fieldRegistrationEmailUseTemplate.checked) ||
+        Boolean(String((fieldRegistrationEmailTemplateId && fieldRegistrationEmailTemplateId.value) || "").trim()),
+      registrationEmailIsHtml: Boolean(fieldRegistrationEmailIsHtml && fieldRegistrationEmailIsHtml.checked),
+      registrationEmailContent: String((fieldRegistrationEmailContent && fieldRegistrationEmailContent.value) || "").trim(),
+      registrationEmailUseFullHtml: Boolean(fieldRegistrationEmailUseFullHtml && fieldRegistrationEmailUseFullHtml.checked),
+      registrationEmailFullHtml: String((fieldRegistrationEmailFullHtml && fieldRegistrationEmailFullHtml.value) || "").trim(),
       ctaLabel: String((fieldCtaLabel && fieldCtaLabel.value) || "").trim(),
       ctaHref: String((fieldCtaHref && fieldCtaHref.value) || "").trim(),
     };
@@ -1990,6 +2029,13 @@
       summary: "",
       registrationEnabled: false,
       registrationCapacity: 0,
+      registrationEmailSubject: "",
+      registrationEmailUseTemplate: false,
+      registrationEmailTemplateId: "",
+      registrationEmailIsHtml: false,
+      registrationEmailContent: "",
+      registrationEmailUseFullHtml: false,
+      registrationEmailFullHtml: "",
       ctaLabel: "",
       ctaHref: "",
     };
@@ -2012,6 +2058,13 @@
       summary: "",
       registrationEnabled: false,
       registrationCapacity: 0,
+      registrationEmailSubject: "",
+      registrationEmailUseTemplate: false,
+      registrationEmailTemplateId: "",
+      registrationEmailIsHtml: false,
+      registrationEmailContent: "",
+      registrationEmailUseFullHtml: false,
+      registrationEmailFullHtml: "",
       ctaLabel: "",
       ctaHref: "",
     };
@@ -2041,6 +2094,13 @@
       summary: String((templateItem && templateItem.summary) || "").trim(),
       registrationEnabled: Boolean(templateItem && templateItem.registrationEnabled),
       registrationCapacity: Math.max(0, Number((templateItem && templateItem.registrationCapacity) || 0) || 0),
+      registrationEmailSubject: String((templateItem && templateItem.registrationEmailSubject) || "").trim(),
+      registrationEmailUseTemplate: Boolean(templateItem && templateItem.registrationEmailUseTemplate),
+      registrationEmailTemplateId: String((templateItem && templateItem.registrationEmailTemplateId) || "").trim(),
+      registrationEmailIsHtml: Boolean(templateItem && templateItem.registrationEmailIsHtml),
+      registrationEmailContent: String((templateItem && templateItem.registrationEmailContent) || "").trim(),
+      registrationEmailUseFullHtml: Boolean(templateItem && templateItem.registrationEmailUseFullHtml),
+      registrationEmailFullHtml: String((templateItem && templateItem.registrationEmailFullHtml) || "").trim(),
       ctaLabel: String((templateItem && templateItem.ctaLabel) || "").trim(),
       ctaHref: String((templateItem && templateItem.ctaHref) || "").trim(),
     };
@@ -2108,6 +2168,14 @@
     }
     if (field === "summary") {
       item.summary = value;
+      return true;
+    }
+    if (field === "registrationEmailContent") {
+      item.registrationEmailContent = value;
+      return true;
+    }
+    if (field === "registrationEmailSubject") {
+      item.registrationEmailSubject = value;
       return true;
     }
     if (field === "registrationEnabled") {
@@ -2499,70 +2567,8 @@
     showValidation("Worker-backed calendar cleared. Static file fallback is active again.");
   }
 
-  function buildLoginModal(onSuccess) {
-    if (document.querySelector(".events-auth-modal")) return;
-
-    const overlay = document.createElement("div");
-    overlay.className = "events-auth-modal";
-    overlay.innerHTML = `
-      <div class="events-auth-card">
-        <h3>DMZ Admin</h3>
-        <p>Sign in to edit the event calendar.</p>
-        <form class="events-auth-form">
-          <label>Username<input type="text" autocomplete="username" required /></label>
-          <label>Password<input type="password" autocomplete="current-password" required /></label>
-          <p class="events-auth-error" data-error></p>
-          <div class="events-auth-actions">
-            <button type="button" class="btn secondary events-auth-cancel">Cancel</button>
-            <button type="submit" class="btn primary">Sign In</button>
-          </div>
-        </form>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-
-    const form = overlay.querySelector("form");
-    const inputs = form ? form.querySelectorAll("input") : [];
-    const errorEl = overlay.querySelector("[data-error]");
-    const cancel = overlay.querySelector(".events-auth-cancel");
-
-    const close = () => overlay.remove();
-    if (cancel) cancel.addEventListener("click", close);
-    overlay.addEventListener("click", (event) => {
-      if (event.target === overlay) close();
-    });
-
-    if (form) {
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        if (errorEl) errorEl.textContent = "";
-        const user = inputs[0] ? inputs[0].value.trim() : "";
-        const pass = inputs[1] ? inputs[1].value : "";
-        const resp = await fetch(loginUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user, pass }),
-        }).catch(() => null);
-
-        if (!resp || !resp.ok) {
-          if (errorEl) errorEl.textContent = "Login failed.";
-          return;
-        }
-
-        const json = await resp.json().catch(() => ({}));
-        if (!json.token) {
-          if (errorEl) errorEl.textContent = "Login failed.";
-          return;
-        }
-
-        setToken(json.token);
-        syncAuthUi();
-        setEditMode(true);
-        setStatus("Ready", "ready");
-        close();
-        if (typeof onSuccess === "function") onSuccess();
-      });
-    }
+  function buildLoginModal(_onSuccess) {
+    window.location.href = "/management/?redirect=" + encodeURIComponent(window.location.href);
   }
 
   if (triggerBtn) {
@@ -2838,6 +2844,8 @@
     fieldSummary,
     fieldRegistrationEnabled,
     fieldRegistrationCapacity,
+    fieldRegistrationEmailSubject,
+    fieldRegistrationEmailContent,
     fieldCtaLabel,
     fieldCtaHref,
     fieldInterval,
@@ -2884,5 +2892,8 @@
     await validateStoredToken();
     syncAuthUi();
     await loadPayload();
+    if (isAuthed() && new URLSearchParams(window.location.search).get("editMode") === "1") {
+      setEditMode(true);
+    }
   })();
 })();

@@ -18,25 +18,7 @@
 </head>
 
 <body>
-  <header class="site-header">
-    <div class="nav-container">
-      <a class="logo" href="../../index.html" aria-label="DMZ Scuba Home">
-        <img src="../../assets/images/logos/dmz-scuba-logo.png" alt="DMZ Scuba logo" />
-      </a>
-      <div class="site-name">DMZ Scuba</div>
-
-      <nav class="main-nav" aria-label="Primary">
-        <a href="../../index.html">Home</a>
-        <a href="../training/index.html">Training</a>
-        <a href="../travel/index.html">Travel</a>
-        <a href="../media/index.html">Media</a>
-        <a href="/pages/events/index.html">Events</a>
-        <a class="is-active" href="../contact/index.html">Contact</a>
-        <a href="/pages/about/">About</a>
-        <a class="nav-cta" href="#dive-now">Dive Now</a>
-      </nav>
-    </div>
-  </header>
+  <header class="site-header" data-site-nav></header>
 
  <section class="page-hero">
   <div class="page-hero-inner">
@@ -109,6 +91,33 @@
     We reply by email, usually within 24–48 hours.
   </p>
 </form>
+
+<div class="mini-divider"></div>
+
+<section class="event-alert-signup event-alert-signup-inline" aria-labelledby="contact-alert-title">
+  <h2 id="contact-alert-title">Event alerts</h2>
+  <p class="muted">Get an email when new public classes, dive days, or travel events open for registration.</p>
+  <form class="event-alert-form" method="post" data-event-alert-subscribe data-form-name="Contact Page Event Alerts">
+    <div class="form-row">
+      <div class="field">
+        <label for="event-alert-name">Name</label>
+        <input id="event-alert-name" name="subscriber-name" type="text" autocomplete="name" placeholder="Your name" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label for="event-alert-email">Email</label>
+        <input id="event-alert-email" name="subscriber-email" type="email" autocomplete="email" placeholder="you@email.com" required />
+      </div>
+    </div>
+    <div class="field dmz-honeypot" aria-hidden="true">
+      <label for="event-alert-company">Company</label>
+      <input id="event-alert-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+    </div>
+    <button class="btn primary" type="submit">Get Event Alerts</button>
+    <p class="muted small" data-subscribe-status aria-live="polite">Only public events with open registration will be announced.</p>
+  </form>
+</section>
 
 <div class="mini-divider"></div>
 

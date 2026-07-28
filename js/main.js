@@ -46,6 +46,11 @@ console.log("main.js loaded");
     return base ? `${base}/api/contact` : "/api/contact";
   }
 
+  function getEventAlertSubscribeApiUrl() {
+    const base = (document.body && document.body.dataset.contactApi) || "";
+    return base ? `${base}/api/event-alert-subscribe` : "/api/event-alert-subscribe";
+  }
+
   function getTelemetryApiUrl() {
     const base =
       (document.body &&
@@ -173,6 +178,15 @@ console.log("main.js loaded");
       if (!response.ok) {
         throw new Error(`Send failed (${response.status})`);
       }
+      if (form.id === "courseBuilderForm") {
+        form.dataset.telemetryCompleted = "true";
+        sendTelemetry("training_inquiry_completed", {
+          course: String(fields.course || "unspecified"),
+          experience: String(fields.experience || "unspecified"),
+          group: String(fields.group || "unspecified"),
+          sourcePage: new URLSearchParams(window.location.search).get("source_page") || document.referrer || "direct",
+        });
+      }
       showToast("Message sent. We will reply soon.");
       if (submitButton) {
         submitButton.textContent = "Sent!";
@@ -203,8 +217,85 @@ console.log("main.js loaded");
     }
   }
 
+  async function submitEventAlertSubscribeForm(form) {
+    if (!form || form.dataset.submitting === "true") return;
+    if (!form.hasAttribute("novalidate") && !form.reportValidity()) {
+      showToast("Add your email to subscribe.");
+      return;
+    }
+
+    const fields = collectFields(form);
+    const honey = fields.company || "";
+    if (honey) return;
+    delete fields.company;
+
+    const email = pickFieldValue(fields, (key) => key.toLowerCase().includes("email"));
+    const name = pickFieldValue(fields, (key) => key.toLowerCase().includes("name"));
+    const phone = pickFieldValue(fields, (key) => key.toLowerCase().includes("phone"));
+    if (!email) {
+      showToast("Add your email to subscribe.");
+      return;
+    }
+
+    const payload = {
+      form: form.dataset.formName || "Event Alert Subscribe",
+      fields,
+      name,
+      email,
+      phone,
+      pageUrl: window.location.href,
+      honey,
+    };
+    const submitButton = form.querySelector("button[type='submit']");
+    const statusEl = form.querySelector("[data-subscribe-status]");
+    const originalLabel = submitButton ? submitButton.textContent : "";
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Subscribing...";
+    }
+    if (statusEl) statusEl.textContent = "";
+    form.dataset.submitting = "true";
+
+    try {
+      const response = await fetch(getEventAlertSubscribeApiUrl(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || `Subscribe failed (${response.status})`);
+      }
+      showToast("You are subscribed to event alerts.");
+      if (statusEl) statusEl.textContent = "You are subscribed to DMZ Scuba event alerts.";
+      form.reset();
+      if (submitButton) {
+        submitButton.textContent = "Subscribed";
+        window.setTimeout(() => {
+          submitButton.textContent = originalLabel;
+          submitButton.disabled = false;
+        }, 1400);
+      }
+    } catch (error) {
+      sendTelemetry("event_alert_subscribe_failed", {
+        form: payload.form,
+        hasEmail: Boolean(email),
+        reason: String((error && error.message) || "unknown"),
+      });
+      showToast("Subscribe failed. Please email info@dmzscuba.com.");
+      if (statusEl) statusEl.textContent = "Subscribe failed. Please email info@dmzscuba.com.";
+      if (submitButton) {
+        submitButton.textContent = originalLabel;
+        submitButton.disabled = false;
+      }
+    } finally {
+      form.dataset.submitting = "false";
+    }
+  }
+
   window.DMZForms = {
     submit: submitDmzForm,
+    subscribeToEventAlerts: submitEventAlertSubscribeForm,
   };
   window.DMZTelemetry = {
     report: sendTelemetry,
@@ -240,9 +331,130 @@ console.log("main.js loaded");
     }
   }
 
+  function initSharedNav() {
+    const headers = document.querySelectorAll("header[data-site-nav]");
+    if (!headers.length) return;
+
+    const path = window.location.pathname;
+
+    function isActive(prefix) {
+      if (prefix === "/") return path === "/" || path === "/index.html";
+      return path === prefix || path.startsWith(prefix);
+    }
+
+    const navLinks = [
+      { href: "/", label: "Home" },
+      { href: "/pages/training/", label: "Classes" },
+      { href: "/pages/travel/", label: "Travel" },
+      { href: "/pages/media/", label: "Media" },
+      { href: "/pages/events/", label: "Events" },
+      { href: "/pages/contact/", label: "Contact" },
+      { href: "/pages/about/", label: "About" },
+    ];
+
+    const linksHtml = navLinks
+      .map(({ href, label }) => {
+        const active = isActive(href);
+        const attrs = active ? ' class="is-active" aria-current="page"' : "";
+        return `<a${attrs} href="${href}">${label}</a>`;
+      })
+      .join("");
+
+    const navHtml =
+      `<div class="nav-container">` +
+      `<a class="logo" href="/" aria-label="DMZ Scuba Home">` +
+      `<img src="/assets/images/logos/dmz-scuba-logo.png" alt="DMZ Scuba logo" /></a>` +
+      `<div class="site-name">DMZ Scuba</div>` +
+      `<nav class="main-nav" aria-label="Primary">${linksHtml}` +
+      `<a class="nav-cta" href="/pages/contact/#dive-now">Dive Now</a></nav>` +
+      `</div>`;
+
+    headers.forEach((header) => {
+      header.innerHTML = navHtml;
+    });
+  }
+
   const init = () => {
+    initSharedNav();
     const thanksUrl = `${window.location.origin}/pages/thanks/index.html`;
     const params = new URLSearchParams(window.location.search);
+    let trainingPath = window.location.pathname.replace(/\/index\.html$/, "/");
+    if (trainingPath.startsWith("/pages/training/") && !trainingPath.endsWith("/") && !/\.[a-z0-9]+$/i.test(trainingPath)) {
+      trainingPath += "/";
+    }
+    const trainingCourseMap = {
+      "/pages/training/": "training-landing",
+      "/pages/training/open-water/": "open-water",
+      "/pages/training/open-water-referral/": "open-water-referral",
+      "/pages/training/discover-scuba/": "scuba-discovery",
+      "/pages/training/advanced-specialty/": "advanced-adventure",
+      "/pages/training/skill-refresh/": "skill-refresh",
+      "/pages/training/specialty/": "specialty-hub",
+      "/pages/training/specialty/nitrox/": "nitrox",
+      "/pages/training/specialty/drysuit/": "dry-suit",
+      "/pages/training/specialty/wreck/": "wreck",
+      "/pages/training/specialty/full-face-mask/": "full-face-mask",
+      "/pages/training/course-builder/": "course-builder",
+    };
+    const trainingCourse = trainingCourseMap[trainingPath] || "";
+    if (trainingCourse) {
+      sendTelemetry("training_course_view", {
+        course: trainingCourse,
+        device: window.matchMedia("(max-width: 780px)").matches ? "mobile" : "desktop",
+        source: params.get("utm_source") || "direct-or-referral",
+        campaign: params.get("utm_campaign") || "",
+      });
+
+      const campaignKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid"];
+      document.querySelectorAll('a[href*="/training/"], a[href^="../"], a[href^="./"]').forEach((link) => {
+        let destination;
+        try {
+          destination = new URL(link.href, window.location.href);
+        } catch (error) {
+          return;
+        }
+        if (!destination.pathname.startsWith("/pages/training/")) return;
+        campaignKeys.forEach((key) => {
+          if (params.has(key) && !destination.searchParams.has(key)) {
+            destination.searchParams.set(key, params.get(key));
+          }
+        });
+        if (!destination.searchParams.has("source_page")) {
+          destination.searchParams.set("source_page", trainingPath);
+        }
+        link.href = `${destination.pathname}${destination.search}${destination.hash}`;
+      });
+
+      document.addEventListener("click", (event) => {
+        const link = event.target.closest("a");
+        if (!link) return;
+        const isButton = link.classList.contains("btn");
+        let destination;
+        try {
+          destination = new URL(link.href, window.location.href);
+        } catch (error) {
+          return;
+        }
+        if (!isButton && destination.pathname.startsWith("/pages/training/") && destination.pathname !== trainingPath) {
+          sendTelemetry("training_internal_progression_click", {
+            course: trainingCourse,
+            label: String(link.textContent || "").trim(),
+            destination: destination.pathname,
+          });
+          return;
+        }
+        if (!isButton) return;
+        const isSticky = link.classList.contains("mobile-sticky-cta-link");
+        const section = link.closest("section");
+        sendTelemetry(isSticky ? "training_sticky_cta_click" : "training_cta_click", {
+          course: trainingCourse,
+          label: String(link.textContent || "").trim(),
+          destination: link.getAttribute("href") || "",
+          ctaType: link.classList.contains("primary") ? "primary" : "secondary",
+          placement: section ? section.id || section.className || "section" : "global",
+        });
+      });
+    }
     const hasPrefill = params.has("interest") || params.has("location") || params.has("course");
     if (params.size) {
       const setField = (id, value) => {
@@ -367,6 +579,7 @@ console.log("main.js loaded");
 
     const courseBuilderForm = document.getElementById("courseBuilderForm");
     if (courseBuilderForm) {
+      let trainingFormStarted = false;
       const requiredFields = courseBuilderForm.querySelectorAll("input[required], select[required], textarea[required]");
 
       const updateFieldState = (field) => {
@@ -383,6 +596,13 @@ console.log("main.js loaded");
       requiredFields.forEach((field) => updateFieldState(field));
 
       courseBuilderForm.addEventListener("input", (e) => {
+        if (!trainingFormStarted) {
+          trainingFormStarted = true;
+          sendTelemetry("training_inquiry_form_start", {
+            course: String((document.getElementById("cb-course") || {}).value || "unspecified"),
+            sourcePage: params.get("source_page") || document.referrer || "direct",
+          });
+        }
         const field = e.target;
         if (field && field.matches("input[required], select[required], textarea[required]")) {
           updateFieldState(field);
@@ -394,6 +614,14 @@ console.log("main.js loaded");
         if (field && field.matches("input[required], select[required], textarea[required]")) {
           updateFieldState(field);
         }
+      });
+
+      window.addEventListener("pagehide", () => {
+        if (!trainingFormStarted || courseBuilderForm.dataset.telemetryCompleted === "true") return;
+        sendTelemetry("training_inquiry_form_abandoned", {
+          course: String((document.getElementById("cb-course") || {}).value || "unspecified"),
+          sourcePage: params.get("source_page") || document.referrer || "direct",
+        });
       });
     }
 
@@ -506,9 +734,11 @@ console.log("main.js loaded");
 
     const stickyCta = document.getElementById("mobile-sticky-cta");
     if (stickyCta) {
+      document.body.classList.add("has-training-sticky-cta");
+      const stickyDismissKey = stickyCta.dataset.dismissStorageKey || "dmz-mobile-sticky-cta-dismissed";
       const dismissed = (() => {
         try {
-          return window.localStorage.getItem("dmz-mobile-sticky-cta-dismissed") === "1";
+          return window.localStorage.getItem(stickyDismissKey) === "1";
         } catch (error) {
           return false;
         }
@@ -526,8 +756,14 @@ console.log("main.js loaded");
       const target = document.querySelector(targetSelector);
       if (!target) return;
       target.classList.add("is-hidden");
+      if (target.classList.contains("mobile-sticky-cta")) {
+        sendTelemetry("training_sticky_cta_dismiss", {
+          course: trainingCourse || "training",
+        });
+      }
       try {
-        window.localStorage.setItem("dmz-mobile-sticky-cta-dismissed", "1");
+        const dismissKey = target.dataset.dismissStorageKey || "dmz-mobile-sticky-cta-dismissed";
+        window.localStorage.setItem(dismissKey, "1");
       } catch (error) {
         // Ignore storage failures and keep dismiss behavior for current view.
       }
@@ -568,6 +804,13 @@ console.log("main.js loaded");
         submitDmzForm(diveNowFormSubmit, { requireEmail: true, redirectUrl: thanksUrl });
       });
     }
+
+    document.querySelectorAll("[data-event-alert-subscribe]").forEach((subscribeForm) => {
+      subscribeForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        submitEventAlertSubscribeForm(subscribeForm);
+      });
+    });
   };
 
   if (document.readyState === "loading") {

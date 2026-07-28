@@ -1,8 +1,13 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DMZ SCUBA — MANAGEMENT CONSOLE
+   App-shell layout: fixed left sidebar (220px) + scrollable main panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 .management-page {
   min-height: 100vh;
   background:
-    linear-gradient(135deg, rgba(226, 27, 35, 0.14), rgba(5, 11, 20, 0) 34%),
-    radial-gradient(900px 460px at 85% 5%, rgba(66, 185, 156, 0.16), rgba(5, 11, 20, 0) 58%),
+    linear-gradient(135deg, rgba(226, 27, 35, 0.12), rgba(5, 11, 20, 0) 34%),
+    radial-gradient(900px 460px at 85% 5%, rgba(66, 185, 156, 0.14), rgba(5, 11, 20, 0) 58%),
     var(--bg);
 }
 
@@ -20,11 +25,555 @@
   display: none !important;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   APP SHELL
+   ────────────────────────────────────────────────────────────────────────── */
+
 .management-shell {
-  width: min(1420px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 28px 0 44px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: 100dvh;
 }
+
+.management-dashboard {
+  display: block;
+  position: relative;
+}
+
+.mgmt-app {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+
+.mgmt-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow-y: auto;
+  background: rgba(4, 11, 22, 0.98);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+  overscroll-behavior: contain;
+  flex-shrink: 0;
+}
+
+.mgmt-sidebar::-webkit-scrollbar { width: 4px; }
+.mgmt-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+.mgmt-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 14px 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.mgmt-brand img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.mgmt-brand-name {
+  font-size: 13.5px;
+  font-weight: 850;
+  color: rgba(234, 242, 255, 0.88);
+  letter-spacing: 0.01em;
+}
+
+/* ── Navigation ───────────────────────────────────────────────────────────── */
+
+.mgmt-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 8px 4px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.mgmt-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 10px;
+}
+
+.mgmt-nav-label {
+  padding: 4px 8px 5px;
+  color: rgba(234, 242, 255, 0.30);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mgmt-nav-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: rgba(234, 242, 255, 0.58);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.mgmt-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(234, 242, 255, 0.90);
+}
+
+.mgmt-nav-item.is-active {
+  background: rgba(85, 185, 255, 0.14);
+  color: #cfeeff;
+  font-weight: 750;
+}
+
+.mgmt-nav-text {
+  flex: 1;
+}
+
+.mgmt-nav-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(234, 242, 255, 0.34);
+  margin-left: 4px;
+}
+
+.mgmt-nav-item.is-active .mgmt-nav-badge {
+  color: rgba(85, 185, 255, 0.62);
+}
+
+/* ── More toggle: desktop-only hidden (visible only in mobile tab bar) ── */
+[data-more-toggle],
+.mgmt-nav-more-panel { display: none; }
+
+/* ── Dashboard home button — top of nav, flagged as the default home screen ── */
+.mgmt-nav-home {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: rgba(234, 242, 255, 0.78);
+  background: rgba(66, 185, 156, 0.05);
+  margin-bottom: 2px;
+}
+
+.mgmt-nav-home:hover {
+  background: rgba(66, 185, 156, 0.11);
+  color: rgba(234, 242, 255, 0.95);
+}
+
+.mgmt-nav-home.is-active {
+  background: rgba(66, 185, 156, 0.16);
+  color: rgba(160, 245, 215, 0.95);
+}
+
+.mgmt-nav-home-mobile { display: none; }
+
+/* ── Sidebar stats ────────────────────────────────────────────────────────── */
+
+.mgmt-sidebar-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  padding: 8px 8px 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.mgmt-stat {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.026);
+  padding: 7px 9px;
+}
+
+.mgmt-stat span {
+  display: block;
+  font-size: 18px;
+  font-weight: 850;
+  line-height: 1;
+  color: var(--text);
+}
+
+.mgmt-stat p {
+  margin: 3px 0 0;
+  color: rgba(234, 242, 255, 0.40);
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.mgmt-stat-balance {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mgmt-stat-balance p { margin: 0; }
+
+/* ── Sidebar footer ───────────────────────────────────────────────────────── */
+
+.mgmt-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 8px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.mgmt-sidebar-link {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: rgba(234, 242, 255, 0.44);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+}
+
+.mgmt-sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(234, 242, 255, 0.80);
+}
+
+.mgmt-sidebar-bottom {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mgmt-action-btn {
+  flex: 1;
+  padding: 8px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.035);
+  color: rgba(234, 242, 255, 0.56);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.mgmt-action-btn:hover {
+  background: rgba(85, 185, 255, 0.09);
+  border-color: rgba(85, 185, 255, 0.32);
+  color: #cfeeff;
+}
+
+.mgmt-action-btn-danger:hover {
+  background: rgba(226, 27, 35, 0.11);
+  border-color: rgba(226, 27, 35, 0.34);
+  color: #ffb3b8;
+}
+
+/* ── Main content area ────────────────────────────────────────────────────── */
+
+.mgmt-main {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+  min-width: 0;
+}
+
+/* Backdrop: covers main area (not sidebar) when record drawer is open */
+.is-editor-open .mgmt-main::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  right: min(560px, 82vw);
+  bottom: 0;
+  left: 220px;
+  z-index: 35;
+  background: rgba(2, 7, 14, 0.55);
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+
+/* ── Panel base ───────────────────────────────────────────────────────────── */
+
+.mgmt-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Topbar ───────────────────────────────────────────────────────────────── */
+
+.mgmt-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(5, 11, 20, 0.96);
+  flex-shrink: 0;
+  z-index: 5;
+}
+
+.mgmt-topbar-left { min-width: 0; }
+
+.mgmt-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.mgmt-panel-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.mgmt-search-input {
+  width: 200px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 12px;
+  outline: none;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.mgmt-search-input:focus {
+  border-color: rgba(85, 185, 255, 0.58);
+  box-shadow: 0 0 0 3px rgba(85, 185, 255, 0.09);
+  background: rgba(85, 185, 255, 0.035);
+}
+
+.mgmt-sort-select {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+.mgmt-sort-select option {
+  background: #071325;
+  color: var(--text);
+}
+
+.mgmt-new-btn {
+  padding: 8px 14px;
+  border: 1px solid rgba(226, 27, 35, 0.40);
+  border-radius: 8px;
+  background: rgba(226, 27, 35, 0.12);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s, border-color 0.14s;
+}
+
+.mgmt-new-btn:hover {
+  border-color: rgba(226, 27, 35, 0.72);
+  background: rgba(226, 27, 35, 0.24);
+}
+
+.mgmt-btn-sm {
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(234, 242, 255, 0.68);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.mgmt-btn-sm:hover {
+  border-color: rgba(85, 185, 255, 0.40);
+  background: rgba(85, 185, 255, 0.09);
+  color: #cfeeff;
+}
+
+/* ── Operations body ──────────────────────────────────────────────────────── */
+
+.mgmt-ops-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 40px;
+  min-height: 0;
+}
+
+.mgmt-ops-body::-webkit-scrollbar { width: 6px; }
+.mgmt-ops-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+.mgmt-ops-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 0 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mgmt-cal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.mgmt-cal-status {
+  color: rgba(234, 242, 255, 0.48);
+  font-size: 12px;
+}
+
+.mgmt-sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Home panel ───────────────────────────────────────────────────────────── */
+
+.mgmt-home-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px;
+}
+
+/* ── Studio panel height (fills app shell) ────────────────────────────────── */
+
+.mgmt-panel.mstudio-panel {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.mgmt-main .mstudio-workspace {
+  height: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Record editor: right-side drawer ────────────────────────────────────── */
+
+.management-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  width: min(560px, calc(100vw - 220px));
+  display: none;
+  overflow-y: auto;
+  background: rgba(5, 11, 20, 0.99);
+  border-left: 1px solid rgba(85, 185, 255, 0.22);
+  box-shadow: -14px 0 52px rgba(0, 0, 0, 0.46);
+  padding: 0;
+  border-radius: 0;
+}
+
+.is-editor-open .management-panel {
+  display: block;
+}
+
+.management-panel-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 11, 20, 0.99);
+  margin: 0;
+}
+
+.management-panel h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+.management-panel-head h2 {
+  font-size: 17px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+}
+
+.management-panel-head button {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.048);
+  color: rgba(234, 242, 255, 0.68);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.management-panel-head button:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   LOGIN
+   ────────────────────────────────────────────────────────────────────────── */
 
 .management-login {
   min-height: calc(100vh - 72px);
@@ -32,19 +581,12 @@
   place-items: center;
 }
 
-.management-login-card,
-.management-panel,
-.management-list-panel,
-.management-site-tools,
-.management-metrics article {
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  background: rgba(7, 19, 37, 0.86);
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.34);
-}
-
 .management-login-card {
   width: min(420px, 100%);
+  border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 8px;
+  background: rgba(7, 19, 37, 0.86);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.34);
   padding: 30px;
 }
 
@@ -65,26 +607,29 @@
   text-transform: uppercase;
 }
 
-.management-login-card h1,
-.management-header h1,
-.management-panel h2 {
+.management-login-card h1 {
   margin: 0;
   letter-spacing: 0;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   FORM FIELDS
+   ────────────────────────────────────────────────────────────────────────── */
 
 .management-login-form,
 .management-record-form,
 .management-ticker-form {
   display: grid;
   gap: 14px;
-  margin-top: 20px;
+  padding: 20px;
   min-width: 0;
 }
+
+.management-login-form { padding: 0; margin-top: 20px; }
 
 .management-login-form label,
 .management-record-form label,
 .management-ticker-form label,
-.management-search label,
 .management-sort {
   display: grid;
   gap: 7px;
@@ -97,17 +642,47 @@
 .management-record-form input,
 .management-record-form select,
 .management-record-form textarea,
-.management-ticker-form textarea,
-.management-search input,
-.management-sort select {
+.management-ticker-form textarea {
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.055);
   color: var(--text);
   font: inherit;
-  padding: 12px 12px;
+  padding: 11px 12px;
   outline: none;
+}
+
+.management-login-form input:focus,
+.management-record-form input:focus,
+.management-record-form select:focus,
+.management-record-form textarea:focus,
+.management-ticker-form textarea:focus {
+  border-color: rgba(85, 185, 255, 0.72);
+  box-shadow: 0 0 0 3px rgba(85, 185, 255, 0.13);
+}
+
+.management-record-form select option {
+  background: #071325;
+  color: var(--text);
+}
+
+.management-record-form textarea,
+.management-ticker-form textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+
+.management-ticker-form textarea {
+  min-height: 260px;
+  line-height: 1.55;
+}
+
+.management-ticker-hint {
+  color: rgba(234, 242, 255, 0.48);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
 }
 
 .management-copy-field {
@@ -144,43 +719,31 @@
   accent-color: var(--accent);
 }
 
-.management-record-form select option {
-  background: #071325;
-  color: var(--text);
+.management-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.management-record-form textarea,
-.management-ticker-form textarea {
-  resize: vertical;
-  min-height: 140px;
+.management-extra-fields {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  min-width: 0;
 }
 
-.management-ticker-form textarea {
-  min-height: 260px;
-  line-height: 1.55;
-}
-
-.management-ticker-hint {
-  color: rgba(234, 242, 255, 0.48);
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 2px;
-}
-
-.management-login-form input:focus,
-.management-record-form input:focus,
-.management-record-form select:focus,
-.management-record-form textarea:focus,
-.management-ticker-form textarea:focus,
-.management-search input:focus,
-.management-sort select:focus {
-  border-color: rgba(85, 185, 255, 0.72);
-  box-shadow: 0 0 0 3px rgba(85, 185, 255, 0.13);
-}
-
-.management-sort select option {
-  background: #071325;
-  color: var(--text);
+.management-extra-fields:not(.management-field-hidden)::before {
+  content: "Additional Details";
+  display: block;
+  color: rgba(155, 211, 255, 0.74);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: -2px;
 }
 
 .management-form-status {
@@ -188,416 +751,300 @@
   margin: 0;
   color: rgba(234, 242, 255, 0.68);
   font-size: 13px;
+  padding: 0 20px;
 }
 
-.management-form-status.is-error {
-  color: #ffb3b8;
-}
+.management-form-status.is-error { color: #ffb3b8; }
+.management-form-status.is-success { color: #9ff0ce; }
 
-.management-form-status.is-success {
-  color: #9ff0ce;
-}
-
-.management-registration-manager {
-  display: grid;
-  gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.045);
-  padding: 14px;
-}
-
-.management-registration-head {
+.management-form-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 0 20px 20px;
 }
 
-.management-registration-head h3,
-.management-registration-head p {
-  margin: 0;
-}
+/* ──────────────────────────────────────────────────────────────────────────
+   RECORD LIST & CARDS
+   ────────────────────────────────────────────────────────────────────────── */
 
-.management-registration-head h3 {
-  font-size: 16px;
-  letter-spacing: 0;
-}
-
-.management-registration-head p {
-  margin-top: 4px;
-  color: rgba(234, 242, 255, 0.64);
-  font-size: 13px;
-}
-
-.management-registration-list {
-  display: grid;
-  gap: 8px;
-}
-
-.management-registration-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 10px;
-  background: rgba(5, 11, 20, 0.36);
-}
-
-.management-registration-item div {
+.management-records {
   display: grid;
   gap: 3px;
+  margin-top: 10px;
 }
 
-.management-registration-item strong {
-  color: var(--text);
-  font-size: 14px;
-}
-
-.management-registration-item span {
-  color: rgba(234, 242, 255, 0.62);
-  font-size: 12px;
-}
-
-.management-registration-item button {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 8px 10px;
-  cursor: pointer;
-}
-
-.management-registration-item button:hover:not(:disabled) {
-  border-color: rgba(226, 27, 35, 0.58);
-  background: rgba(226, 27, 35, 0.14);
-}
-
-.management-registration-item .management-registration-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.management-registration-actions button:first-child:hover:not(:disabled) {
-  border-color: rgba(85, 185, 255, 0.58);
-  background: rgba(85, 185, 255, 0.14);
-}
-
-.management-class-schedule,
-.management-class-roster,
-.management-contact-classes {
-  display: block;
-  border: 1px solid rgba(255, 255, 255, 0.11);
+.management-empty,
+.management-record {
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.045);
-  padding: 14px;
-  min-width: 0;
-  overflow: hidden;
 }
 
-.management-class-schedule[open],
-.management-class-roster[open],
-.management-contact-classes[open] {
-  display: grid;
-  gap: 14px;
-}
-
-.management-class-schedule > summary,
-.management-class-roster > summary,
-.management-contact-classes > summary,
-.management-record-details > summary {
-  cursor: pointer;
-  list-style-position: outside;
-}
-
-.management-class-schedule > summary::marker,
-.management-class-roster > summary::marker,
-.management-contact-classes > summary::marker,
-.management-record-details > summary::marker {
-  color: rgba(85, 185, 255, 0.82);
-}
-
-.management-class-schedule-head h3,
-.management-class-schedule-head p,
-.management-class-roster-head h3,
-.management-class-roster-head p,
-.management-class-session-head h4 {
-  margin: 0;
-}
-
-.management-class-schedule-head p,
-.management-class-roster-head p,
-.management-class-registration-review p {
-  margin-top: 4px;
-  color: rgba(234, 242, 255, 0.62);
-  font-size: 13px;
-}
-
-.management-class-session-group {
-  display: grid;
-  gap: 8px;
-}
-
-.management-class-session-head,
-.management-class-session-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-}
-
-.management-class-session-head h4 {
-  font-size: 14px;
-  letter-spacing: 0;
-}
-
-.management-class-session-head button,
-.management-class-session-row button {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  color: var(--text);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  padding: 8px 10px;
-  cursor: pointer;
-}
-
-.management-class-session-row {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: end;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 8px;
-  padding: 10px;
-  background: rgba(5, 11, 20, 0.3);
-  min-width: 0;
-}
-
-.management-class-session-row label {
-  display: grid;
-  gap: 5px;
+.management-empty {
+  padding: 22px;
   color: rgba(234, 242, 255, 0.68);
-  font-size: 12px;
-  font-weight: 800;
 }
 
-.management-class-session-row label span {
-  line-height: 1;
-}
-
-.management-class-session-row input,
-.management-class-session-row select {
-  min-width: 0;
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  color: var(--text);
-  font: inherit;
-  padding: 10px;
-  outline: none;
-}
-
-.management-class-session-location {
-  min-width: 0;
-  grid-column: 1 / -1;
-}
-
-.management-class-session-row button {
-  grid-column: 1 / -1;
-  justify-self: end;
-  min-height: 38px;
-}
-
-.management-class-contact-add {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-}
-
-.management-contact-classes .management-class-contact-add {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-}
-
-.management-contact-classes .management-class-contact-add select[multiple] {
-  grid-column: 1 / -1;
-  width: 100%;
-}
-
-.management-class-contact-add select,
-.management-class-contact-add button,
-.management-class-contact-item button,
-.management-class-registration-item button {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  color: var(--text);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  padding: 9px 10px;
-}
-
-.management-class-contact-add select[multiple] {
-  min-height: 104px;
-}
-
-.management-contact-classes .management-class-contact-add select:not([multiple]),
-.management-contact-classes .management-class-contact-add button {
-  min-height: 42px;
-  align-self: start;
-}
-
-.management-class-contact-list,
-.management-class-registration-review,
-[data-class-registration-list] {
-  display: grid;
-  gap: 8px;
-}
-
-.management-class-contact-item,
-.management-class-registration-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 8px;
-  padding: 10px;
-  background: rgba(5, 11, 20, 0.3);
-}
-
-.management-class-contact-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.management-class-contact-item strong,
-.management-class-registration-item strong {
-  display: block;
-  color: var(--text);
+.management-empty-compact {
+  padding: 12px;
   font-size: 13px;
 }
 
-.management-class-contact-item span,
-.management-class-registration-item span {
-  display: block;
-  margin-top: 3px;
-  color: rgba(234, 242, 255, 0.62);
-  font-size: 12px;
-}
-
-.management-dashboard {
+.management-record {
   display: grid;
-  gap: 18px;
-}
-
-.management-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 10px 0 2px;
-}
-
-.management-header h1 {
-  font-size: clamp(32px, 5vw, 58px);
-  line-height: 1;
-}
-
-.management-header-actions,
-.management-form-actions,
-.management-panel-head,
-.management-list-tools {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.management-metrics {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.management-metrics article {
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.management-metrics span {
-  display: block;
-  font-size: 32px;
-  line-height: 1;
-  font-weight: 850;
-}
-
-.management-metrics p {
-  margin: 8px 0 0;
-  color: rgba(234, 242, 255, 0.66);
-  font-size: 13px;
-  font-weight: 750;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.management-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 7px 38px 7px 12px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
   align-items: start;
-  min-width: 0;
 }
 
-.management-site-tools {
+.management-record.is-contact {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  position: relative;
+  padding: 8px 38px 8px 16px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(90deg, rgba(85, 185, 255, 0.13), rgba(85, 185, 255, 0) 46%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.management-record.is-contact::before {
+  content: "";
+  position: absolute;
+  inset: 8px auto 8px 0;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: rgba(85, 185, 255, 0.78);
+}
+
+.management-record.is-class {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  padding: 7px 38px 7px 12px;
+  border-color: rgba(66, 185, 156, 0.18);
+  background:
+    linear-gradient(90deg, rgba(66, 185, 156, 0.10), rgba(66, 185, 156, 0) 42%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.management-record.is-inquiry {
+  border-color: rgba(245, 178, 62, 0.22);
+  border-left: 3px solid rgba(245, 178, 62, 0.72);
+  background:
+    linear-gradient(90deg, rgba(245, 178, 62, 0.07), rgba(245, 178, 62, 0) 40%),
+    rgba(255, 255, 255, 0.045);
+  padding-left: 14px;
+  padding-right: 38px;
+}
+
+.management-record.is-task {
+  border-color: rgba(149, 117, 205, 0.22);
+  border-left: 3px solid rgba(149, 117, 205, 0.72);
+  background:
+    linear-gradient(90deg, rgba(149, 117, 205, 0.07), rgba(149, 117, 205, 0) 40%),
+    rgba(255, 255, 255, 0.045);
+  padding-left: 14px;
+  padding-right: 38px;
+}
+
+.management-record.is-trip {
+  border-color: rgba(85, 210, 230, 0.22);
+  border-left: 3px solid rgba(85, 210, 230, 0.72);
+  background:
+    linear-gradient(90deg, rgba(85, 210, 230, 0.07), rgba(85, 210, 230, 0) 40%),
+    rgba(255, 255, 255, 0.045);
+  padding-left: 14px;
+  padding-right: 38px;
+}
+
+.management-record.is-registration {
+  cursor: default;
+  border-color: rgba(245, 178, 62, 0.18);
+  background:
+    linear-gradient(90deg, rgba(245, 178, 62, 0.10), rgba(245, 178, 62, 0) 42%),
+    rgba(255, 255, 255, 0.045);
+}
+
+.management-record-site { border-style: dashed; }
+
+.management-record:hover,
+.management-record.is-selected {
+  border-color: rgba(85, 185, 255, 0.48);
+  background: rgba(85, 185, 255, 0.10);
+}
+
+.management-record.is-contact:hover,
+.management-record.is-contact.is-selected {
+  background:
+    linear-gradient(90deg, rgba(85, 185, 255, 0.18), rgba(85, 185, 255, 0.04) 50%),
+    rgba(85, 185, 255, 0.08);
+}
+
+.management-record.is-class:hover,
+.management-record.is-class.is-selected {
+  border-color: rgba(66, 185, 156, 0.42);
+  background:
+    linear-gradient(90deg, rgba(66, 185, 156, 0.16), rgba(66, 185, 156, 0.03) 48%),
+    rgba(66, 185, 156, 0.06);
+}
+
+.management-record.is-inquiry:hover,
+.management-record.is-inquiry.is-selected {
+  border-color: rgba(245, 178, 62, 0.42);
+  border-left-color: rgba(245, 178, 62, 0.88);
+  background:
+    linear-gradient(90deg, rgba(245, 178, 62, 0.13), rgba(245, 178, 62, 0.02) 46%),
+    rgba(245, 178, 62, 0.055);
+}
+
+.management-record.is-task:hover,
+.management-record.is-task.is-selected {
+  border-color: rgba(149, 117, 205, 0.42);
+  border-left-color: rgba(149, 117, 205, 0.88);
+  background:
+    linear-gradient(90deg, rgba(149, 117, 205, 0.13), rgba(149, 117, 205, 0.02) 46%),
+    rgba(149, 117, 205, 0.055);
+}
+
+.management-record.is-trip:hover,
+.management-record.is-trip.is-selected {
+  border-color: rgba(85, 210, 230, 0.42);
+  border-left-color: rgba(85, 210, 230, 0.88);
+  background:
+    linear-gradient(90deg, rgba(85, 210, 230, 0.13), rgba(85, 210, 230, 0.02) 46%),
+    rgba(85, 210, 230, 0.055);
+}
+
+.management-record.is-registration:hover {
+  border-color: rgba(245, 178, 62, 0.36);
+  background:
+    linear-gradient(90deg, rgba(245, 178, 62, 0.14), rgba(245, 178, 62, 0.03) 48%),
+    rgba(245, 178, 62, 0.06);
+}
+
+.management-record.is-pinned {
+  border-color: rgba(245, 178, 62, 0.30);
+  background: rgba(245, 178, 62, 0.05);
+}
+
+.management-record h3 {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.management-record.is-contact h3 { margin-top: 0; font-size: 15px; }
+.management-record.is-class h3   { margin-top: 2px; font-size: 14px; }
+
+.management-record p {
+  margin: 3px 0 0;
+  color: rgba(234, 242, 255, 0.65);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.management-record.is-contact p {
+  max-width: 86ch;
+  color: rgba(234, 242, 255, 0.68);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.management-record-meta,
+.management-record-badges {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  border-radius: 8px;
-  padding: 16px 18px;
-}
-
-.management-site-tools h2 {
-  margin: 0;
-  font-size: 22px;
-  letter-spacing: 0;
-}
-
-.management-calendar-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  gap: 5px;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  align-items: center;
 }
 
-.management-toggle {
+.management-record-meta {
+  margin-top: 4px;
+  color: rgba(234, 242, 255, 0.58);
+  font-size: 11.5px;
+}
+
+.management-record.is-contact .management-record-meta {
+  margin-top: 5px;
+  color: rgba(234, 242, 255, 0.60);
+}
+
+.management-record-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.management-record-actions select {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 20px;
+  background: #071325;
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+  min-width: 104px;
+  cursor: pointer;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   BADGES
+   ────────────────────────────────────────────────────────────────────────── */
+
+.management-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  min-height: 18px;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: rgba(255, 255, 255, 0.08);
   color: rgba(234, 242, 255, 0.78);
-  font-size: 13px;
-  font-weight: 800;
-  white-space: nowrap;
+  font-size: 10.5px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.management-toggle input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent);
+.management-badge.is-urgent, .management-badge.is-high { background: rgba(226, 27, 35, 0.18); color: #ffd7d9; }
+.management-badge.is-complete { background: rgba(66, 185, 156, 0.18); color: #c5ffe9; }
+.management-badge.is-alert-ready { background: rgba(85, 185, 255, 0.18); color: #d4efff; }
+.management-badge.is-waiting { background: rgba(245, 178, 62, 0.18); color: #ffe5b3; }
+.management-badge.is-to_contact, .management-badge.is-reached_out { background: rgba(85, 185, 255, 0.16); color: #cfeeff; }
+.management-badge.is-gathering_details, .management-badge.is-planning,
+.management-badge.is-payment, .management-badge.is-timing { background: rgba(245, 178, 62, 0.18); color: #ffe5b3; }
+.management-badge.is-dead_end, .management-badge.is-not_fit, .management-badge.is-archived {
+  background: rgba(255, 255, 255, 0.08); color: rgba(234, 242, 255, 0.66);
 }
+.management-badge.is-contact    { background: rgba(85, 185, 255, 0.16); color: #cfeeff; }
+.management-badge.is-inquiry    { background: rgba(245, 178, 62, 0.18); color: #ffe5b3; }
+.management-badge.is-class      { background: rgba(66, 185, 156, 0.18); color: #c5ffe9; }
+.management-badge.is-trip       { background: rgba(85, 210, 230, 0.16); color: #b3f0ff; }
+.management-badge.is-task       { background: rgba(149, 117, 205, 0.18); color: #dfd0ff; }
+.management-badge.is-registration { background: rgba(245, 178, 62, 0.18); color: #ffe5b3; }
+.management-badge.is-new       { background: rgba(85, 185, 255, 0.11); color: #cfeeff; }
+.mgmt-bal-badge { background: rgba(245, 178, 62, 0.16); color: rgba(245, 178, 62, 0.94); border: 1px solid rgba(245, 178, 62, 0.24); }
+.management-badge.is-active    { background: rgba(66, 185, 156, 0.15); color: #c5ffe9; }
+.management-badge.is-scheduled { background: rgba(66, 185, 156, 0.13); color: #c5ffe9; }
+.management-badge.is-normal    { background: rgba(255, 255, 255, 0.05); color: rgba(234, 242, 255, 0.62); }
+.management-badge.is-low       { background: rgba(255, 255, 255, 0.04); color: rgba(234, 242, 255, 0.48); }
+.management-badge.is-overdue   { background: rgba(226, 27, 35, 0.22); color: #ffb3b8; border: 1px solid rgba(226, 27, 35, 0.38); font-weight: 900; letter-spacing: 0.04em; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   CALENDAR ITEMS (rendered by management.js)
+   ────────────────────────────────────────────────────────────────────────── */
 
 .management-calendar-item {
   display: grid;
@@ -620,9 +1067,7 @@
     rgba(85, 185, 255, 0.06);
 }
 
-.management-calendar-item.is-past {
-  opacity: 0.72;
-}
+.management-calendar-item.is-past { opacity: 0.72; }
 
 .management-calendar-date-block {
   border: 1px solid rgba(85, 185, 255, 0.18);
@@ -631,37 +1076,11 @@
   padding: 10px;
 }
 
-.management-calendar-date-block strong {
-  display: block;
-  color: rgba(234, 242, 255, 0.92);
-  font-size: 20px;
-  line-height: 1.1;
-}
-
-.management-calendar-date-block span {
-  display: block;
-  margin-top: 6px;
-  color: rgba(155, 211, 255, 0.74);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.management-calendar-main {
-  min-width: 0;
-}
-
-.management-calendar-item h3 {
-  margin: 8px 0 0;
-  font-size: 18px;
-  line-height: 1.25;
-}
-
-.management-calendar-item p {
-  margin: 10px 0 0;
-  color: rgba(234, 242, 255, 0.68);
-  font-size: 13px;
-  line-height: 1.5;
-}
+.management-calendar-date-block strong { display: block; color: rgba(234, 242, 255, 0.92); font-size: 20px; line-height: 1.1; }
+.management-calendar-date-block span  { display: block; margin-top: 6px; color: rgba(155, 211, 255, 0.74); font-size: 12px; font-weight: 800; }
+.management-calendar-main { min-width: 0; }
+.management-calendar-item h3 { margin: 8px 0 0; font-size: 18px; line-height: 1.25; }
+.management-calendar-item p  { margin: 10px 0 0; color: rgba(234, 242, 255, 0.68); font-size: 13px; line-height: 1.5; }
 
 .management-calendar-stat-grid {
   display: grid;
@@ -695,7 +1114,182 @@
   justify-content: flex-end;
 }
 
-.management-calendar-actions a {
+.management-calendar-actions a,
+.management-calendar-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 10px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.management-calendar-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.management-calendar-actions a:hover,
+.management-calendar-actions button:hover:not(:disabled) {
+  border-color: rgba(85, 185, 255, 0.52);
+  background: rgba(85, 185, 255, 0.13);
+}
+
+.management-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(234, 242, 255, 0.78);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.management-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   CONTACT / COPY LINES
+   ────────────────────────────────────────────────────────────────────────── */
+
+.management-contact-card-lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.management-contact-copy-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 32px;
+  border: 1px solid rgba(85, 185, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(5, 11, 20, 0.34);
+  padding: 4px 8px 4px 10px;
+}
+
+.management-contact-copy-line span { min-width: 0; }
+.management-contact-copy-line strong { display: block; margin: 0 0 3px; color: rgba(155, 211, 255, 0.74); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.management-contact-copy-line a, .management-contact-copy-line em { color: rgba(234, 242, 255, 0.9); font-size: 12.5px; overflow-wrap: anywhere; text-decoration: none; }
+.management-contact-copy-line.is-empty a, .management-contact-copy-line.is-empty em { color: rgba(234, 242, 255, 0.46); }
+
+.management-contact-copy-line button {
+  border: 1px solid rgba(85, 185, 255, 0.28);
+  border-radius: 6px;
+  background: rgba(85, 185, 255, 0.10);
+  color: #cfeeff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  padding: 3px 8px;
+  transition: background 0.16s, border-color 0.16s;
+}
+
+.management-contact-copy-line button:hover:not(:disabled) { border-color: rgba(85, 185, 255, 0.52); background: rgba(85, 185, 255, 0.18); }
+.management-contact-copy-line button:disabled { border-color: rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.04); color: rgba(234, 242, 255, 0.36); cursor: not-allowed; }
+
+.management-contact-detail-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.management-contact-detail-grid div {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(5, 11, 20, 0.28);
+  padding: 10px;
+}
+
+.management-contact-detail-grid strong {
+  display: block;
+  margin-bottom: 3px;
+  color: rgba(234, 242, 255, 0.68);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.management-contact-detail-grid span {
+  display: block;
+  color: rgba(234, 242, 255, 0.82);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   REGISTRATION MANAGER
+   ────────────────────────────────────────────────────────────────────────── */
+
+.management-registration-manager {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 14px;
+}
+
+.management-registration-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.management-registration-head h3, .management-registration-head p { margin: 0; }
+.management-registration-head h3 { font-size: 16px; letter-spacing: 0; }
+.management-registration-head p  { margin-top: 4px; color: rgba(234, 242, 255, 0.64); font-size: 13px; }
+.management-registration-head > div { min-width: 0; }
+.management-registration-head button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 9px 14px;
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.management-registration-list { display: grid; gap: 8px; }
+
+.management-registration-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(5, 11, 20, 0.36);
+}
+
+.management-registration-item > div:first-child {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.management-registration-item strong { color: var(--text); font-size: 15px; line-height: 1.2; }
+.management-registration-item span {
+  color: rgba(234, 242, 255, 0.68);
+  font-size: 12.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.management-registration-item button {
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.055);
@@ -707,21 +1301,28 @@
   cursor: pointer;
 }
 
-.management-calendar-actions a:hover {
-  border-color: rgba(85, 185, 255, 0.52);
-  background: rgba(85, 185, 255, 0.13);
-}
+.management-registration-item button:hover:not(:disabled) { border-color: rgba(226, 27, 35, 0.58); background: rgba(226, 27, 35, 0.14); }
 
-.management-site-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-  justify-content: flex-end;
+.management-registration-item .management-registration-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 8px;
+  width: 100%;
 }
+.management-registration-item .management-registration-actions button {
+  min-height: 40px;
+  width: 100%;
+  text-align: center;
+}
+.management-registration-actions button:first-child:hover:not(:disabled) { border-color: rgba(85, 185, 255, 0.58); background: rgba(85, 185, 255, 0.14); }
 
-.management-site-links a,
-.management-site-links button {
-  appearance: none;
+.management-registration-card-event { display: grid; gap: 3px; margin-top: 12px; color: rgba(234, 242, 255, 0.7); font-size: 13px; }
+.management-registration-card-event strong { color: var(--text); font-size: 14px; }
+.management-registration-card-event span { overflow-wrap: anywhere; }
+
+.management-registration-card-actions { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+.management-registration-card-actions button {
   border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.055);
@@ -729,15 +1330,862 @@
   font: inherit;
   font-size: 13px;
   font-weight: 800;
-  padding: 9px 11px;
+  padding: 8px 10px;
   cursor: pointer;
 }
 
-.management-site-links a:hover,
-.management-site-links button:hover {
-  border-color: rgba(85, 185, 255, 0.52);
-  background: rgba(85, 185, 255, 0.13);
+.management-registration-card-actions button:hover:not(:disabled) { border-color: rgba(226, 27, 35, 0.58); background: rgba(226, 27, 35, 0.14); }
+.management-registration-card-actions button:first-child:hover:not(:disabled) { border-color: rgba(85, 185, 255, 0.58); background: rgba(85, 185, 255, 0.14); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   CLASS SCHEDULE / ROSTER / CONTACT CLASSES
+   ────────────────────────────────────────────────────────────────────────── */
+
+.management-class-schedule,
+.management-class-roster,
+.management-contact-classes {
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 14px;
+  min-width: 0;
+  overflow: hidden;
 }
+
+.management-class-schedule[open],
+.management-class-roster[open],
+.management-contact-classes[open] { display: grid; gap: 14px; }
+
+.management-class-schedule > summary,
+.management-class-roster > summary,
+.management-contact-classes > summary,
+.management-record-details > summary { cursor: pointer; list-style-position: outside; }
+
+.management-class-schedule > summary::marker,
+.management-class-roster > summary::marker,
+.management-contact-classes > summary::marker,
+.management-record-details > summary::marker { color: rgba(85, 185, 255, 0.82); }
+
+.management-class-schedule-head h3, .management-class-schedule-head p,
+.management-class-roster-head h3,   .management-class-roster-head p,
+.management-class-session-head h4 { margin: 0; }
+
+.management-class-schedule-head p,
+.management-class-roster-head p,
+.management-class-registration-review p { margin-top: 4px; color: rgba(234, 242, 255, 0.62); font-size: 13px; }
+
+.management-class-session-group { display: grid; gap: 8px; }
+
+.management-class-session-head,
+.management-class-session-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.management-class-session-head h4 { font-size: 14px; letter-spacing: 0; }
+
+.management-class-session-head button,
+.management-class-session-row button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.management-class-session-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(5, 11, 20, 0.3);
+  min-width: 0;
+}
+
+.management-class-session-row label { display: grid; gap: 5px; color: rgba(234, 242, 255, 0.68); font-size: 12px; font-weight: 800; }
+.management-class-session-row label span { line-height: 1; }
+
+.management-class-session-row input,
+.management-class-session-row select {
+  min-width: 0; width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  padding: 10px;
+  outline: none;
+}
+
+.management-class-session-location { min-width: 0; grid-column: 1 / -1; }
+.management-class-session-row button { grid-column: 1 / -1; justify-self: end; min-height: 38px; }
+
+.management-class-contact-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.management-contact-classes .management-class-contact-add { grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.management-contact-classes .management-class-contact-add select[multiple] { grid-column: 1 / -1; width: 100%; }
+.management-inquiry-contacts {
+  display: grid;
+  gap: 12px;
+  border-color: rgba(85, 185, 255, 0.18);
+  background:
+    linear-gradient(135deg, rgba(85, 185, 255, 0.08), rgba(255, 255, 255, 0.025)),
+    rgba(5, 11, 20, 0.18);
+}
+
+.management-inquiry-contacts > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: default;
+  list-style: none;
+}
+
+.management-inquiry-contacts > summary::-webkit-details-marker { display: none; }
+
+.management-inquiry-contacts > summary span {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.management-inquiry-contacts > summary strong {
+  flex: 0 0 auto;
+  border: 1px solid rgba(85, 185, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(85, 185, 255, 0.1);
+  color: #cfeeff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 6px 9px;
+}
+
+.management-inquiry-contacts > p {
+  margin: -4px 0 0;
+  color: rgba(234, 242, 255, 0.58);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.management-inquiry-contact-add {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.management-inquiry-contact-add input[type="search"],
+.management-inquiry-contact-add select[multiple] { width: 100%; }
+
+.management-inquiry-contact-add input[type="search"],
+.management-class-contact-add select,
+.management-class-contact-add button,
+.management-class-contact-item button,
+.management-class-registration-item button {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 9px 10px;
+}
+
+.management-class-contact-add select[multiple] { min-height: 104px; }
+.management-inquiry-contact-add select[multiple] {
+  min-height: 132px;
+  padding: 6px;
+}
+
+.management-inquiry-contact-add select[multiple] option {
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+
+.management-contact-classes .management-class-contact-add select:not([multiple]),
+.management-contact-classes .management-class-contact-add button { min-height: 42px; align-self: start; }
+
+.management-class-contact-list,
+.management-class-registration-review,
+[data-class-registration-list] { display: grid; gap: 8px; }
+
+.management-class-contact-item,
+.management-class-registration-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(5, 11, 20, 0.3);
+}
+
+.management-class-contact-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.management-class-contact-item strong, .management-class-registration-item strong { display: block; color: var(--text); font-size: 13px; }
+.management-class-contact-item span,   .management-class-registration-item span   { display: block; margin-top: 3px; color: rgba(234, 242, 255, 0.62); font-size: 12px; }
+
+.management-inquiry-contact-item {
+  border-color: rgba(85, 185, 255, 0.14);
+  background: rgba(85, 185, 255, 0.055);
+}
+
+.management-inquiry-contact-item button {
+  justify-self: end;
+  min-height: 34px;
+}
+
+.management-inquiry-contact-item button:hover:not(:disabled) {
+  border-color: rgba(226, 27, 35, 0.5);
+  background: rgba(226, 27, 35, 0.13);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   RECORD DETAIL SECTIONS
+   ────────────────────────────────────────────────────────────────────────── */
+
+.management-record-details { margin-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 7px; }
+.management-record.is-contact .management-record-details { margin-top: 8px; padding-top: 8px; }
+.management-record-details summary { color: rgba(234, 242, 255, 0.82); font-size: 12px; font-weight: 850; }
+.management-record.is-contact .management-record-details summary { color: #cfeeff; }
+
+.management-card-expand {
+  border-top: 0;
+  margin-top: 8px;
+  padding-top: 0;
+}
+
+.management-card-expand > summary { display: none; }
+.management-card-expand > .management-card-expand-body,
+.management-card-expand:not([open]) > .management-card-expand-body {
+  display: grid;
+  gap: 8px;
+}
+
+.management-card-note { margin: 0; }
+
+.management-class-card-detail  { display: grid; gap: 8px; margin-top: 10px; }
+
+.management-class-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.management-class-detail-grid span,
+.management-class-detail-section {
+  border: 1px solid rgba(66, 185, 156, 0.15);
+  border-radius: 8px;
+  background: rgba(5, 11, 20, 0.32);
+  padding: 8px 10px;
+}
+
+.management-class-detail-grid span { color: rgba(234, 242, 255, 0.9); font-size: 16px; font-weight: 850; }
+.management-class-detail-grid strong, .management-class-detail-section strong {
+  display: block; margin-bottom: 3px;
+  color: rgba(159, 240, 206, 0.78);
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+}
+.management-class-detail-section p { margin: 4px 0 0; color: rgba(234, 242, 255, 0.82); font-size: 13px; line-height: 1.35; }
+
+.management-inquiry-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.management-inquiry-detail-grid section { border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 8px; background: rgba(5, 11, 20, 0.28); padding: 10px; }
+.management-inquiry-detail-grid h4 { margin: 0 0 8px; color: rgba(155, 211, 255, 0.82); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.management-inquiry-detail-grid section > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+.management-inquiry-detail-grid strong { display: block; margin-bottom: 2px; color: rgba(234, 242, 255, 0.58); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.management-inquiry-detail-grid span, .management-inquiry-detail-grid p { display: block; margin: 0; color: rgba(234, 242, 255, 0.84); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; white-space: pre-wrap; }
+.management-inquiry-detail-grid .management-inquiry-notes { grid-column: 1 / -1; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   INQUIRY PIPELINE
+   ────────────────────────────────────────────────────────────────────────── */
+
+.management-inquiry-pipeline { display: flex; gap: 2px; margin: 5px 0 2px; }
+
+.management-inquiry-stage {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 5px;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(234, 242, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.management-inquiry-stage.is-done    { color: rgba(245, 178, 62, 0.65); background: rgba(245, 178, 62, 0.09); border-color: rgba(245, 178, 62, 0.18); }
+.management-inquiry-stage.is-current { color: #ffe5b3; background: rgba(245, 178, 62, 0.20); border-color: rgba(245, 178, 62, 0.40); box-shadow: 0 0 0 1px rgba(245, 178, 62, 0.18); }
+.management-inquiry-stage.is-dead    { color: #ffb3b8; background: rgba(226, 27, 35, 0.16); border-color: rgba(226, 27, 35, 0.32); box-shadow: 0 0 0 1px rgba(226, 27, 35, 0.14); }
+
+.management-inquiry-callout { display: grid; gap: 4px; margin-top: 5px; }
+
+.management-inquiry-next-step {
+  display: block;
+  padding: 5px 8px;
+  border: 1px solid rgba(245, 178, 62, 0.22);
+  border-left: 3px solid rgba(245, 178, 62, 0.65);
+  border-radius: 5px;
+  background: rgba(245, 178, 62, 0.06);
+  color: rgba(234, 242, 255, 0.88);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.management-inquiry-callout-meta { display: flex; flex-wrap: wrap; gap: 5px 10px; align-items: center; }
+.management-inquiry-callout-meta span { color: rgba(234, 242, 255, 0.60); font-size: 12px; }
+.management-inquiry-due         { color: rgba(245, 178, 62, 0.82) !important; font-weight: 800; }
+.management-inquiry-due.is-due-soon { color: #ffb3b8 !important; }
+.management-inquiry-balance     { color: rgba(245, 178, 62, 0.82) !important; font-weight: 800; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   QUICK-ADD / PIN / TIMESTAMP / CHARACTER COUNTER
+   ────────────────────────────────────────────────────────────────────────── */
+
+.management-quick-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.management-quick-add.is-loading { opacity: 0.6; pointer-events: none; }
+
+.management-quick-add-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.042);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.management-quick-add-input:focus {
+  border-color: rgba(85, 185, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(85, 185, 255, 0.11);
+}
+
+.management-quick-add-btn {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  padding: 10px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.management-quick-add-btn:hover { border-color: rgba(85, 185, 255, 0.52); background: rgba(85, 185, 255, 0.13); }
+
+.management-pin-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: rgba(234, 242, 255, 0.24);
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  display: inline-grid;
+  place-items: center;
+  transition: color 0.15s, transform 0.1s;
+  border-radius: 999px;
+}
+
+.management-pin-btn:hover { color: rgba(245, 178, 62, 0.72); background: transparent; }
+.management-pin-btn.is-pinned { color: #f5b23e; }
+
+/* ── Quick advance button — one-tap status advance on the card ── */
+.mgmt-qa-btn {
+  flex-shrink: 0;
+  border: 1px solid rgba(85, 185, 255, 0.30);
+  border-radius: 20px;
+  background: rgba(85, 185, 255, 0.07);
+  color: rgba(85, 185, 255, 0.88);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  letter-spacing: 0.01em;
+}
+
+.mgmt-qa-btn:hover {
+  background: rgba(85, 185, 255, 0.15);
+  border-color: rgba(85, 185, 255, 0.55);
+  color: #cfeeff;
+}
+
+.mgmt-qa-btn.is-done {
+  border-color: rgba(66, 185, 156, 0.35);
+  background: rgba(66, 185, 156, 0.07);
+  color: rgba(66, 185, 156, 0.88);
+}
+
+.mgmt-qa-btn.is-done:hover {
+  background: rgba(66, 185, 156, 0.17);
+  border-color: rgba(66, 185, 156, 0.60);
+  color: rgba(150, 245, 215, 0.95);
+}
+
+.mgmt-qa-btn:disabled { opacity: 0.50; cursor: default; }
+
+.management-notes-label { position: relative; }
+
+.management-timestamp-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(234, 242, 255, 0.60);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  padding: 3px 8px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.management-timestamp-btn:hover { border-color: rgba(85, 185, 255, 0.45); background: rgba(85, 185, 255, 0.10); color: var(--text); }
+
+/* ── Log entry appender ─────────────────────────────────────────────────────── */
+
+.mgmt-note-logger {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  margin-top: -6px; /* pull up slightly — sits right under the notes textarea */
+}
+
+.mgmt-note-logger-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px !important;
+  padding: 6px 10px !important;
+  border-radius: 7px !important;
+}
+
+.mgmt-note-logger-btn {
+  flex-shrink: 0;
+  border: 1px solid rgba(85, 185, 255, 0.28);
+  border-radius: 7px;
+  background: rgba(85, 185, 255, 0.07);
+  color: rgba(85, 185, 255, 0.88);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.mgmt-note-logger-btn:hover {
+  background: rgba(85, 185, 255, 0.15);
+  border-color: rgba(85, 185, 255, 0.55);
+  color: #cfeeff;
+}
+
+.management-character-counter { display: block; margin-top: 6px; color: rgba(234, 242, 255, 0.54); font-size: 11px; font-weight: 700; line-height: 1.35; text-align: right; }
+.management-character-counter.is-warning { color: #f5b23e; }
+.management-character-counter.is-full    { color: #ff8b8b; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   HOME STUDIO CARDS
+   ────────────────────────────────────────────────────────────────────────── */
+
+.management-studio-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 720px;
+}
+
+.management-studio-cards article {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 8px;
+  background: rgba(7, 19, 37, 0.86);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.20);
+  padding: 20px;
+}
+
+.management-studio-cards h3, .management-studio-cards p { margin: 0; }
+.management-studio-cards h3 { font-size: 17px; letter-spacing: 0; }
+.management-studio-cards p  { margin-top: 8px; color: rgba(234, 242, 255, 0.62); font-size: 13px; line-height: 1.5; }
+
+.management-studio-cards a,
+.management-studio-cards button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  margin-top: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  padding: 0 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.management-studio-cards a:hover,
+.management-studio-cards button:hover { border-color: rgba(85, 185, 255, 0.52); background: rgba(85, 185, 255, 0.13); }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   DASHBOARD
+   ────────────────────────────────────────────────────────────────────────── */
+
+.mgmt-dashboard {
+  margin-bottom: 32px;
+}
+
+/* ── Stat row ── */
+.mgmt-dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.mgmt-dash-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 14px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+  min-height: 72px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.mgmt-dash-stat:hover,
+.mgmt-dash-stat:focus-visible {
+  border-color: rgba(85, 185, 255, 0.38);
+  background: rgba(85, 185, 255, 0.08);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.mgmt-dash-stat.is-urgent {
+  border-color: rgba(226, 27, 35, 0.38);
+  background: rgba(226, 27, 35, 0.08);
+}
+
+.mgmt-dash-stat.is-warn {
+  border-color: rgba(245, 178, 62, 0.35);
+  background: rgba(245, 178, 62, 0.07);
+}
+
+.mgmt-dash-stat.is-balance {
+  border-color: rgba(66, 185, 156, 0.30);
+  background: rgba(66, 185, 156, 0.06);
+}
+
+.mgmt-dash-stat-val {
+  display: block;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.mgmt-dash-stat.is-urgent .mgmt-dash-stat-val { color: #ffb3b8; }
+.mgmt-dash-stat.is-warn   .mgmt-dash-stat-val { color: #ffe5b3; }
+.mgmt-dash-stat.is-balance .mgmt-dash-stat-val { color: #c5ffe9; font-size: 18px; }
+
+.mgmt-dash-stat-lbl {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(234, 242, 255, 0.50);
+}
+
+/* ── Section grid ── */
+.mgmt-dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.mgmt-dash-section {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.mgmt-dash-section-hd {
+  margin: 0;
+  padding: 10px 14px 9px;
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(234, 242, 255, 0.52);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* ── Record rows ── */
+.mgmt-dash-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mgmt-dash-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background 0.1s;
+  min-height: 40px;
+}
+
+.mgmt-dash-row:last-child { border-bottom: none; }
+
+.mgmt-dash-row:hover { background: rgba(85, 185, 255, 0.07); }
+
+.mgmt-dash-row.is-overdue { background: rgba(226, 27, 35, 0.05); }
+.mgmt-dash-row.is-overdue:hover { background: rgba(226, 27, 35, 0.10); }
+.mgmt-dash-row.is-today { background: rgba(245, 178, 62, 0.05); }
+.mgmt-dash-row.is-today:hover { background: rgba(245, 178, 62, 0.10); }
+
+.mgmt-dash-row-type {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(234, 242, 255, 0.68);
+}
+
+.mgmt-dash-type-contact  { background: rgba(85, 185, 255, 0.14); color: #cfeeff; }
+.mgmt-dash-type-inquiry  { background: rgba(245, 178, 62, 0.15); color: #ffe5b3; }
+.mgmt-dash-type-class    { background: rgba(66, 185, 156, 0.15); color: #c5ffe9; }
+.mgmt-dash-type-trip     { background: rgba(85, 210, 230, 0.15); color: #b3f0ff; }
+.mgmt-dash-type-task     { background: rgba(149, 117, 205, 0.15); color: #dfd0ff; }
+
+.mgmt-dash-row-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(234, 242, 255, 0.90);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.mgmt-dash-row.is-overdue .mgmt-dash-row-title { color: #ffb3b8; }
+.mgmt-dash-row.is-today   .mgmt-dash-row-title { color: #ffe5b3; }
+
+.mgmt-dash-row-meta {
+  font-size: 11px;
+  color: rgba(234, 242, 255, 0.48);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Status / empty messages ── */
+.mgmt-dash-msg {
+  margin: 0;
+  padding: 12px 14px;
+  color: rgba(234, 242, 255, 0.52);
+  font-size: 13px;
+}
+
+.mgmt-dash-msg.is-good { color: rgba(66, 185, 156, 0.80); }
+
+/* ── Studio quick-links divider ── */
+.mgmt-dash-studio { margin-top: 8px; }
+
+.mgmt-dash-studio-hd {
+  margin: 0 0 12px;
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(234, 242, 255, 0.40);
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   KEYBOARD SHORTCUTS OVERLAY
+   ────────────────────────────────────────────────────────────────────────── */
+
+.mgmt-shortcuts-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.mgmt-shortcuts-card {
+  background: rgba(7, 17, 34, 0.98);
+  border: 1px solid rgba(85, 185, 255, 0.18);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.60);
+  width: min(460px, 100%);
+}
+
+.mgmt-shortcuts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.mgmt-shortcuts-head h3 {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: rgba(234, 242, 255, 0.88);
+  letter-spacing: 0.01em;
+}
+
+.mgmt-shortcuts-close {
+  border: none;
+  background: none;
+  color: rgba(234, 242, 255, 0.38);
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+
+.mgmt-shortcuts-close:hover {
+  color: rgba(234, 242, 255, 0.80);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.mgmt-shortcuts-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 18px 20px 22px;
+}
+
+.mgmt-shortcuts-body section { padding-right: 16px; }
+.mgmt-shortcuts-body section + section {
+  padding-left: 16px;
+  padding-right: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mgmt-shortcuts-body h4 {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(234, 242, 255, 0.28);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.mgmt-shortcuts-body dl { display: grid; gap: 7px; }
+
+.mgmt-shortcuts-body dl > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mgmt-shortcuts-body dt {
+  flex-shrink: 0;
+  min-width: 56px;
+  display: flex;
+  gap: 3px;
+  justify-content: flex-end;
+}
+
+.mgmt-shortcuts-body dd {
+  margin: 0;
+  font-size: 12.5px;
+  color: rgba(234, 242, 255, 0.60);
+}
+
+kbd {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-family: inherit;
+  font-weight: 800;
+  color: rgba(234, 242, 255, 0.78);
+  line-height: 1.55;
+  white-space: nowrap;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   TICKER MODAL
+   ────────────────────────────────────────────────────────────────────────── */
 
 .management-ticker-modal {
   position: fixed;
@@ -762,1820 +2210,2048 @@
 }
 
 .management-ticker-card .management-panel-head {
+  position: sticky;
   top: -20px;
   margin: -20px -20px 18px;
 }
 
-.management-panel,
-.management-list-panel {
-  border-radius: 8px;
-  padding: 18px;
-  min-width: 0;
-}
-
-.management-panel {
-  position: fixed;
-  inset: 24px;
-  z-index: 40;
-  display: none;
-  width: min(920px, calc(100vw - 32px));
-  max-height: calc(100vh - 48px);
-  margin: 0 auto;
-  overflow: auto;
-  border-color: rgba(85, 185, 255, 0.28);
-}
-
-.is-editor-open .management-panel {
-  display: block;
-}
-
-.is-editor-open .management-workspace::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 35;
-  background: rgba(2, 7, 14, 0.74);
-  backdrop-filter: blur(6px);
-}
-
-.management-panel-head {
-  position: sticky;
-  top: -18px;
-  z-index: 2;
-  justify-content: space-between;
-  margin: -18px -18px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(7, 19, 37, 0.96);
-  padding: 18px;
-}
-
-.management-panel-head button,
-.management-new-record,
-.management-filters button {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 750;
-  padding: 9px 11px;
-  cursor: pointer;
-}
-
-.management-panel-head button:hover,
-.management-new-record:hover,
-.management-filters button:hover,
-.management-filters button.is-active {
-  border-color: rgba(85, 185, 255, 0.52);
-  background: rgba(85, 185, 255, 0.13);
-}
-
-.management-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.management-extra-fields {
-  display: grid;
-  gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 8px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.035);
-  min-width: 0;
-}
-
-.management-form-actions {
-  flex-wrap: wrap;
-}
-
-.management-list-panel {
-  min-height: 640px;
-}
-
-.management-list-tools {
-  justify-content: space-between;
-  align-items: end;
-  flex-wrap: wrap;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-}
-
-.management-search {
-  flex: 1 1 300px;
-}
-
-.management-sort {
-  flex: 0 1 220px;
-}
-
-.management-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.management-records {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.management-empty,
-.management-record {
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.045);
-}
-
-.management-empty {
-  padding: 22px;
-  color: rgba(234, 242, 255, 0.68);
-}
-
-.management-empty-compact {
-  padding: 12px;
-  font-size: 13px;
-}
-
-.management-record {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  padding: 10px 12px;
-  text-align: left;
-  color: inherit;
-  cursor: pointer;
-}
-
-.management-record.is-contact {
-  display: block;
-  position: relative;
-  padding: 16px 18px 14px;
-  border-color: rgba(255, 255, 255, 0.12);
-  background:
-    linear-gradient(90deg, rgba(85, 185, 255, 0.13), rgba(85, 185, 255, 0) 46%),
-    rgba(255, 255, 255, 0.045);
-}
-
-.management-record.is-contact::before {
-  content: "";
-  position: absolute;
-  inset: 14px auto 14px 0;
-  width: 3px;
-  border-radius: 0 999px 999px 0;
-  background: rgba(85, 185, 255, 0.78);
-}
-
-.management-record.is-class {
-  display: block;
-  padding: 12px 14px;
-  border-color: rgba(66, 185, 156, 0.18);
-  background:
-    linear-gradient(90deg, rgba(66, 185, 156, 0.10), rgba(66, 185, 156, 0) 42%),
-    rgba(255, 255, 255, 0.045);
-}
-
-.management-record:hover,
-.management-record.is-selected {
-  border-color: rgba(85, 185, 255, 0.48);
-  background: rgba(85, 185, 255, 0.10);
-}
-
-.management-record.is-contact:hover,
-.management-record.is-contact.is-selected {
-  background:
-    linear-gradient(90deg, rgba(85, 185, 255, 0.18), rgba(85, 185, 255, 0.04) 50%),
-    rgba(85, 185, 255, 0.08);
-}
-
-.management-record.is-class:hover,
-.management-record.is-class.is-selected {
-  border-color: rgba(66, 185, 156, 0.42);
-  background:
-    linear-gradient(90deg, rgba(66, 185, 156, 0.16), rgba(66, 185, 156, 0.03) 48%),
-    rgba(66, 185, 156, 0.06);
-}
-
-.management-record.is-registration {
-  cursor: default;
-  border-color: rgba(245, 178, 62, 0.18);
-  background:
-    linear-gradient(90deg, rgba(245, 178, 62, 0.10), rgba(245, 178, 62, 0) 42%),
-    rgba(255, 255, 255, 0.045);
-}
-
-.management-record.is-registration:hover {
-  border-color: rgba(245, 178, 62, 0.36);
-  background:
-    linear-gradient(90deg, rgba(245, 178, 62, 0.14), rgba(245, 178, 62, 0.03) 48%),
-    rgba(245, 178, 62, 0.06);
-}
-
-.management-registration-card-event {
-  display: grid;
-  gap: 3px;
-  margin-top: 12px;
-  color: rgba(234, 242, 255, 0.7);
-  font-size: 13px;
-}
-
-.management-registration-card-event strong {
-  color: var(--text);
-  font-size: 14px;
-}
-
-.management-registration-card-event span {
-  overflow-wrap: anywhere;
-}
-
-.management-record-site {
-  border-style: dashed;
-}
-
-.management-record h3 {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.25;
-}
-
-.management-record.is-contact h3 {
-  margin-top: 6px;
-  font-size: 18px;
-}
-
-.management-record.is-class h3 {
-  margin-top: 4px;
-  font-size: 18px;
-}
-
-.management-record p {
-  margin: 8px 0 0;
-  color: rgba(234, 242, 255, 0.68);
-}
-
-.management-record.is-contact p {
-  max-width: 86ch;
-  color: rgba(234, 242, 255, 0.72);
-  font-size: 15px;
-  line-height: 1.45;
-}
-
-.management-record-meta,
-.management-record-badges {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.management-record-meta {
-  margin-top: 10px;
-  color: rgba(234, 242, 255, 0.6);
-  font-size: 13px;
-}
-
-.management-record.is-contact .management-record-meta {
-  margin-top: 10px;
-  color: rgba(234, 242, 255, 0.62);
-}
-
-.management-contact-card-lines {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.management-contact-copy-line {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  min-height: 48px;
-  border: 1px solid rgba(85, 185, 255, 0.16);
-  border-radius: 8px;
-  background: rgba(5, 11, 20, 0.34);
-  padding: 8px 10px 8px 12px;
-}
-
-.management-contact-copy-line span {
-  min-width: 0;
-}
-
-.management-contact-copy-line strong {
-  display: block;
-  margin: 0 0 3px;
-  color: rgba(155, 211, 255, 0.74);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.management-contact-detail-grid strong {
-  display: block;
-  margin-bottom: 3px;
-  color: rgba(234, 242, 255, 0.68);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.management-contact-copy-line a,
-.management-contact-copy-line em {
-  color: rgba(234, 242, 255, 0.9);
-  font-size: 14px;
-  overflow-wrap: anywhere;
-  text-decoration: none;
-}
-
-.management-contact-copy-line.is-empty a,
-.management-contact-copy-line.is-empty em {
-  color: rgba(234, 242, 255, 0.46);
-}
-
-.management-contact-copy-line button {
-  border: 1px solid rgba(85, 185, 255, 0.28);
-  border-radius: 8px;
-  background: rgba(85, 185, 255, 0.10);
-  color: #cfeeff;
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 850;
-  padding: 7px 10px;
-  transition: background 0.16s ease, border-color 0.16s ease;
-}
-
-.management-contact-copy-line button:hover:not(:disabled) {
-  border-color: rgba(85, 185, 255, 0.52);
-  background: rgba(85, 185, 255, 0.18);
-}
-
-.management-contact-copy-line button:disabled {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(234, 242, 255, 0.36);
-  cursor: not-allowed;
-}
-
-.management-record-details {
-  margin-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 10px;
-}
-
-.management-record.is-contact .management-record-details {
-  margin-top: 12px;
-  padding-top: 12px;
-}
-
-.management-record-details summary {
-  color: rgba(234, 242, 255, 0.82);
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.management-record.is-contact .management-record-details summary {
-  color: #cfeeff;
-}
-
-.management-class-card-detail {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.management-contact-detail-grid {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.management-contact-detail-grid div {
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 8px;
-  background: rgba(5, 11, 20, 0.28);
-  padding: 10px;
-}
-
-.management-contact-detail-grid span {
-  display: block;
-  color: rgba(234, 242, 255, 0.82);
-  font-size: 13px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-
-.management-inquiry-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.management-inquiry-detail-grid section {
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 8px;
-  background: rgba(5, 11, 20, 0.28);
-  padding: 10px;
-}
-
-.management-inquiry-detail-grid h4 {
-  margin: 0 0 8px;
-  color: rgba(155, 211, 255, 0.82);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.management-inquiry-detail-grid section > div {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 12px;
-}
-
-.management-inquiry-detail-grid strong {
-  display: block;
-  margin-bottom: 2px;
-  color: rgba(234, 242, 255, 0.58);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.management-inquiry-detail-grid span,
-.management-inquiry-detail-grid p {
-  display: block;
-  margin: 0;
-  color: rgba(234, 242, 255, 0.84);
-  font-size: 13px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-
-.management-inquiry-detail-grid .management-inquiry-notes {
-  grid-column: 1 / -1;
-}
-
-.management-class-detail-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.management-class-detail-grid span,
-.management-class-detail-section {
-  border: 1px solid rgba(66, 185, 156, 0.15);
-  border-radius: 8px;
-  background: rgba(5, 11, 20, 0.32);
-  padding: 8px 10px;
-}
-
-.management-class-detail-grid span {
-  color: rgba(234, 242, 255, 0.9);
-  font-size: 16px;
-  font-weight: 850;
-}
-
-.management-class-detail-grid strong,
-.management-class-detail-section strong {
-  display: block;
-  margin-bottom: 3px;
-  color: rgba(159, 240, 206, 0.78);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.management-class-detail-section p {
-  margin: 4px 0 0;
-  color: rgba(234, 242, 255, 0.82);
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.management-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  border-radius: 999px;
-  padding: 4px 9px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(234, 242, 255, 0.78);
-  font-size: 12px;
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.management-badge.is-urgent,
-.management-badge.is-high {
-  background: rgba(226, 27, 35, 0.18);
-  color: #ffd7d9;
-}
-
-.management-badge.is-complete {
-  background: rgba(66, 185, 156, 0.18);
-  color: #c5ffe9;
-}
-
-.management-badge.is-waiting {
-  background: rgba(245, 178, 62, 0.18);
-  color: #ffe5b3;
-}
-
-.management-badge.is-to_contact,
-.management-badge.is-reached_out {
-  background: rgba(85, 185, 255, 0.16);
-  color: #cfeeff;
-}
-
-.management-badge.is-gathering_details,
-.management-badge.is-planning,
-.management-badge.is-payment,
-.management-badge.is-timing {
-  background: rgba(245, 178, 62, 0.18);
-  color: #ffe5b3;
-}
-
-.management-badge.is-dead_end,
-.management-badge.is-not_fit,
-.management-badge.is-archived {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(234, 242, 255, 0.66);
-}
-
-.management-record-actions {
-  display: flex;
-  align-items: start;
-}
-
-.management-record-actions select {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
-  background: #071325;
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  padding: 8px;
-}
-
-.management-registration-card-actions {
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.management-registration-card-actions button {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 8px 10px;
-  cursor: pointer;
-}
-
-.management-registration-card-actions button:hover:not(:disabled) {
-  border-color: rgba(226, 27, 35, 0.58);
-  background: rgba(226, 27, 35, 0.14);
-}
-
-.management-registration-card-actions button:first-child:hover:not(:disabled) {
-  border-color: rgba(85, 185, 255, 0.58);
-  background: rgba(85, 185, 255, 0.14);
-}
-
-@media (max-width: 980px) {
-  .management-workspace {
-    grid-template-columns: 1fr;
+/* ──────────────────────────────────────────────────────────────────────────
+   RESPONSIVE
+   ────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .mgmt-app {
+    grid-template-columns: 180px 1fr;
+  }
+
+  .is-editor-open .mgmt-main::before {
+    left: 180px;
+    right: min(480px, 80vw);
   }
 
   .management-panel {
-    inset: 14px;
-    width: calc(100vw - 28px);
-    max-height: calc(100vh - 28px);
+    width: min(480px, calc(100vw - 180px));
   }
 
-  .management-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .mgmt-search-input {
+    width: 160px;
   }
+}
 
-  .management-site-tools {
-    align-items: stretch;
-    flex-direction: column;
-  }
+/* ── Mobile: native bottom-tab app layout ─────────────────────────────────── */
 
-  .management-calendar-item {
-    align-items: stretch;
-    flex-direction: column;
+@media (max-width: 680px) {
+
+  /* ── App shell: flex column — content fills top, tabs pin to bottom ── */
+  .mgmt-app {
     display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
   }
 
-  .management-calendar-controls {
-    justify-content: flex-start;
+  .mgmt-main {
+    order: 1;
+    flex: 1;
+    height: 0; /* flex trick: take all remaining space */
+    overflow: hidden;
   }
 
-  .management-site-links {
-    justify-content: flex-start;
-  }
-
-  .management-class-session-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 680px) {
-  .management-shell {
-    width: min(100% - 20px, 1420px);
-    padding-top: 14px;
-  }
-
-  .management-header,
-  .management-record {
-    grid-template-columns: 1fr;
-  }
-
-  .management-header {
-    display: grid;
-  }
-
-  .management-header-actions,
-  .management-form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .management-form-grid {
-    display: grid;
-  }
-
-  .management-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .management-record {
-    display: grid;
-  }
-
-  .management-class-session-row {
-    grid-template-columns: 1fr;
-  }
-
-  .management-class-contact-add,
-  .management-class-contact-item,
-  .management-class-contact-actions,
-  .management-class-registration-item,
-  .management-registration-item,
-  .management-class-detail-grid,
-  .management-inquiry-detail-grid,
-  .management-inquiry-detail-grid section > div {
-    grid-template-columns: 1fr;
-  }
-
-  .management-registration-item .management-registration-actions {
-    justify-content: flex-start;
-  }
-}
-
-/* ============================================================
-   Visual & Layout Improvements
-   ============================================================ */
-
-/* ---- Two-row toolbar: grid replaces flat flex ---- */
-.management-list-tools {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 10px;
-  align-items: end;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-}
-
-.management-new-record {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: end;
-  border-color: rgba(226, 27, 35, 0.42);
-  background: rgba(226, 27, 35, 0.13);
-  font-weight: 800;
-}
-
-.management-new-record:hover {
-  border-color: rgba(226, 27, 35, 0.72);
-  background: rgba(226, 27, 35, 0.24);
-}
-
-.management-search {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.management-sort {
-  grid-column: 3;
-  grid-row: 1;
-  align-self: end;
-}
-
-.management-filters {
-  grid-column: 1 / 3;
-  grid-row: 2;
-  align-self: center;
-}
-
-.management-calendar-controls {
-  grid-column: 3;
-  grid-row: 2;
-  align-self: center;
-  justify-self: end;
-}
-
-/* ---- Filter buttons: pill tabs ---- */
-.management-filters button {
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.management-filters button:hover {
-  border-color: rgba(85, 185, 255, 0.38);
-  background: rgba(85, 185, 255, 0.10);
-}
-
-.management-filters button.is-active {
-  border-color: rgba(85, 185, 255, 0.56);
-  background: rgba(85, 185, 255, 0.20);
-  color: #cfeeff;
-}
-
-/* ---- Metric tiles: colored left accents per category ---- */
-.management-metrics article:nth-child(1) { border-left: 3px solid rgba(226, 27, 35, 0.65); }
-.management-metrics article:nth-child(2) { border-left: 3px solid rgba(85, 185, 255, 0.65); }
-.management-metrics article:nth-child(3) { border-left: 3px solid rgba(245, 178, 62, 0.65); }
-.management-metrics article:nth-child(4) { border-left: 3px solid rgba(66, 185, 156, 0.65); }
-.management-metrics article:nth-child(5) { border-left: 3px solid rgba(85, 210, 230, 0.65); }
-.management-metrics article:nth-child(6) { border-left: 3px solid rgba(226, 27, 35, 0.45); }
-
-/* ---- Inquiry records: amber left bar ---- */
-.management-record.is-inquiry {
-  border-color: rgba(245, 178, 62, 0.22);
-  border-left: 3px solid rgba(245, 178, 62, 0.72);
-  background:
-    linear-gradient(90deg, rgba(245, 178, 62, 0.07), rgba(245, 178, 62, 0) 40%),
-    rgba(255, 255, 255, 0.045);
-  padding-left: 14px;
-}
-
-.management-record.is-inquiry:hover,
-.management-record.is-inquiry.is-selected {
-  border-color: rgba(245, 178, 62, 0.42);
-  border-left-color: rgba(245, 178, 62, 0.88);
-  background:
-    linear-gradient(90deg, rgba(245, 178, 62, 0.13), rgba(245, 178, 62, 0.02) 46%),
-    rgba(245, 178, 62, 0.055);
-}
-
-/* ---- Task records: violet left bar ---- */
-.management-record.is-task {
-  border-color: rgba(149, 117, 205, 0.22);
-  border-left: 3px solid rgba(149, 117, 205, 0.72);
-  background:
-    linear-gradient(90deg, rgba(149, 117, 205, 0.07), rgba(149, 117, 205, 0) 40%),
-    rgba(255, 255, 255, 0.045);
-  padding-left: 14px;
-}
-
-.management-record.is-task:hover,
-.management-record.is-task.is-selected {
-  border-color: rgba(149, 117, 205, 0.42);
-  border-left-color: rgba(149, 117, 205, 0.88);
-  background:
-    linear-gradient(90deg, rgba(149, 117, 205, 0.13), rgba(149, 117, 205, 0.02) 46%),
-    rgba(149, 117, 205, 0.055);
-}
-
-/* ---- Trip records: cyan left bar ---- */
-.management-record.is-trip {
-  border-color: rgba(85, 210, 230, 0.22);
-  border-left: 3px solid rgba(85, 210, 230, 0.72);
-  background:
-    linear-gradient(90deg, rgba(85, 210, 230, 0.07), rgba(85, 210, 230, 0) 40%),
-    rgba(255, 255, 255, 0.045);
-  padding-left: 14px;
-}
-
-.management-record.is-trip:hover,
-.management-record.is-trip.is-selected {
-  border-color: rgba(85, 210, 230, 0.42);
-  border-left-color: rgba(85, 210, 230, 0.88);
-  background:
-    linear-gradient(90deg, rgba(85, 210, 230, 0.13), rgba(85, 210, 230, 0.02) 46%),
-    rgba(85, 210, 230, 0.055);
-}
-
-/* ---- Type badge colors ---- */
-.management-badge.is-contact { background: rgba(85, 185, 255, 0.16); color: #cfeeff; }
-.management-badge.is-inquiry { background: rgba(245, 178, 62, 0.18); color: #ffe5b3; }
-.management-badge.is-class   { background: rgba(66, 185, 156, 0.18); color: #c5ffe9; }
-.management-badge.is-trip    { background: rgba(85, 210, 230, 0.16); color: #b3f0ff; }
-.management-badge.is-task    { background: rgba(149, 117, 205, 0.18); color: #dfd0ff; }
-.management-badge.is-registration { background: rgba(245, 178, 62, 0.18); color: #ffe5b3; }
-
-/* ---- Status badge fills (previously unstyled values) ---- */
-.management-badge.is-new       { background: rgba(85, 185, 255, 0.11); color: #cfeeff; }
-.management-badge.is-active    { background: rgba(66, 185, 156, 0.15); color: #c5ffe9; }
-.management-badge.is-scheduled { background: rgba(66, 185, 156, 0.13); color: #c5ffe9; }
-.management-badge.is-normal    { background: rgba(255, 255, 255, 0.05); color: rgba(234, 242, 255, 0.62); }
-.management-badge.is-low       { background: rgba(255, 255, 255, 0.04); color: rgba(234, 242, 255, 0.48); }
-
-/* ---- Quick-status select: pill style ---- */
-.management-record-actions select {
-  border-radius: 20px;
-  padding: 7px 10px;
-  font-size: 12px;
-  font-weight: 800;
-  min-width: 130px;
-  cursor: pointer;
-}
-
-/* ---- Extra-fields section label via pseudo-element ---- */
-.management-extra-fields:not(.management-field-hidden)::before {
-  content: "Additional Details";
-  display: block;
-  color: rgba(155, 211, 255, 0.74);
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: -2px;
-}
-
-/* ---- Responsive: single-column toolbar on narrow screens ---- */
-@media (max-width: 680px) {
-  .management-list-tools {
-    grid-template-columns: 1fr;
-  }
-
-  .management-new-record       { grid-column: 1; grid-row: 1; }
-  .management-search           { grid-column: 1; grid-row: 2; }
-  .management-sort             { grid-column: 1; grid-row: 3; }
-  .management-filters          { grid-column: 1; grid-row: 4; }
-  .management-calendar-controls { grid-column: 1; grid-row: 5; justify-self: start; }
-}
-
-/* ============================================================
-   Inquiry Progress Visualization
-   ============================================================ */
-
-/* ---- Pipeline step bar ---- */
-.management-inquiry-pipeline {
-  display: flex;
-  gap: 3px;
-  margin: 10px 0 4px;
-}
-
-.management-inquiry-stage {
-  flex: 1;
-  min-width: 0;
-  padding: 5px 6px;
-  font-size: 10px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: rgba(234, 242, 255, 0.28);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 5px;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.management-inquiry-stage.is-done {
-  color: rgba(245, 178, 62, 0.65);
-  background: rgba(245, 178, 62, 0.09);
-  border-color: rgba(245, 178, 62, 0.18);
-}
-
-.management-inquiry-stage.is-current {
-  color: #ffe5b3;
-  background: rgba(245, 178, 62, 0.20);
-  border-color: rgba(245, 178, 62, 0.40);
-  box-shadow: 0 0 0 1px rgba(245, 178, 62, 0.18);
-}
-
-.management-inquiry-stage.is-dead {
-  color: #ffb3b8;
-  background: rgba(226, 27, 35, 0.16);
-  border-color: rgba(226, 27, 35, 0.32);
-  box-shadow: 0 0 0 1px rgba(226, 27, 35, 0.14);
-}
-
-/* ---- Next step + meta callout ---- */
-.management-inquiry-callout {
-  display: grid;
-  gap: 7px;
-  margin-top: 8px;
-}
-
-.management-inquiry-next-step {
-  display: block;
-  padding: 7px 10px;
-  border: 1px solid rgba(245, 178, 62, 0.22);
-  border-left: 3px solid rgba(245, 178, 62, 0.65);
-  border-radius: 6px;
-  background: rgba(245, 178, 62, 0.06);
-  color: rgba(234, 242, 255, 0.88);
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.management-inquiry-callout-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px 10px;
-  align-items: center;
-}
-
-.management-inquiry-callout-meta span {
-  color: rgba(234, 242, 255, 0.60);
-  font-size: 12px;
-}
-
-.management-inquiry-due {
-  color: rgba(245, 178, 62, 0.82) !important;
-  font-weight: 800;
-}
-
-.management-inquiry-due.is-due-soon {
-  color: #ffb3b8 !important;
-}
-
-.management-inquiry-balance {
-  color: rgba(245, 178, 62, 0.82) !important;
-  font-weight: 800;
-}
-
-@media (max-width: 680px) {
-  .management-inquiry-stage {
-    font-size: 9px;
-    padding: 4px 3px;
-    letter-spacing: 0;
-  }
-}
-
-/* ---- Overdue badge ---- */
-.management-badge.is-overdue {
-  background: rgba(226, 27, 35, 0.22);
-  color: #ffb3b8;
-  border: 1px solid rgba(226, 27, 35, 0.38);
-  font-weight: 900;
-  letter-spacing: 0.04em;
-}
-
-/* ---- Pin button on cards ---- */
-.management-pin-btn {
-  flex-shrink: 0;
-  border: none;
-  background: none;
-  color: rgba(234, 242, 255, 0.30);
-  font-size: 16px;
-  line-height: 1;
-  padding: 6px 8px;
-  cursor: pointer;
-  transition: color 0.15s, transform 0.1s;
-  border-radius: 6px;
-}
-.management-pin-btn:hover {
-  color: rgba(245, 178, 62, 0.80);
-  background: rgba(245, 178, 62, 0.10);
-}
-.management-pin-btn.is-pinned {
-  color: #f5b23e;
-}
-.management-record.is-pinned {
-  border-color: rgba(245, 178, 62, 0.30);
-  background: rgba(245, 178, 62, 0.05);
-}
-
-/* ---- Quick-add task bar ---- */
-.management-quick-add {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  margin-top: 12px;
-  margin-bottom: 4px;
-}
-.management-quick-add.is-loading {
-  opacity: 0.6;
-  pointer-events: none;
-}
-.management-quick-add-input {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.042);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  padding: 10px 12px;
-  outline: none;
-}
-.management-quick-add-input:focus {
-  border-color: rgba(85, 185, 255, 0.55);
-  box-shadow: 0 0 0 3px rgba(85, 185, 255, 0.11);
-}
-.management-quick-add-btn {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 750;
-  padding: 10px 14px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.management-quick-add-btn:hover {
-  border-color: rgba(85, 185, 255, 0.52);
-  background: rgba(85, 185, 255, 0.13);
-}
-
-/* ---- Timestamp button in notes label ---- */
-.management-notes-label {
-  position: relative;
-}
-.management-timestamp-btn {
-  position: absolute;
-  top: 0;
-  right: 0;
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.045);
-  color: rgba(234, 242, 255, 0.60);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 750;
-  padding: 3px 8px;
-  cursor: pointer;
-  line-height: 1.4;
-}
-.management-timestamp-btn:hover {
-  border-color: rgba(85, 185, 255, 0.45);
-  background: rgba(85, 185, 255, 0.10);
-  color: var(--text);
-}
-
-/* ---- Filter count badge ---- */
-.management-filters button [data-filter-count] {
-  color: rgba(234, 242, 255, 0.50);
-  font-size: 11px;
-  font-weight: 700;
-}
-.management-filters button.is-active [data-filter-count] {
-  color: rgba(85, 185, 255, 0.75);
-}
-
-/* ============================================================
-   Mobile enhancements - up to 767px
-   Everything above this point is the unchanged desktop layout.
-   ============================================================ */
-
-@keyframes mgmt-sheet-up {
-  from { transform: translateY(36px); opacity: 0.5; }
-  to   { transform: translateY(0);    opacity: 1;   }
-}
-
-@media (max-width: 767px) {
-
-  /* Shell */
-  .management-shell {
-    width: calc(100% - 20px);
-    padding: 14px 0 max(env(safe-area-inset-bottom, 0px), 40px);
-  }
-
-  .management-dashboard {
-    gap: 14px;
-  }
-
-  /* Header */
-  .management-header {
-    display: flex;
+  /* ── Sidebar → bottom tab bar ── */
+  .mgmt-sidebar {
+    order: 2;
+    height: auto;
     flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 4px 0 0;
-  }
-
-  .management-header h1 {
-    font-size: 26px;
-  }
-
-  .management-header-actions {
-    flex-shrink: 0;
-    flex-wrap: nowrap;
-    gap: 7px;
-  }
-
-  .management-header-actions button {
-    min-height: 40px;
-    padding: 8px 11px;
-    font-size: 12px;
-  }
-
-  /* Metrics: 3 columns by 2 rows */
-  .management-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .management-metrics article {
-    padding: 10px 10px 12px;
-  }
-
-  .management-metrics span {
-    font-size: 22px;
-  }
-
-  .management-metrics p {
-    font-size: 9px;
-    margin-top: 5px;
-    letter-spacing: 0.04em;
-  }
-
-  /* Site tools */
-  .management-site-tools {
-    flex-direction: column;
     align-items: stretch;
-    gap: 12px;
-    padding: 14px;
-  }
-
-  .management-site-tools h2 {
-    font-size: 17px;
-  }
-
-  .management-site-links {
-    justify-content: flex-start;
-    gap: 7px;
-  }
-
-  .management-site-links a,
-  .management-site-links button {
-    min-height: 44px;
-    padding: 10px 12px;
-    font-size: 12px;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  /* List toolbar: New and Sort, then Search, then Filters */
-  .management-list-tools {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto auto auto;
-    gap: 9px;
-    padding-bottom: 12px;
-  }
-
-  .management-new-record {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 44px;
-    font-size: 13px;
-  }
-
-  .management-sort {
-    grid-column: 2;
-    grid-row: 1;
-    flex: none;
-    align-self: stretch;
-    min-width: 0;
-  }
-
-  .management-sort select {
-    height: 100%;
-    min-height: 44px;
-    padding: 0 8px;
-    font-size: 12px;
-    max-width: 130px;
-  }
-
-  .management-search {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    flex: none;
-  }
-
-  /* 16px prevents iOS auto-zoom on focus */
-  .management-search input,
-  .management-search input[type="search"] {
-    font-size: 16px;
-    min-height: 44px;
-    padding: 12px;
-  }
-
-  /* Filter pills become a horizontal scroll strip */
-  .management-filters {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 6px;
-    padding-bottom: 2px;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
-    /* Fade right edge to hint at more pills */
-    mask-image: linear-gradient(to right, black 0%, black calc(100% - 22px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 22px), transparent 100%);
-  }
-
-  .management-filters::-webkit-scrollbar { display: none; }
-
-  .management-filters button {
+    overflow: hidden;
     flex-shrink: 0;
-    white-space: nowrap;
-    min-height: 38px;
-    padding: 5px 12px;
-    touch-action: manipulation;
+    border-right: none;
+    border-top: 1px solid rgba(85, 185, 255, 0.18);
+    padding: 6px 8px 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background:
+      linear-gradient(180deg, rgba(13, 36, 58, 0.98), rgba(4, 11, 22, 0.99));
+    box-shadow: 0 -16px 34px rgba(0, 0, 0, 0.42);
   }
 
-  .management-calendar-controls {
-    grid-column: 1 / -1;
-    grid-row: 4;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 10px;
+  /* Hide sidebar elements that don't belong in a tab bar */
+  .mgmt-brand,
+  .mgmt-sidebar-stats,
+  .mgmt-sidebar-footer,
+  .mgmt-nav-label,
+  .mgmt-nav-secondary,
+  .mgmt-nav-section:last-of-type { display: none; }
+
+  /* Nav flattens into a single horizontal row */
+  .mgmt-nav {
+    flex: 1;
+    flex-direction: row;
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
   }
 
-  /* Quick-add bar */
-  .management-quick-add-input {
-    font-size: 16px; /* iOS zoom prevention */
-    min-height: 44px;
-  }
-
-  .management-quick-add-btn {
-    min-height: 44px;
-  }
-
-  /* Record cards */
-  .management-record {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    padding: 12px 12px;
-    touch-action: manipulation;
-  }
-
-  .management-record.is-contact,
-  .management-record.is-class {
-    padding: 14px 14px 12px;
-  }
-
-  .management-record-actions {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-    padding-top: 2px;
-  }
-
-  .management-record-actions select {
-    min-width: 100px;
-    font-size: 11px;
-    padding: 5px 7px;
-  }
-
-  .management-pin-btn {
-    padding: 3px 6px;
-    min-height: 30px;
-    font-size: 15px;
-  }
-
-  /* Bottom-sheet editor panel */
-  .management-panel {
-    inset: auto 0 0 0;
-    width: 100%;
-    max-width: 100%;
-    max-height: 92vh;
-    max-height: 92dvh;
-    border-radius: 20px 20px 0 0;
-    border-bottom: none;
+  .mgmt-nav-section {
+    flex: 1;
+    flex-direction: row;
+    padding: 0;
+    gap: 0;
     margin: 0;
-    padding: 0 16px max(env(safe-area-inset-bottom, 0px), 24px);
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
   }
 
-  .is-editor-open .management-panel {
-    display: block;
-    animation: mgmt-sheet-up 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  /* Operations section takes 4 flex units so its 4 visible tabs each equal Dashboard's 1 */
+  .mgmt-nav-section:first-of-type { flex: 4; }
+
+  /* More toggle: visible in tab bar, equal width slot */
+  [data-more-toggle] {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    min-height: 58px;
+    padding: 8px 3px 7px;
+    border-radius: 12px;
+    gap: 3px;
+    color: rgba(234, 242, 255, 0.58);
   }
 
-  /* Panel head: re-anchor to top, add drag handle */
-  .management-panel .management-panel-head {
-    top: 0;
-    margin: 0 -16px 16px;
-    padding: 24px 16px 14px;
-    border-radius: 20px 20px 0 0;
+  [data-more-toggle].is-active {
+    background: rgba(85, 185, 255, 0.14);
+    color: #eaf7ff;
   }
 
-  /* Drag-handle indicator (position: sticky is a containing block) */
-  .management-panel .management-panel-head::before {
+  [data-more-toggle].is-active::after {
     content: "";
     position: absolute;
-    top: 8px;
+    top: 5px;
     left: 50%;
+    width: 18px;
+    height: 3px;
     transform: translateX(-50%);
-    width: 40px;
-    height: 4px;
+    background: rgba(85, 185, 255, 0.85);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.22);
-    pointer-events: none;
   }
 
-  /* Inputs: 16px font-size prevents iOS auto-zoom */
-  .management-record-form input,
-  .management-record-form select,
-  .management-record-form textarea {
-    font-size: 16px;
-    min-height: 44px;
+  /* More panel: slides up from above the tab bar */
+  .mgmt-nav-more-panel {
+    display: block;
+    position: fixed;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    left: 10px;
+    right: 10px;
+    overflow: hidden;
+    background: rgba(6, 17, 32, 0.98);
+    border: 1px solid rgba(85, 185, 255, 0.18);
+    border-radius: 16px;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.55);
+    z-index: 200;
   }
 
-  .management-record-form textarea {
-    min-height: 100px;
-  }
-
-  /* Form labels slightly larger for readability */
-  .management-record-form label,
-  .management-ticker-form label {
-    font-size: 14px;
-  }
-
-  /* Form actions: full-width stacked buttons */
-  .management-form-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .management-form-actions button {
+  .mgmt-nav-more-item {
+    display: flex;
+    align-items: center;
     width: 100%;
     min-height: 50px;
+    padding: 0 18px;
+    gap: 12px;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0;
+    background: transparent;
+    color: rgba(234, 242, 255, 0.72);
+    font: inherit;
     font-size: 15px;
-    touch-action: manipulation;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.10s;
   }
 
-  /* Ticker modal as bottom sheet */
-  .management-ticker-modal {
-    padding: 0;
-    align-items: flex-end;
+  .mgmt-nav-more-item:last-child { border-bottom: none; }
+  .mgmt-nav-more-item:hover,
+  .mgmt-nav-more-item:active { background: rgba(85, 185, 255, 0.10); }
+
+  .mgmt-nav-more-item .mgmt-nav-badge {
+    font-size: 11px;
+    font-weight: 800;
+    color: rgba(85, 185, 255, 0.70);
+    margin-left: auto;
   }
 
-  .management-ticker-card {
-    width: 100%;
-    max-height: 90vh;
-    max-height: 90dvh;
-    border-radius: 20px 20px 0 0;
-    border-bottom: none;
-    padding: 0 16px max(env(safe-area-inset-bottom, 0px), 24px);
-    animation: mgmt-sheet-up 0.28s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  /* Dashboard home tab: one equal slot in the tab bar */
+  .mgmt-nav-home {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    margin-bottom: 0;
+    background: transparent;
+    border-radius: 0;
+    padding: 8px 2px 6px;
+    min-height: 58px;
+    gap: 3px;
   }
 
-  .management-ticker-card .management-panel-head {
-    top: 0;
-    margin: 0 -16px 16px;
-    padding: 24px 16px 14px;
-    border-radius: 20px 20px 0 0;
+  .mgmt-nav-home:hover { background: rgba(255, 255, 255, 0.04); }
+
+  .mgmt-nav-home.is-active {
+    background: rgba(66, 185, 156, 0.14);
+    border-radius: 12px;
   }
 
-  .management-ticker-card .management-panel-head::before {
+  /* Teal top indicator bar on the active home tab */
+  .mgmt-nav-home.is-active::after {
+    background: rgba(66, 185, 156, 0.85);
+  }
+
+  .mgmt-nav-home-desktop { display: none; }
+  .mgmt-nav-home-mobile { display: inline; }
+
+  /* ── Bottom tab items ── */
+  .mgmt-nav-item {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 2px 6px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(234, 242, 255, 0.58);
+    gap: 3px;
+    min-height: 58px;
+    position: relative;
+  }
+
+  .mgmt-nav-item:hover { background: rgba(255, 255, 255, 0.055); color: rgba(234, 242, 255, 0.82); }
+
+  .mgmt-nav-item.is-active {
+    background: rgba(85, 185, 255, 0.14);
+    color: #eaf7ff;
+    font-weight: 800;
+    border-radius: 12px;
+  }
+
+  /* Active indicator bar at the top of the tab */
+  .mgmt-nav-item.is-active::after {
     content: "";
     position: absolute;
-    top: 8px;
+    top: 5px;
+    left: 50%;
+    width: 18px;
+    height: 3px;
+    transform: translateX(-50%);
+    background: rgba(85, 185, 255, 0.85);
+    border-radius: 999px;
+  }
+
+  /* Badge: show as small count text below label */
+  .mgmt-nav-badge {
+    font-size: 9px;
+    font-weight: 800;
+    color: rgba(85, 185, 255, 0.60);
+    line-height: 1;
+  }
+
+  .mgmt-nav-badge:empty { display: none; }
+
+  /* ── Panels: full-height, overflow-hidden, flex column ── */
+  .mgmt-panel {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mgmt-panel.mstudio-panel { height: 100%; overflow: hidden; }
+
+  /* ── Operations body: scrolls on mobile ── */
+  .mgmt-ops-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 14px 32px;
+    min-height: 0;
+  }
+
+  /* ── Topbar: compact one-row header ── */
+  .mgmt-topbar {
+    flex-wrap: nowrap;
+    padding: 10px 14px 8px;
+    gap: 8px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    align-items: center;
+  }
+
+  .mgmt-topbar-left { flex-shrink: 0; }
+  .mgmt-panel-title { font-size: 17px; margin: 0; }
+
+  .mgmt-topbar-right { gap: 6px; flex-shrink: 0; }
+
+  .mgmt-search { flex: 1 1 auto; min-width: 0; }
+  .mgmt-search-input { width: 100%; min-width: 0; font-size: 13px; }
+
+  .mgmt-sort-select { max-width: 90px; font-size: 12px; padding: 5px 4px; }
+
+  .mgmt-new-btn { padding: 7px 10px; font-size: 12px; flex-shrink: 0; }
+
+  /* ── Ops toolbar: compact on mobile ── */
+  .mgmt-ops-toolbar { padding: 10px 0 0; gap: 10px; }
+  .mgmt-cal-row { flex-wrap: wrap; gap: 8px; }
+
+  /* ── Record edit drawer → full-width bottom sheet ── */
+  .management-panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 92dvh;
+    max-height: 92dvh;
+    border-left: none;
+    border-top: 1px solid rgba(85, 185, 255, 0.22);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.52);
+  }
+
+  /* Drag handle indicator at top of bottom sheet */
+  .management-panel-head {
+    padding-top: 26px;
+  }
+
+  .management-panel-head::before {
+    content: "";
+    position: absolute;
+    top: 10px;
     left: 50%;
     transform: translateX(-50%);
-    width: 40px;
+    width: 36px;
     height: 4px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 2px;
     pointer-events: none;
   }
 
-  .management-ticker-form textarea {
-    font-size: 16px;
-    min-height: 200px;
+  /* Full-screen backdrop */
+  .is-editor-open .mgmt-main::before {
+    inset: 0;
+    left: 0;
+    right: 0;
   }
 
-  /* Calendar items */
-  .management-calendar-item {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .management-calendar-date-block {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .management-calendar-date-block strong {
-    font-size: 17px;
-  }
-
-  /* Contact copy lines */
-  .management-contact-card-lines {
-    grid-template-columns: 1fr;
-  }
-
-  /* Class session dates */
-  .management-class-session-row {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  /* Registration items: stack actions below info */
-  .management-registration-item {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .management-registration-item .management-registration-actions {
-    justify-content: flex-start;
-  }
-
-  /* Inquiry pipeline: compact */
-  .management-inquiry-stage {
-    font-size: 9px;
-    padding: 4px 3px;
-    letter-spacing: 0;
-  }
-
-  /* Login card */
-  .management-login-card {
-    padding: 24px 20px;
-  }
-
-}
-
-/* Extra-small phones, up to 390px */
-@media (max-width: 390px) {
-  .management-metrics span    { font-size: 19px; }
-  .management-metrics p       { font-size: 8px; letter-spacing: 0; }
-  .management-metrics article { padding: 8px 8px 10px; }
-
-  .management-panel,
-  .management-ticker-card {
-    max-height: 96dvh;
-    max-height: 96vh;
-  }
-}
-
-/* ============================================================
-   Mobile polish pass
-   These overrides only apply to the management console on
-   phone-sized screens. Desktop layout and behavior stay intact.
-   ============================================================ */
-
-@media (max-width: 767px) {
-  .management-page {
-    overflow-x: hidden;
-  }
-
-  .management-shell {
-    width: 100%;
-    padding: 12px 10px max(env(safe-area-inset-bottom, 0px), 32px);
-  }
-
-  .management-login {
-    min-height: calc(100dvh - 24px);
-  }
-
-  .management-login-card {
-    width: 100%;
-    padding: 22px 18px;
-  }
-
-  .management-login-card img {
-    width: 70px;
-    height: 70px;
-  }
-
-  .management-header {
-    align-items: start;
-  }
-
-  .management-header-actions {
+  /* ── Record cards: comfortable touch targets ── */
+  .management-record {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 13px 42px 13px 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.045);
   }
-
-  .management-header-actions button {
-    white-space: nowrap;
+  .management-record.is-contact { padding: 13px 42px 13px 14px; }
+  .management-record h3,
+  .management-record.is-class h3 {
+    font-size: 15px;
+    line-height: 1.22;
   }
-
-  .management-kicker {
-    font-size: 10px;
+  .management-record.is-contact h3 { font-size: 16px; }
+  .management-record-badges { gap: 6px; }
+  .management-badge {
+    min-height: 20px;
+    padding: 3px 7px;
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
   }
-
-  .management-site-tools,
-  .management-list-panel {
-    padding: 12px;
-  }
-
-  .management-site-links {
+  .management-record-meta {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 12px;
   }
-
-  .management-site-links a,
-  .management-site-links button {
-    justify-content: center;
+  .management-record-meta span {
+    display: block;
     min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .management-record-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    padding-top: 0;
+  }
+  .management-record-actions button,
+  .management-record-actions a {
+    justify-content: center;
+    min-height: 42px;
+    width: 100%;
+    white-space: normal;
     text-align: center;
   }
 
-  .management-list-tools {
-    position: sticky;
-    top: 0;
-    z-index: 8;
-    margin: -12px -12px 0;
-    padding: 12px;
-    border-radius: 8px 8px 0 0;
-    background: rgba(7, 19, 37, 0.97);
+  /* Hide inline status select and quick-advance on mobile — use drawer to change status */
+  .management-record-actions select,
+  .mgmt-qa-btn { display: none; }
+
+  /* Pin star: visible without adding another boxed control. */
+  .management-pin-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-grid;
+    place-items: center;
+    background: transparent;
+    color: rgba(234, 242, 255, 0.22);
+    font-size: 17px;
+    top: 8px;
+    right: 8px;
+  }
+
+  /* ── Quick add: full-height touch targets ── */
+  .management-quick-add-input,
+  .management-quick-add-btn { min-height: 44px; font-size: 14px; padding: 10px 12px; }
+
+  /* ── Log entry appender: 44px touch targets ── */
+  .mgmt-note-logger-input { min-height: 44px !important; font-size: 14px !important; padding: 10px 12px !important; }
+  .mgmt-note-logger-btn { min-height: 44px; font-size: 14px; padding: 10px 14px; }
+
+  /* ── Contact copy lines: stacked on mobile ── */
+  .management-contact-card-lines { flex-direction: column; gap: 5px; }
+  .management-contact-copy-line { width: 100%; }
+
+  /* Signups: purpose-built mobile cards */
+  .management-registration-card {
+    gap: 14px;
+    padding: 15px;
+    border: 1px solid rgba(245, 178, 62, 0.24);
+    border-left: 3px solid rgba(245, 178, 62, 0.72);
+    background:
+      linear-gradient(135deg, rgba(245, 178, 62, 0.12), rgba(85, 185, 255, 0.045) 52%, rgba(5, 11, 20, 0.34)),
+      rgba(255, 255, 255, 0.045);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+  }
+  .management-registration-card:hover {
+    border-color: rgba(245, 178, 62, 0.34);
+    background:
+      linear-gradient(135deg, rgba(245, 178, 62, 0.14), rgba(85, 185, 255, 0.055) 52%, rgba(5, 11, 20, 0.38)),
+      rgba(255, 255, 255, 0.05);
+  }
+  .management-registration-card .management-record-badges { margin-bottom: 8px; }
+  .management-registration-card h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 850;
+    line-height: 1.16;
+  }
+  .management-registration-card .management-contact-card-lines {
+    display: grid;
+    gap: 7px;
+    margin-top: 11px;
+  }
+  .management-registration-card .management-contact-copy-line {
+    display: grid;
+    grid-template-columns: minmax(58px, auto) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 8px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    background: rgba(5, 11, 20, 0.32);
+  }
+  .management-registration-card .management-contact-copy-line strong {
+    color: rgba(234, 242, 255, 0.54);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .management-registration-card .management-contact-copy-line span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: rgba(234, 242, 255, 0.88);
+    font-size: 12.5px;
+  }
+  .management-registration-card-event {
+    gap: 5px;
+    margin-top: 12px;
+    padding: 11px 12px;
+    border: 1px solid rgba(85, 185, 255, 0.15);
+    border-radius: 8px;
+    background: rgba(7, 19, 37, 0.58);
+  }
+  .management-registration-card-event strong {
+    font-size: 13.5px;
+    line-height: 1.25;
+  }
+  .management-registration-card-event span {
+    color: rgba(234, 242, 255, 0.66);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .management-registration-card .management-record-meta { grid-template-columns: 1fr; }
+  .management-registration-card .management-record-meta span {
+    padding: 7px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(234, 242, 255, 0.72);
+  }
+  .management-registration-card-actions {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+  .management-registration-card-actions button {
+    min-height: 44px;
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  /* Ticker modal */
+  .management-ticker-card { border-radius: 12px; padding: 16px; }
+  .management-ticker-card .management-panel-head { top: -16px; margin: -16px -16px 14px; }
+
+  /* ── All multi-column grids → single column ── */
+  .management-form-grid { grid-template-columns: 1fr; display: grid; }
+  .management-class-session-row { grid-template-columns: 1fr; }
+  .management-inquiry-detail-grid { grid-template-columns: 1fr; }
+  .management-inquiry-detail-grid section > div { grid-template-columns: 1fr; }
+  .management-class-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .management-class-contact-add, .management-class-contact-item,
+  .management-class-contact-actions, .management-class-registration-item,
+  .management-registration-item { grid-template-columns: 1fr; }
+  .management-registration-item .management-registration-actions { justify-content: flex-start; }
+  .management-studio-cards { grid-template-columns: 1fr; }
+  .management-calendar-item { flex-direction: column; display: flex; }
+
+  /* Dashboard: 2-column stats, 1-column sections */
+  .mgmt-dash-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mgmt-dash-stat { min-height: 60px; padding: 10px 8px; }
+  .mgmt-dash-stat-val { font-size: 20px; }
+  .mgmt-dash-stat.is-balance .mgmt-dash-stat-val { font-size: 16px; }
+  .mgmt-dash-grid { grid-template-columns: 1fr; gap: 10px; }
+  .mgmt-dash-row { padding: 9px 12px; min-height: 44px; }
+
+  /* ── Bulk select: mobile adjustments ── */
+  .mgmt-bulk-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .mgmt-bulk-bar-right { flex-wrap: wrap; gap: 8px; }
+
+  .mgmt-bulk-status-wrap select { font-size: 13px; padding: 7px 8px; flex: 1; }
+  .mgmt-bulk-apply { min-height: 40px; font-size: 13px; flex: 1; }
+
+  /* Larger touch target checkbox, shifted for mobile card padding */
+  .mgmt-bulk-check {
+    left: 12px;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .is-bulk-mode .management-record { padding-left: 46px !important; }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   BULK SELECT
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Bulk action bar — sits between the operations topbar and the ops-body */
+.mgmt-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 20px;
+  background: rgba(85, 185, 255, 0.06);
+  border-bottom: 1px solid rgba(85, 185, 255, 0.16);
+  flex-shrink: 0;
+}
+
+.mgmt-bulk-bar-left,
+.mgmt-bulk-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mgmt-bulk-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(234, 242, 255, 0.78);
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.mgmt-bulk-sel-all {
+  border: none;
+  background: none;
+  color: rgba(85, 185, 255, 0.76);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 5px;
+  transition: background 0.12s, color 0.12s;
+}
+
+.mgmt-bulk-sel-all:hover {
+  background: rgba(85, 185, 255, 0.10);
+  color: #cfeeff;
+}
+
+.mgmt-bulk-status-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: rgba(234, 242, 255, 0.58);
+  white-space: nowrap;
+}
+
+.mgmt-bulk-status-wrap select {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.mgmt-bulk-apply {
+  border: 1px solid rgba(85, 185, 255, 0.40);
+  border-radius: 7px;
+  background: rgba(85, 185, 255, 0.12);
+  color: #cfeeff;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 6px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.mgmt-bulk-apply:hover:not(:disabled) {
+  background: rgba(85, 185, 255, 0.22);
+  border-color: rgba(85, 185, 255, 0.60);
+}
+
+.mgmt-bulk-apply:disabled { opacity: 0.38; cursor: default; }
+
+.mgmt-bulk-cancel {
+  border: none;
+  background: none;
+  color: rgba(234, 242, 255, 0.40);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.mgmt-bulk-cancel:hover { background: rgba(255,255,255,0.07); color: rgba(234,242,255,0.80); }
+
+/* ── Hide Done toggle ──────────────────────────────────────────────────────── */
+
+.mgmt-hide-done-btn.is-active,
+[data-past-cal-toggle].is-active {
+  border-color: rgba(66, 185, 156, 0.40);
+  background: rgba(66, 185, 156, 0.09);
+  color: rgba(66, 185, 156, 0.92);
+}
+
+.mgmt-hide-done-btn.is-active:hover,
+[data-past-cal-toggle].is-active:hover {
+  border-color: rgba(66, 185, 156, 0.60);
+  background: rgba(66, 185, 156, 0.16);
+  color: rgba(150, 245, 215, 0.95);
+}
+
+/* ── Hide complete / archived cards ───────────────────────────────────────── */
+
+/* Non-contact cards: detected via inline status select */
+.is-hiding-complete .management-record:has(option[value="complete"]:checked),
+.is-hiding-complete .management-record:has(option[value="archived"]:checked),
+/* Contact cards (no inline select): detected via status badge class */
+.is-hiding-complete .management-record:has(.management-badge.is-complete),
+.is-hiding-complete .management-record:has(.management-badge.is-archived) {
+  display: none;
+}
+
+/* ── Checkbox on each card ── */
+
+.management-record { position: relative; }
+
+.mgmt-bulk-check {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  background: rgba(5, 11, 20, 0.65);
+  cursor: pointer;
+  z-index: 3;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: transparent;
+  padding: 0;
+  line-height: 1;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+
+.is-bulk-mode .mgmt-bulk-check { display: flex; }
+
+.mgmt-bulk-check:hover { border-color: rgba(255, 255, 255, 0.50); }
+
+.mgmt-bulk-check.is-checked {
+  border-color: rgba(85, 185, 255, 0.70);
+  background: rgba(85, 185, 255, 0.22);
+  color: #cfeeff;
+}
+
+.mgmt-bulk-check.is-checked:hover {
+  background: rgba(85, 185, 255, 0.32);
+  border-color: rgba(85, 185, 255, 0.88);
+}
+
+.mgmt-bulk-check::after { content: "✓"; }
+
+/* Shift card content right to make room for the checkbox */
+.is-bulk-mode .management-record { padding-left: 36px !important; }
+
+/* Checked card gets a selection highlight */
+.management-record.is-bulk-checked {
+  border-color: rgba(85, 185, 255, 0.42) !important;
+  background: rgba(85, 185, 255, 0.09) !important;
+  box-shadow: inset 0 0 0 1px rgba(85, 185, 255, 0.16);
+}
+
+/* ── Very small phones ── */
+@media (max-width: 480px) {
+  .mgmt-topbar { flex-wrap: wrap; gap: 6px; }
+  .mgmt-topbar-right { width: 100%; }
+  .mgmt-search-input { width: 100%; }
+  .mgmt-nav-item { font-size: 9.5px; min-height: 50px; }
+  .mgmt-nav-text { font-size: 9.5px; }
+  .management-management-panel { height: 95dvh; max-height: 95dvh; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NATIVE STUDIO EDITORS  (mstudio-*)
+   Shared by management-media-studio.js and management-travel-studio.js
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Panel wrapper */
+.mstudio-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.mstudio-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 11, 20, 0.8);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.mstudio-toolbar-left,
+.mstudio-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.mstudio-btn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.055);
+  color: rgba(234, 242, 255, 0.82);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+
+.mstudio-btn:hover {
+  background: rgba(85, 185, 255, 0.10);
+  border-color: rgba(85, 185, 255, 0.35);
+  color: var(--text);
+}
+
+.mstudio-btn-primary {
+  background: rgba(85, 185, 255, 0.18);
+  border-color: rgba(85, 185, 255, 0.45);
+  color: #cfeeff;
+  font-weight: 800;
+}
+
+.mstudio-btn-primary:hover {
+  background: rgba(85, 185, 255, 0.28);
+  border-color: rgba(85, 185, 255, 0.65);
+}
+
+.mstudio-btn-sm {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.mstudio-dirty-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 190, 60, 0.85);
+  background: rgba(255, 180, 40, 0.08);
+  border: 1px solid rgba(255, 180, 40, 0.22);
+  border-radius: 5px;
+  padding: 3px 8px;
+}
+
+.mstudio-status-text {
+  font-size: 11px;
+  color: rgba(234, 242, 255, 0.45);
+}
+
+/* ── Workspace grid ──────────────────────────────────────────────────────── */
+.mstudio-workspace {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  height: auto;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Sidebar (list + edit pane) ──────────────────────────────────────────── */
+.mstudio-sidebar {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.mstudio-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.mstudio-search {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.048);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 9px;
+  outline: none;
+}
+
+.mstudio-search:focus {
+  border-color: rgba(85, 185, 255, 0.5);
+}
+
+.mstudio-count {
+  font-size: 11px;
+  color: rgba(234, 242, 255, 0.38);
+  white-space: nowrap;
+}
+
+/* ── Item list ───────────────────────────────────────────────────────────── */
+.mstudio-list {
+  flex: 1 1 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.mstudio-list::-webkit-scrollbar { width: 5px; }
+.mstudio-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+.mstudio-dest-list .mstudio-list-item { grid-template-columns: 1fr; }
+
+.mstudio-list-item {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 8px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.1s;
+}
+
+.mstudio-list-item:hover  { background: rgba(255, 255, 255, 0.04); }
+.mstudio-list-item.is-selected { background: rgba(85, 185, 255, 0.10); }
+
+.mstudio-list-thumb {
+  width: 44px;
+  height: 32px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.mstudio-list-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mstudio-list-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(234, 242, 255, 0.88);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mstudio-list-meta {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+
+.mstudio-chip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: rgba(234, 242, 255, 0.55);
+}
+
+.mstudio-chip-type {
+  background: rgba(85, 185, 255, 0.08);
+  border-color: rgba(85, 185, 255, 0.25);
+  color: rgba(85, 185, 255, 0.9);
+}
+
+.mstudio-chip-dirty {
+  background: rgba(255, 180, 40, 0.1);
+  border-color: rgba(255, 180, 40, 0.28);
+  color: rgba(255, 190, 60, 0.9);
+}
+
+/* ── Edit pane ───────────────────────────────────────────────────────────── */
+.mstudio-edit-pane {
+  flex-shrink: 0;
+  max-height: 54%;
+  overflow-y: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mstudio-edit-pane::-webkit-scrollbar { width: 5px; }
+.mstudio-edit-pane::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+.mstudio-hint { color: rgba(234, 242, 255, 0.38); font-size: 12px; text-align: center; padding: 14px 0; margin: 0; }
+.mstudio-hint-sm { font-size: 11px; text-align: left; padding: 4px 0 8px; }
+
+/* ── Form fields ─────────────────────────────────────────────────────────── */
+.mstudio-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  margin-bottom: 2px;
+}
+
+.mstudio-form-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(147, 211, 255, 0.8); }
+
+.mstudio-delete-btn {
+  font-size: 11px; font-weight: 700;
+  color: rgba(255, 90, 90, 0.75);
+  background: none;
+  border: 1px solid rgba(255, 90, 90, 0.25);
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.mstudio-delete-btn:hover { background: rgba(255, 90, 90, 0.12); color: rgba(255, 90, 90, 0.95); }
+
+.mstudio-label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: rgba(234, 242, 255, 0.55); font-weight: 700; letter-spacing: 0.04em; }
+.mstudio-label em { font-style: normal; font-weight: 500; opacity: 0.7; }
+
+.mstudio-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 9px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.12s;
+}
+
+.mstudio-input:focus { border-color: rgba(85, 185, 255, 0.5); background: rgba(85, 185, 255, 0.04); }
+
+.mstudio-textarea { resize: vertical; min-height: 56px; line-height: 1.45; }
+.mstudio-json-editor { font-family: 'Consolas', 'Fira Code', monospace; font-size: 11px; min-height: 220px; line-height: 1.5; }
+
+.mstudio-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.mstudio-meta-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(234, 242, 255, 0.45); padding: 4px 0; }
+
+.mstudio-code { font-family: monospace; font-size: 10px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 3px; padding: 2px 6px; color: rgba(147, 211, 255, 0.8); word-break: break-all; }
+
+.mstudio-form-actions { display: flex; gap: 7px; padding-top: 4px; flex-wrap: wrap; }
+
+/* ── Tabs (travel) ───────────────────────────────────────────────────────── */
+.mstudio-tabs { display: flex; gap: 4px; padding: 6px 0 4px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+
+.mstudio-tabs button { padding: 5px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px; background: rgba(255,255,255,0.04); color: rgba(234,242,255,0.6); font: inherit; font-size: 11px; font-weight: 750; cursor: pointer; transition: all 0.1s; }
+.mstudio-tabs button:hover { background: rgba(85,185,255,0.1); border-color: rgba(85,185,255,0.3); color: var(--text); }
+.mstudio-tabs button.is-active { background: rgba(85,185,255,0.16); border-color: rgba(85,185,255,0.48); color: var(--text); }
+
+.mstudio-tab-panel { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; }
+.mstudio-tab-panels { flex: 1; }
+.mstudio-json-panel { gap: 8px; }
+
+/* ── Preview column ──────────────────────────────────────────────────────── */
+.mstudio-preview-col { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+.mstudio-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.mstudio-preview-label { font-size: 11px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(234,242,255,0.4); }
+.mstudio-preview-actions { display: flex; gap: 6px; }
+.mstudio-preview-frame { flex: 1; width: 100%; border: none; background: #f0f0f0; }
+
+/* ── Upload / add modal ──────────────────────────────────────────────────── */
+.mstudio-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(2, 7, 14, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.mstudio-modal {
+  width: min(520px, 100%);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  border: 1px solid rgba(85, 185, 255, 0.28);
+  border-radius: 10px;
+  background: rgba(7, 19, 37, 0.97);
+  box-shadow: 0 24px 54px rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mstudio-modal-head { display: flex; align-items: center; justify-content: space-between; }
+.mstudio-modal-head h3 { margin: 0; font-size: 17px; letter-spacing: 0; }
+.mstudio-modal-form { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .mstudio-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+  }
+
+  .mstudio-sidebar {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    max-height: 50vh;
+  }
+
+  .mstudio-edit-pane { max-height: none; }
+  .mstudio-preview-col { min-height: 340px; }
+
+  .mstudio-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Final mobile fit pass: keeps the console inside the device viewport. */
+@media (max-width: 680px) {
+  html,
+  body.management-page {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .management-page {
+    min-height: 100svh;
+  }
+
+  .management-shell,
+  .management-dashboard,
+  .mgmt-app {
+    width: 100%;
+    max-width: 100vw;
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  @supports (height: 100dvh) {
+    .management-shell,
+    .management-dashboard,
+    .mgmt-app {
+      height: 100dvh;
+    }
+  }
+
+  .mgmt-app {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mgmt-main {
+    order: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .mgmt-panel {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+  }
+
+  .mgmt-panel.mstudio-panel,
+  .mgmt-main .mstudio-workspace {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mgmt-home-body,
+  .mgmt-ops-body {
+    min-width: 0;
+    width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .mgmt-ops-body {
+    padding-bottom: 20px;
+  }
+
+  .mgmt-ops-toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .mgmt-cal-row {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mgmt-cal-row > * {
+    min-width: 0;
+  }
+
+  .management-records {
+    gap: 10px;
+    margin-top: 12px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .management-record {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .management-record > *,
+  .management-record h3,
+  .management-record p,
+  .management-record span {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .management-record-actions {
+    min-width: 0;
+  }
+
+  .management-record-actions button,
+  .management-record-actions a {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .management-contact-copy-line {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .management-registration-card .management-contact-copy-line {
+    grid-template-columns: 1fr auto;
+  }
+
+  .management-registration-card .management-contact-copy-line strong {
+    grid-column: 1 / -1;
+  }
+
+  .management-registration-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .management-class-detail-grid,
+  .management-calendar-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mgmt-sidebar {
+    order: 2;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100vw;
+    min-width: 0;
+  }
+
+  .mgmt-nav {
+    min-width: 0;
+  }
+
+  .mgmt-nav-section:first-of-type {
+    min-width: 0;
+  }
+
+  .mgmt-nav-item,
+  [data-more-toggle] {
+    min-width: 0;
+    min-height: 56px;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .mgmt-nav-text {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .mgmt-nav-more-panel {
+    max-height: min(65svh, 420px);
+    overflow-y: auto;
+  }
+
+  .management-panel {
+    height: min(92svh, 92%);
+    max-height: 92svh;
+    width: 100%;
+  }
+}
+
+/* Mobile polish pass: tighter app-like rhythm and calmer hierarchy. */
+@media (max-width: 680px) {
+  .management-page {
+    background:
+      linear-gradient(180deg, rgba(7, 19, 37, 0.98), rgba(4, 11, 22, 1) 48%),
+      var(--bg);
+  }
+
+  .mgmt-topbar {
+    padding: 12px 14px 10px;
+    background: rgba(5, 11, 20, 0.72);
     backdrop-filter: blur(10px);
   }
 
-  .management-sort {
-    min-width: 128px;
+  .mgmt-panel-title {
+    color: rgba(234, 242, 255, 0.94);
+    font-size: 18px;
+    font-weight: 850;
+    letter-spacing: 0;
   }
 
-  .management-sort select {
-    max-width: none;
+  .mgmt-topbar-right {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    width: 100%;
+    gap: 7px;
   }
 
-  .management-filters {
-    margin-right: -12px;
-    padding-right: 28px;
+  .mgmt-search {
+    min-width: 0;
   }
 
-  .management-calendar-controls {
-    display: flex;
+  .mgmt-search-input,
+  .mgmt-sort-select,
+  .mgmt-new-btn,
+  .mgmt-btn-sm {
+    min-height: 40px;
+    border-radius: 9px;
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.055);
+  }
+
+  .mgmt-search-input {
+    padding: 9px 10px;
+  }
+
+  .mgmt-sort-select {
+    width: 94px;
+    max-width: 94px;
+  }
+
+  .mgmt-new-btn {
+    width: 42px;
+    padding: 0;
+    overflow: hidden;
+    color: transparent;
+    position: relative;
+  }
+
+  .mgmt-new-btn::after {
+    content: "+";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #eaf7ff;
+    font-size: 22px;
+    font-weight: 850;
+    line-height: 1;
+  }
+
+  .mgmt-ops-body {
+    padding-top: 10px;
+    background:
+      linear-gradient(180deg, rgba(85, 185, 255, 0.025), rgba(85, 185, 255, 0) 160px);
+  }
+
+  .mgmt-ops-toolbar {
+    padding: 10px;
+    border: 1px solid rgba(85, 185, 255, 0.11);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .mgmt-cal-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .mgmt-cal-row label,
+  .mgmt-cal-status {
     width: 100%;
   }
 
-  .management-toggle {
-    min-height: 36px;
+  .mgmt-cal-status {
+    color: rgba(234, 242, 255, 0.56);
+    font-size: 12px;
+    line-height: 1.35;
   }
 
   .management-records {
     gap: 12px;
+    padding-bottom: 6px;
+  }
+
+  .management-empty,
+  .management-record {
+    border-radius: 12px;
   }
 
   .management-record {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 12px;
+    padding: 14px 42px 14px 14px;
+    border-color: rgba(255, 255, 255, 0.105);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.032)),
+      rgba(5, 11, 20, 0.46);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
   }
 
-  .management-record-actions {
-    align-items: stretch;
-    width: 100%;
+  .management-record.is-contact,
+  .management-record.is-class,
+  .management-record.is-inquiry,
+  .management-record.is-task,
+  .management-record.is-trip,
+  .management-record.is-registration {
+    padding-left: 14px;
+    padding-right: 42px;
+    border-left-width: 1px;
   }
 
-  .management-record-actions select {
-    width: 100%;
-    min-height: 42px;
-    font-size: 13px;
-  }
-
-  .management-pin-btn {
-    justify-self: start;
-    width: 44px;
-    min-height: 38px;
+  .management-record.is-contact::before {
+    display: none;
   }
 
   .management-record h3,
   .management-record.is-contact h3,
   .management-record.is-class h3 {
-    font-size: 17px;
-    line-height: 1.25;
+    margin: 4px 0 0;
+    color: rgba(255, 255, 255, 0.96);
+    font-size: 16px;
+    font-weight: 850;
+    line-height: 1.18;
   }
 
-  .management-record-badges,
-  .management-record-meta,
-  .management-inquiry-callout-meta {
+  .management-record p {
+    margin-top: 7px;
+    color: rgba(234, 242, 255, 0.68);
+    font-size: 13px;
+    line-height: 1.42;
+  }
+
+  .management-record-badges {
     gap: 6px;
+    margin-bottom: 2px;
   }
 
   .management-badge {
-    min-height: 24px;
-    padding: 3px 8px;
-    font-size: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.07);
   }
 
-  .management-contact-copy-line {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  .management-record-meta {
+    gap: 7px;
   }
 
-  .management-contact-copy-line button,
-  .management-copy-field button {
-    min-height: 42px;
+  .management-record-meta span {
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    color: rgba(234, 242, 255, 0.68);
+    line-height: 1.3;
   }
 
-  .management-inquiry-pipeline {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 5px;
+  .management-card-expand {
+    margin-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.075);
+    padding-top: 8px;
   }
 
-  .management-inquiry-stage {
-    min-height: 30px;
+  .management-card-expand > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 38px;
+    border: 1px solid rgba(85, 185, 255, 0.16);
+    border-radius: 10px;
+    background: rgba(85, 185, 255, 0.065);
+    color: rgba(224, 244, 255, 0.9);
+    font-size: 12px;
+    font-weight: 850;
+    letter-spacing: 0;
+    list-style: none;
+    padding: 0 10px;
+  }
+
+  .management-card-expand > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .management-card-expand > summary::after {
+    content: "+";
     display: grid;
     place-items: center;
-    white-space: normal;
-    line-height: 1.1;
-  }
-
-  .management-inquiry-next-step {
-    font-size: 13px;
-  }
-
-  .management-calendar-stat-grid,
-  .management-class-detail-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .management-calendar-actions,
-  .management-registration-actions {
-    width: 100%;
-    justify-content: stretch;
-  }
-
-  .management-calendar-actions a,
-  .management-registration-actions button {
-    flex: 1 1 auto;
-    min-height: 42px;
-    text-align: center;
-  }
-
-  .management-panel {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    max-height: min(92dvh, 760px);
-    overflow-y: auto;
-  }
-
-  .management-panel-head {
-    align-items: start;
-  }
-
-  .management-panel-head h2 {
-    font-size: 20px;
-    line-height: 1.2;
-  }
-
-  .management-panel-head button {
-    min-height: 42px;
-  }
-
-  .management-record-form {
-    gap: 12px;
-  }
-
-  .management-record-form input,
-  .management-record-form select,
-  .management-record-form textarea,
-  .management-ticker-form textarea,
-  .management-class-contact-add select {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.075);
+    color: rgba(234, 242, 255, 0.82);
     font-size: 16px;
+    line-height: 1;
   }
 
-  .management-copy-field {
+  .management-card-expand[open] > summary::after {
+    content: "-";
+  }
+
+  .management-card-expand:not([open]) > .management-card-expand-body {
+    display: none;
+  }
+
+  .management-card-expand[open] > .management-card-expand-body {
+    display: grid;
+    gap: 10px;
+    padding-top: 10px;
+  }
+
+  .management-card-expand .management-record-details:not(.management-card-expand) {
+    margin-top: 2px;
+    border-top-color: rgba(255, 255, 255, 0.07);
+  }
+
+  .management-calendar-item .management-card-expand {
+    margin-top: 9px;
+  }
+
+  .management-calendar-item .management-card-expand[open] > .management-card-expand-body {
+    gap: 9px;
+  }
+
+  .management-record-actions {
     grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 2px;
   }
 
-  .management-extra-fields,
-  .management-class-schedule,
-  .management-class-roster,
-  .management-contact-classes,
-  .management-registration-manager {
+  .management-record-actions button,
+  .management-record-actions a,
+  .management-registration-card-actions button {
+    min-height: 44px;
+    border-radius: 9px;
+    border-color: rgba(85, 185, 255, 0.20);
+    background: rgba(85, 185, 255, 0.09);
+    color: #d7f0ff;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .management-record-actions .management-pin-btn {
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    justify-self: end;
+    border: none;
+    background: transparent;
+    color: rgba(234, 242, 255, 0.24);
+    font-size: 17px;
+  }
+
+  .management-record-actions .management-pin-btn.is-pinned {
+    color: #f5b23e;
+  }
+
+  .management-registration-card {
+    border-radius: 14px;
+    border-left-width: 1px;
+    border-color: rgba(245, 178, 62, 0.22);
+    background:
+      linear-gradient(180deg, rgba(245, 178, 62, 0.12), rgba(85, 185, 255, 0.045) 56%, rgba(5, 11, 20, 0.50)),
+      rgba(255, 255, 255, 0.045);
+  }
+
+  .management-registration-card h3 {
+    font-size: 19px;
+  }
+
+  .management-registration-card .management-contact-copy-line,
+  .management-registration-card-event,
+  .management-registration-card .management-record-meta span {
+    border-radius: 10px;
+    background: rgba(5, 11, 20, 0.36);
+  }
+
+  .management-registration-card .management-contact-copy-line {
+    padding: 10px;
+  }
+
+  .management-registration-card-event {
     padding: 12px;
   }
 
-  .management-class-session-head {
-    align-items: start;
+  .management-registration-card-event strong {
+    color: rgba(255, 255, 255, 0.94);
+    font-size: 14px;
   }
 
-  .management-class-session-row,
-  .management-class-contact-add,
-  .management-contact-classes .management-class-contact-add,
-  .management-class-contact-item,
-  .management-class-registration-item {
-    grid-template-columns: 1fr;
+  .mgmt-sidebar {
+    padding: 7px 8px max(7px, env(safe-area-inset-bottom, 0px));
+    background:
+      linear-gradient(180deg, rgba(13, 36, 58, 0.96), rgba(4, 11, 22, 0.99));
   }
 
-  .management-class-session-row button,
-  .management-class-contact-add button,
-  .management-class-contact-item button,
-  .management-class-registration-item button {
-    width: 100%;
-    min-height: 42px;
+  .mgmt-nav {
+    gap: 4px;
   }
 
-  .management-contact-classes .management-class-contact-add select[multiple] {
-    min-height: 148px;
+  .mgmt-nav-section {
+    gap: 4px;
   }
 
-  .management-inquiry-detail-grid,
-  .management-inquiry-detail-grid section > div,
-  .management-contact-detail-grid {
-    grid-template-columns: 1fr;
+  .mgmt-nav-item,
+  [data-more-toggle] {
+    min-height: 54px;
+    border-radius: 14px;
+    color: rgba(234, 242, 255, 0.66);
   }
 
-  .management-timestamp-btn {
-    position: static;
-    width: max-content;
-    margin-top: 6px;
+  .mgmt-nav-item.is-active,
+  [data-more-toggle].is-active {
+    background: rgba(85, 185, 255, 0.16);
+    color: #f0fbff;
+    box-shadow: inset 0 0 0 1px rgba(85, 185, 255, 0.12);
   }
 
-  .management-ticker-card {
-    overflow-y: auto;
+  .mgmt-nav-badge {
+    font-size: 9px;
+    color: rgba(155, 211, 255, 0.72);
+  }
+
+  .mgmt-nav-more-panel {
+    border-radius: 18px;
+    background: rgba(7, 19, 37, 0.98);
+    box-shadow: 0 -16px 44px rgba(0, 0, 0, 0.52);
+  }
+
+  .mgmt-nav-more-item {
+    min-height: 52px;
+    padding: 0 18px;
+    color: rgba(234, 242, 255, 0.82);
+    font-weight: 750;
+  }
+
+  .management-panel {
+    border-radius: 18px 18px 0 0;
+  }
+
+  .management-panel-head {
+    padding: 26px 14px 12px;
+    background: rgba(7, 19, 37, 0.96);
+  }
+
+  .management-panel-head h2 {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  .management-record-form {
+    padding: 14px;
+    gap: 12px;
   }
 }
 
-@media (max-width: 480px) {
-  .management-header {
-    display: grid;
-    grid-template-columns: 1fr;
+/* ══════════════════════════════════════════════════════════════════════════════
+   IMPORT / EXPORT MODAL
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.mgmt-ie-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(5, 11, 20, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+
+body.mgmt-ie-open {
+  overflow: hidden;
+}
+
+.mgmt-ie-modal {
+  background: rgba(9, 20, 38, 0.98);
+  border: 1px solid rgba(85, 185, 255, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.64);
+  width: 100%;
+  max-width: 660px;
+  max-height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mgmt-ie-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 12px;
+  border-bottom: 1px solid rgba(85, 185, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.mgmt-ie-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: rgba(234, 242, 255, 0.95);
+  margin: 0;
+}
+
+.mgmt-ie-close {
+  background: none;
+  border: none;
+  color: rgba(234, 242, 255, 0.5);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+}
+
+.mgmt-ie-close:hover {
+  color: rgba(234, 242, 255, 0.9);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Tabs */
+.mgmt-ie-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 20px 0;
+  border-bottom: 1px solid rgba(85, 185, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.mgmt-ie-tab {
+  background: none;
+  border: none;
+  color: rgba(234, 242, 255, 0.5);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.mgmt-ie-tab:hover {
+  color: rgba(234, 242, 255, 0.8);
+}
+
+.mgmt-ie-tab.is-active {
+  color: rgba(85, 185, 255, 0.95);
+  border-bottom-color: rgba(85, 185, 255, 0.8);
+  background: rgba(85, 185, 255, 0.06);
+}
+
+/* Panels */
+.mgmt-ie-panel {
+  padding: 18px 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mgmt-ie-desc {
+  font-size: 13px;
+  color: rgba(234, 242, 255, 0.55);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mgmt-ie-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mgmt-ie-label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(234, 242, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 1;
+  min-width: 160px;
+}
+
+.mgmt-ie-select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(85, 185, 255, 0.16);
+  border-radius: 8px;
+  color: rgba(234, 242, 255, 0.88);
+  font-size: 13px;
+  padding: 7px 10px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.mgmt-ie-select:focus {
+  outline: none;
+  border-color: rgba(85, 185, 255, 0.45);
+}
+
+.mgmt-ie-select-sm {
+  font-size: 12px;
+  padding: 5px 8px;
+  min-width: 180px;
+  flex: 1;
+}
+
+.mgmt-ie-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(85, 185, 255, 0.18);
+  border-radius: 8px;
+  color: rgba(234, 242, 255, 0.85);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+
+.mgmt-ie-btn:hover {
+  background: rgba(85, 185, 255, 0.12);
+  border-color: rgba(85, 185, 255, 0.32);
+}
+
+.mgmt-ie-btn.primary {
+  background: rgba(85, 185, 255, 0.14);
+  border-color: rgba(85, 185, 255, 0.3);
+  color: rgba(155, 211, 255, 0.95);
+}
+
+.mgmt-ie-btn.primary:hover {
+  background: rgba(85, 185, 255, 0.22);
+}
+
+.mgmt-ie-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* File input */
+.mgmt-ie-file-label {
+  cursor: pointer;
+}
+
+.mgmt-ie-file-label span {
+  display: block;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(85, 185, 255, 0.24);
+  border-radius: 8px;
+  color: rgba(234, 242, 255, 0.55);
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 10px 14px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mgmt-ie-file-label:hover span {
+  border-color: rgba(85, 185, 255, 0.4);
+  background: rgba(85, 185, 255, 0.06);
+  color: rgba(234, 242, 255, 0.8);
+}
+
+.mgmt-ie-file-label input[type="file"] {
+  display: none;
+}
+
+/* Preview table */
+.mgmt-ie-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mgmt-ie-preview-title {
+  font-size: 12px;
+  color: rgba(234, 242, 255, 0.5);
+  margin: 0;
+}
+
+.mgmt-ie-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(85, 185, 255, 0.1);
+  border-radius: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.mgmt-ie-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.mgmt-ie-table th,
+.mgmt-ie-table td {
+  padding: 5px 10px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(85, 185, 255, 0.07);
+  color: rgba(234, 242, 255, 0.75);
+}
+
+.mgmt-ie-table th {
+  background: rgba(85, 185, 255, 0.08);
+  color: rgba(155, 211, 255, 0.85);
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+}
+
+/* Column mapping */
+.mgmt-ie-mapping {
+  background: rgba(245, 178, 62, 0.06);
+  border: 1px solid rgba(245, 178, 62, 0.18);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mgmt-ie-mapping-title {
+  font-size: 12px;
+  color: rgba(245, 178, 62, 0.85);
+  font-weight: 600;
+  margin: 0;
+}
+
+.mgmt-ie-mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mgmt-ie-mapping-label {
+  font-size: 12px;
+  color: rgba(234, 242, 255, 0.65);
+  min-width: 120px;
+  font-weight: 600;
+}
+
+/* Progress */
+.mgmt-ie-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.mgmt-ie-progress-bar-wrap {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mgmt-ie-progress-bar {
+  height: 100%;
+  background: rgba(85, 185, 255, 0.7);
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+.mgmt-ie-progress-label {
+  font-size: 12px;
+  color: rgba(234, 242, 255, 0.6);
+  margin: 0;
+}
+
+/* Status */
+.mgmt-ie-status {
+  font-size: 13px;
+  color: rgba(66, 185, 156, 0.9);
+  margin: 0;
+  min-height: 18px;
+}
+
+/* Mobile */
+@media (max-width: 680px) {
+  .mgmt-ie-modal {
+    max-height: 92dvh;
+    border-radius: 18px 18px 0 0;
+    align-self: flex-end;
+    margin-bottom: 0;
   }
 
-  .management-header-actions {
-    width: 100%;
+  .mgmt-ie-overlay {
+    align-items: flex-end;
+    padding: 0;
   }
 
-  .management-metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .mgmt-ie-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .management-site-links {
-    grid-template-columns: 1fr;
-  }
-
-  .management-list-tools {
-    grid-template-columns: 1fr;
-  }
-
-  .management-new-record,
-  .management-sort,
-  .management-search,
-  .management-filters,
-  .management-calendar-controls {
-    grid-column: 1 / -1;
-  }
-
-  .management-new-record { grid-row: 1; }
-  .management-sort { grid-row: 2; }
-  .management-search { grid-row: 3; }
-  .management-filters { grid-row: 4; }
-  .management-calendar-controls { grid-row: 5; }
-
-  .management-sort select {
-    width: 100%;
-  }
-
-  .management-calendar-stat-grid,
-  .management-class-detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .management-inquiry-pipeline {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .management-panel,
-  .management-ticker-card {
-    max-height: 96dvh;
-    border-radius: 16px 16px 0 0;
-  }
-
-  .management-panel .management-panel-head,
-  .management-ticker-card .management-panel-head {
-    border-radius: 16px 16px 0 0;
+  .mgmt-ie-btn {
+    align-self: stretch;
+    text-align: center;
   }
 }

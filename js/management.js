@@ -34,12 +34,13 @@
   const homeTickerForm = app.querySelector("[data-home-ticker-form]");
   const homeTickerLinesInput = app.querySelector("[data-home-ticker-lines]");
   const homeTickerStatus = app.querySelector("[data-home-ticker-status]");
-  const openHomeTickerButton = app.querySelector("[data-open-home-ticker]");
+  const openHomeTickerButtons = Array.from(app.querySelectorAll("[data-open-home-ticker]"));
   const closeHomeTickerButtons = Array.from(app.querySelectorAll("[data-close-home-ticker]"));
   const filterButtons = Array.from(app.querySelectorAll("[data-filter-type]"));
   const calendarStatus = app.querySelector("[data-calendar-status]");
   const refreshCalendarButton = app.querySelector("[data-refresh-calendar]");
   const showPastCalendarToggle = app.querySelector("[data-show-past-calendar]");
+  const openManagementCalendarButtons = app.querySelectorAll("[data-open-management-calendar]");
   const registrationManager = app.querySelector("[data-registration-manager]");
   const registrationSummary = app.querySelector("[data-registration-summary]");
   const registrationList = app.querySelector("[data-registration-list]");
@@ -52,9 +53,17 @@
   const contactClassSelect = app.querySelector("[data-contact-class-select]");
   const contactClassStatusSelect = app.querySelector("[data-contact-class-status]");
   const contactClassList = app.querySelector("[data-contact-class-list]");
+  const inquiryContactsEl = app.querySelector("[data-inquiry-contacts]");
+  const inquiryContactSearch = app.querySelector("[data-inquiry-contact-search]");
+  const inquiryContactSelect = app.querySelector("[data-inquiry-contact-select]");
+  const inquiryContactList = app.querySelector("[data-inquiry-contact-list]");
+  const inquiryContactCount = app.querySelector("[data-inquiry-contact-count]");
   const classRegistrationSummary = app.querySelector("[data-class-registration-summary]");
   const classRegistrationList = app.querySelector("[data-class-registration-list]");
   const refreshClassRegistrationsButton = app.querySelector("[data-refresh-class-registrations]");
+  const siteStudioTabs = Array.from(app.querySelectorAll("[data-site-studio-tab]"));
+  const siteStudioOpenButtons = Array.from(app.querySelectorAll("[data-site-studio-open]"));
+  const siteStudioPanels = Array.from(app.querySelectorAll("[data-site-studio-panel]"));
   const extraFieldsSection = app.querySelector(".management-extra-fields");
   const classSessionTypes = ["classroom", "pool", "openWater"];
   const classSessionLabels = {
@@ -95,7 +104,7 @@
     not_a_fit: "Not a Good Fit",
     completed: "Completed / Won",
   };
-  const closedStatuses = new Set(["complete", "archived", "dead_end", "not_fit"]);
+  const closedStatuses = new Set(["complete", "completed", "archived", "cancelled", "dead_end", "not_fit"]);
   const inquiryPipelineStages = [
     { keys: new Set(["new", "to_contact"]), label: "Lead" },
     { keys: new Set(["reached_out"]), label: "Contacted" },
@@ -141,6 +150,7 @@
         "contactPhone",
         "source",
         "certification",
+        "emailAlerts",
         "contactClasses",
         "notes",
       ],
@@ -169,9 +179,7 @@
         "status",
         "priority",
         "owner",
-        "contactName",
-        "contactEmail",
-        "contactPhone",
+        "inquiryContacts",
         "dueDate",
         "relatedEvent",
         "inquiryDirection",
@@ -201,6 +209,13 @@
         "classId",
         "capacity",
         "registrationClosed",
+        "registrationEmailSubject",
+        "registrationEmailUseTemplate",
+        "registrationEmailTemplateId",
+        "registrationEmailIsHtml",
+        "registrationEmailContent",
+        "registrationEmailUseFullHtml",
+        "registrationEmailFullHtml",
         "classSchedule",
         "classRoster",
         "notes",
@@ -227,6 +242,13 @@
         "registrationEnabled",
         "registrationClosed",
         "capacity",
+        "registrationEmailSubject",
+        "registrationEmailUseTemplate",
+        "registrationEmailTemplateId",
+        "registrationEmailIsHtml",
+        "registrationEmailContent",
+        "registrationEmailUseFullHtml",
+        "registrationEmailFullHtml",
         "notes",
       ],
     },
@@ -264,37 +286,66 @@
     registrationLoading: false,
     registrationDeletingId: "",
     registrationConvertingId: "",
+    registrationApprovingId: "",
+    registrationResendingId: "",
     allRegistrationSnapshots: [],
     allRegistrationsLoading: false,
     allRegistrationsLoaded: false,
     allRegistrationDeletingKey: "",
     allRegistrationConvertingKey: "",
     allRegistrationApprovingKey: "",
+    allRegistrationResendingKey: "",
+    eventAlertSendingKey: "",
     classRegistrationSnapshot: null,
     classRegistrationLoading: false,
     classConvertingRegistrationId: "",
     classApprovingRegistrationId: "",
     filterType: "all",
+    focusScope: "",
     sortBy: "newest",
     search: "",
     loading: false,
   };
 
   function getToken() {
-    return window.sessionStorage.getItem(tokenStorageKey) || "";
+    return window.localStorage.getItem(tokenStorageKey) || "";
   }
 
   function setToken(token) {
     if (!token) {
-      window.sessionStorage.removeItem(tokenStorageKey);
+      window.localStorage.removeItem(tokenStorageKey);
       return;
     }
-    window.sessionStorage.setItem(tokenStorageKey, token);
+    window.localStorage.setItem(tokenStorageKey, token);
+  }
+
+  function openSiteStudioPanel(panelName) {
+    const key = String(panelName || "operations").trim() || "operations";
+    const targetPanel = siteStudioPanels.find((panel) => panel.getAttribute("data-site-studio-panel") === key)
+      || siteStudioPanels.find((panel) => panel.getAttribute("data-site-studio-panel") === "operations");
+    if (!targetPanel) return;
+    const activeKey = targetPanel.getAttribute("data-site-studio-panel") || "operations";
+
+    siteStudioPanels.forEach((panel) => {
+      panel.hidden = panel !== targetPanel;
+    });
+    siteStudioTabs.forEach((tab) => {
+      const isActive = tab.getAttribute("data-site-studio-tab") === activeKey;
+      tab.classList.toggle("is-active", isActive);
+      tab.setAttribute("aria-selected", isActive ? "true" : "false");
+    });
+
+    const frame = targetPanel.querySelector("[data-site-studio-frame]");
+    if (frame && !frame.getAttribute("src")) {
+      const src = frame.getAttribute("data-src") || "";
+      if (src) frame.setAttribute("src", src);
+    }
   }
 
   function showAuthed(authed) {
     if (loginSection) loginSection.hidden = authed;
     if (dashboard) dashboard.hidden = !authed;
+    if (authed) openSiteStudioPanel("operations");
   }
 
   function openEditorModal() {
@@ -490,6 +541,29 @@
     return record.dueDate < todayKey();
   }
 
+  function isOpenRecord(record) {
+    return record && !closedStatuses.has(record.status);
+  }
+
+  function getEffectiveClassStatus(record) {
+    if (!record || record.recordType !== "class") return normalizeSiteText(record && record.status) || "scheduled";
+    const currentStatus = normalizeSiteText(record.status) || "scheduled";
+    if (currentStatus === "archived" || currentStatus === "complete") return currentStatus;
+    const sessions = getOrderedClassSessions(record);
+    const dates = sessions.map((session) => session.date).filter(Boolean).sort();
+    if (!dates.length) return currentStatus;
+    const currentTodayKey = todayKey();
+    const firstDate = dates[0];
+    const lastDate = dates[dates.length - 1];
+    if (lastDate < currentTodayKey) return "complete";
+    if (firstDate <= currentTodayKey && lastDate >= currentTodayKey) return "active";
+    return currentStatus;
+  }
+
+  function getEffectiveRecordStatus(record) {
+    return record && record.recordType === "class" ? getEffectiveClassStatus(record) : normalizeSiteText(record && record.status);
+  }
+
   function isInputFocused() {
     const active = document.activeElement;
     if (!active) return false;
@@ -527,6 +601,30 @@
     if (field && "placeholder" in field) field.placeholder = placeholder || "";
   }
 
+  function updateCharacterCounter(fieldName) {
+    if (!recordForm || !fieldName) return;
+    const field = recordForm.elements[fieldName];
+    const counter = app.querySelector(`[data-character-counter-for="${fieldName}"]`);
+    if (!field || !counter) return;
+    const maxLength = Math.max(0, Number(field.getAttribute("maxlength") || 0) || 0);
+    if (!maxLength) {
+      counter.textContent = "";
+      counter.classList.remove("is-warning", "is-full");
+      return;
+    }
+    const used = String(field.value || "").length;
+    const remaining = Math.max(0, maxLength - used);
+    counter.textContent = `${remaining.toLocaleString()} characters remaining`;
+    counter.classList.toggle("is-warning", remaining <= Math.ceil(maxLength * 0.1) && remaining > 0);
+    counter.classList.toggle("is-full", remaining === 0);
+  }
+
+  function updateRegistrationEmailCounters() {
+    updateCharacterCounter("registrationEmailSubject");
+    updateCharacterCounter("registrationEmailContent");
+    updateCharacterCounter("registrationEmailFullHtml");
+  }
+
   function syncPriorityOptions(type) {
     const select = recordForm && recordForm.elements.priority;
     if (!select) return;
@@ -552,6 +650,15 @@
       .join("");
     const fallback = type === "inquiry" ? "new" : options[0];
     select.value = options.includes(current) ? current : fallback;
+  }
+
+  function openManagementCalendarList() {
+    state.filterType = "trip";
+    filterButtons.forEach((button) => {
+      button.classList.toggle("is-active", (button.getAttribute("data-filter-type") || "all") === "trip");
+    });
+    renderRecords();
+    if (recordList) recordList.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function syncTimeOptions() {
@@ -636,6 +743,221 @@
 
   function getContactRecords() {
     return state.records.filter((record) => record.recordType === "contact");
+  }
+
+  function getContactDisplayName(contact) {
+    return normalizeSiteText(contact && (contact.contactName || contact.title || contact.contactEmail)) || "Unnamed contact";
+  }
+
+  function getQuizRouteLabel(route) {
+    const labels = {
+      cert: "Open Water Certification",
+      refresh: "Skill Refresh",
+      travel: "Trip-Ready Coaching",
+      contact: "Discovery Consult",
+    };
+    const key = normalizeSiteText(route);
+    return labels[key] || formatLabel(key);
+  }
+
+  function getQuizDetailFromNotes(contact, label) {
+    const noteText = normalizeSiteText(contact && contact.notes);
+    if (!noteText || !label) return "";
+    const escapedLabel = String(label).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = noteText.match(new RegExp(`${escapedLabel}:\\s*([^\\n]+)`, "i"));
+    return normalizeSiteText(match && match[1]);
+  }
+
+  function getContactQuizDetails(contact) {
+    const extras = getExtras(contact);
+    const recommendedStart =
+      normalizeSiteText(extras.quizRecommendedStart) ||
+      getQuizDetailFromNotes(contact, "Recommended start");
+    const quizRoute = normalizeSiteText(extras.quizRoute) || getQuizDetailFromNotes(contact, "Recommended route");
+    const quizMode = normalizeSiteText(extras.quizMode) || getQuizDetailFromNotes(contact, "Quiz mode");
+    const quizPath = normalizeSiteText(extras.quizPath) || getQuizDetailFromNotes(contact, "Quiz path");
+    const timeline = getQuizDetailFromNotes(contact, "Timeline");
+    const executionPlan = getQuizDetailFromNotes(contact, "Execution plan");
+    const goals = getQuizDetailFromNotes(contact, "Goals");
+    const message = getQuizDetailFromNotes(contact, "Message");
+    const answers = normalizeSiteText(extras.quizAnswers) || getQuizDetailFromNotes(contact, "Answers");
+    return {
+      recommendedStart,
+      quizRoute,
+      quizRouteLabel: getQuizRouteLabel(quizRoute),
+      quizMode,
+      quizPath,
+      timeline,
+      executionPlan,
+      goals,
+      message,
+      answers,
+    };
+  }
+
+  function isQuizLeadContact(contact) {
+    if (!contact) return false;
+    const extras = getExtras(contact);
+    const notes = normalizeSiteText(contact.notes).toLowerCase();
+    const source = normalizeSiteText(extras.source).toLowerCase();
+    const hasQuizField =
+      normalizeSiteText(extras.quizRecommendedStart) ||
+      normalizeSiteText(extras.quizAnswers) ||
+      normalizeSiteText(extras.quizPath) ||
+      normalizeSiteText(extras.quizRoute);
+    const hasQuizNote =
+      notes.includes("dive quiz submitted") ||
+      notes.includes("dive path quiz result") ||
+      notes.includes("dive quiz contact") ||
+      notes.includes("dive quiz lead") ||
+      (notes.includes("recommended start:") && notes.includes("recommended route:")) ||
+      (notes.includes("recommended start:") && notes.includes("execution plan:"));
+    return Boolean(
+      normalizeSiteText(extras.quizLead) === "1" ||
+      hasQuizField ||
+      hasQuizNote ||
+      (source === "dive path quiz" && (hasQuizField || hasQuizNote))
+    );
+  }
+
+  function buildInquiryTitleFromContact(contact) {
+    if (!contact) return "";
+    const name = getContactDisplayName(contact);
+    const quiz = getContactQuizDetails(contact);
+    if (isQuizLeadContact(contact)) {
+      const quizResult = quiz.recommendedStart || quiz.quizRouteLabel || quiz.quizPath;
+      return [name, ["Dive Path Quiz", quizResult].filter(Boolean).join(": ")].filter(Boolean).join(" - ");
+    }
+    const source = formatLabel(extras.source);
+    return [name, source || "Inquiry"].filter(Boolean).join(" - ");
+  }
+
+  function setInquiryFieldIfEmpty(name, value) {
+    const field = recordForm && recordForm.elements[name];
+    const nextValue = normalizeSiteText(value);
+    if (!field || field.disabled || !nextValue || normalizeSiteText(field.value)) return;
+    field.value = nextValue;
+  }
+
+  function buildQuizInquiryNotes(contact) {
+    const quiz = getContactQuizDetails(contact);
+    const lines = [
+      "Dive Path Quiz Result",
+      "",
+      `Contact: ${getContactDisplayName(contact)}`,
+      contact.contactEmail ? `Email: ${contact.contactEmail}` : "",
+      contact.contactPhone ? `Phone: ${contact.contactPhone}` : "",
+      "",
+      quiz.recommendedStart ? `Recommended start: ${quiz.recommendedStart}` : "",
+      quiz.quizRoute ? `Recommended route: ${quiz.quizRoute}` : "",
+      quiz.timeline ? `Timeline: ${quiz.timeline}` : "",
+      quiz.executionPlan ? `Execution plan: ${quiz.executionPlan}` : "",
+      quiz.quizMode ? `Quiz mode: ${quiz.quizMode}` : "",
+      quiz.quizPath ? `Quiz path: ${quiz.quizPath}` : "",
+      quiz.goals ? `Goals: ${quiz.goals}` : "",
+      quiz.message ? `Message: ${quiz.message}` : "",
+      quiz.answers ? `Answers: ${quiz.answers}` : "",
+      "",
+      "Original contact notes:",
+      normalizeSiteText(contact.notes),
+    ].filter((line) => line !== "");
+    return lines.join("\n");
+  }
+
+  function fillInquiryFromSelectedContact() {
+    if (!recordForm) return;
+    const type = recordForm.elements.recordType ? normalizeSiteText(recordForm.elements.recordType.value) : "";
+    if (type !== "inquiry") return;
+    const firstContactId = getSelectedInquiryContactIds()[0] || "";
+    if (!firstContactId) return;
+    const contact = getContactRecords().find((item) => item.id === firstContactId);
+    if (!contact) return;
+    if (!isQuizLeadContact(contact)) return;
+    const quiz = getContactQuizDetails(contact);
+    setInquiryFieldIfEmpty("title", buildInquiryTitleFromContact(contact));
+    setInquiryFieldIfEmpty("relatedEvent", quiz.recommendedStart || quiz.quizRouteLabel || quiz.quizPath);
+    setInquiryFieldIfEmpty("source", "Dive Path Quiz");
+    setInquiryFieldIfEmpty("inquiryDirection", "incoming");
+    setInquiryFieldIfEmpty("inquiryCategory", "customer");
+    setInquiryFieldIfEmpty("nextStep", "Follow up with a personalized dive plan.");
+    setInquiryFieldIfEmpty("notes", buildQuizInquiryNotes(contact));
+  }
+
+  function getInquiryContactIds(record = null) {
+    const extras = getExtras(record);
+    if (Array.isArray(extras.inquiryContactIds)) {
+      return extras.inquiryContactIds.map((id) => normalizeSiteText(id)).filter(Boolean);
+    }
+    const legacyEmail = normalizeSiteText(record && record.contactEmail).toLowerCase();
+    if (!legacyEmail) return [];
+    const legacyContact = getContactRecords().find((contact) => normalizeSiteText(contact.contactEmail).toLowerCase() === legacyEmail);
+    return legacyContact && legacyContact.id ? [legacyContact.id] : [];
+  }
+
+  function getInquiryContacts(record = null) {
+    const ids = new Set(getInquiryContactIds(record));
+    return getContactRecords().filter((contact) => ids.has(contact.id));
+  }
+
+  function getSelectedInquiryContactIds() {
+    return inquiryContactSelect
+      ? Array.from(inquiryContactSelect.selectedOptions).map((option) => normalizeSiteText(option.value)).filter(Boolean)
+      : [];
+  }
+
+  function syncInquiryContactSelectedList() {
+    if (!inquiryContactList || !inquiryContactSelect) return;
+    const ids = new Set(getSelectedInquiryContactIds());
+    const contacts = getContactRecords().filter((contact) => ids.has(contact.id));
+    fillInquiryFromSelectedContact();
+    if (inquiryContactCount) {
+      inquiryContactCount.textContent = `${contacts.length} selected`;
+    }
+    inquiryContactList.innerHTML = contacts.length
+      ? contacts.map((contact) => `
+          <div class="management-class-contact-item management-inquiry-contact-item" data-inquiry-contact-id="${escapeHtml(contact.id)}">
+            <div>
+              <strong>${escapeHtml(getContactDisplayName(contact))}</strong>
+              <span>${escapeHtml([contact.contactEmail, contact.contactPhone].filter(Boolean).join(" | "))}</span>
+            </div>
+            <button type="button" data-remove-inquiry-contact="${escapeHtml(contact.id)}">Remove</button>
+          </div>
+        `).join("")
+      : '<div class="management-empty">No contacts linked to this inquiry yet.</div>';
+  }
+
+  function renderInquiryContactManager(record = null) {
+    if (!inquiryContactsEl) return;
+    const isInquiry = record && record.recordType === "inquiry";
+    const query = normalizeSiteText(inquiryContactSearch && inquiryContactSearch.value).toLowerCase();
+    const selectedIds = new Set(getInquiryContactIds(record));
+    const contacts = getContactRecords();
+    const filteredContacts = contacts.filter((contact) => {
+      if (selectedIds.has(contact.id)) return true;
+      if (!query) return true;
+      const extras = getExtras(contact);
+      return [
+        contact.contactName,
+        contact.title,
+        contact.contactEmail,
+        contact.contactPhone,
+        extras.firstName,
+        extras.lastName,
+      ].join(" ").toLowerCase().includes(query);
+    });
+
+    if (inquiryContactSelect) {
+      inquiryContactSelect.innerHTML = filteredContacts.length
+        ? filteredContacts.map((contact) => {
+          const details = [contact.contactEmail, contact.contactPhone].filter(Boolean).join(" | ");
+          const label = [getContactDisplayName(contact), details].filter(Boolean).join(" - ");
+          return `<option value="${escapeHtml(contact.id)}" ${selectedIds.has(contact.id) ? "selected" : ""}>${escapeHtml(label)}</option>`;
+        }).join("")
+        : '<option value="">No matching contacts</option>';
+      inquiryContactSelect.disabled = !isInquiry || !contacts.length;
+    }
+    if (inquiryContactSearch) inquiryContactSearch.disabled = !isInquiry || !contacts.length;
+    syncInquiryContactSelectedList();
   }
 
   function getClassRecords() {
@@ -824,6 +1146,19 @@
     `;
   }
 
+  function renderMobileCardDetails(label, content) {
+    const body = String(content || "").trim();
+    if (!body) return "";
+    return `
+      <details class="management-record-details management-card-expand">
+        <summary>${escapeHtml(label || "Details")}</summary>
+        <div class="management-card-expand-body">
+          ${body}
+        </div>
+      </details>
+    `;
+  }
+
   function renderContactRecordDetails(record) {
     if (!record || record.recordType !== "contact") return "";
     const extras = getExtras(record);
@@ -836,6 +1171,7 @@
       ["Phone", record.contactPhone],
       ["Source", extras.source],
       ["Certification", extras.certification],
+      ["Event Alerts", extras.emailAlerts ? "Opted in" : ""],
       ["Priority", formatLabel(record.priority)],
       ["Notes", record.notes],
     ].filter((row) => normalizeSiteText(row[1]));
@@ -891,7 +1227,8 @@
     const extras = getExtras(record);
     const nextStep = normalizeSiteText(extras.nextStep);
     const dueDate = normalizeSiteText(record.dueDate);
-    const contactName = normalizeSiteText(record.contactName);
+    const linkedContacts = getInquiryContacts(record);
+    const contactName = normalizeSiteText((linkedContacts[0] && getContactDisplayName(linkedContacts[0])) || record.contactName);
     const contactEmail = normalizeSiteText(record.contactEmail);
     const balance = getBalance(record);
     let dueSoonClass = "";
@@ -924,6 +1261,13 @@
     if (!record || record.recordType !== "inquiry") return "";
     const extras = getExtras(record);
     const balance = getBalance(record);
+    const linkedContacts = getInquiryContacts(record);
+    const contactSummary = linkedContacts.length
+      ? linkedContacts.map((contact) => {
+        const detail = [contact.contactEmail, contact.contactPhone].filter(Boolean).join(" | ");
+        return [getContactDisplayName(contact), detail].filter(Boolean).join(" - ");
+      }).join(", ")
+      : "";
     const renderCell = ([label, value]) => normalizeSiteText(value)
       ? `<div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`
       : "";
@@ -940,9 +1284,10 @@
       {
         title: "Contact",
         rows: [
-          ["Primary Contact", record.contactName],
-          ["Email", record.contactEmail],
-          ["Phone", record.contactPhone],
+          ["Linked Contacts", contactSummary],
+          ["Primary Contact", linkedContacts.length ? "" : record.contactName],
+          ["Email", linkedContacts.length ? "" : record.contactEmail],
+          ["Phone", linkedContacts.length ? "" : record.contactPhone],
           ["Organization", record.relatedEvent],
           ["Source", extras.source],
           ["Owner", record.owner],
@@ -1162,6 +1507,8 @@
     state.registrationLoading = false;
     state.registrationDeletingId = "";
     state.registrationConvertingId = "";
+    state.registrationApprovingId = "";
+    state.registrationResendingId = "";
     renderRegistrationManager();
   }
 
@@ -1200,6 +1547,24 @@
   function isSiteBackedManagementRecord(record) {
     const extras = getExtras(record);
     return extras.siteSource === "events";
+  }
+
+  function getUniqueSiteEventId(title, dateValue) {
+    const base = slugify([title, dateValue].filter(Boolean).join(" "), "calendar-event");
+    const existingIds = new Set(
+      [
+        ...(Array.isArray(state.eventsPayload && state.eventsPayload.events) ? state.eventsPayload.events : []),
+        ...(Array.isArray(state.eventsPayload && state.eventsPayload.templates) ? state.eventsPayload.templates : []),
+      ]
+        .map((item) => normalizeSiteText(item && item.id).toLowerCase())
+        .filter(Boolean)
+    );
+    if (!existingIds.has(base)) return base;
+    for (let index = 2; index < 1000; index += 1) {
+      const candidate = `${base}-${index}`;
+      if (!existingIds.has(candidate)) return candidate;
+    }
+    return `${base}-${Date.now().toString().slice(-5)}`;
   }
 
   function getUpcomingSiteEventCounts() {
@@ -1303,6 +1668,13 @@
         eventLocation: normalizeSiteText(item.location),
         registrationEnabled: item.registrationEnabled ? "1" : "",
         registrationClosed: item.registrationClosed ? "1" : "",
+        registrationEmailSubject: normalizeSiteText(item.registrationEmailSubject),
+        registrationEmailUseTemplate: item.registrationEmailUseTemplate ? "1" : "",
+        registrationEmailTemplateId: normalizeSiteText(item.registrationEmailTemplateId),
+        registrationEmailIsHtml: item.registrationEmailIsHtml ? "1" : "",
+        registrationEmailContent: normalizeSiteText(item.registrationEmailContent),
+        registrationEmailUseFullHtml: item.registrationEmailUseFullHtml ? "1" : "",
+        registrationEmailFullHtml: normalizeSiteText(item.registrationEmailFullHtml),
         capacity: capacity ? String(capacity) : existingExtras.capacity || "",
         certification: existingExtras.certification || "",
         source: "Site calendar",
@@ -1347,6 +1719,8 @@
       extras.amountPaid,
       extras.capacity,
       extras.registrationClosed,
+      ...(Array.isArray(extras.inquiryContactIds) ? extras.inquiryContactIds : []),
+      ...getInquiryContacts(record).flatMap((contact) => [contact.contactName, contact.title, contact.contactEmail, contact.contactPhone]),
       extras.siteSource,
       extras.sourceId,
       extras.eventDate,
@@ -1379,6 +1753,35 @@
     return haystack.includes(query);
   }
 
+  function getSiteEventRegistrationSnapshot(item) {
+    const sourceId = normalizeSiteText(item && (item.sourceId || item.id));
+    const eventDate = normalizeSiteText(item && item.date);
+    if (!sourceId || !eventDate) return null;
+    return state.allRegistrationSnapshots.find((snapshot) => {
+      const context = snapshot && snapshot.context ? snapshot.context : {};
+      return normalizeSiteText(context.sourceId) === sourceId && normalizeSiteText(context.eventDate) === eventDate;
+    }) || null;
+  }
+
+  function getEventAlertEligibility(item, isPast) {
+    if (!item) return { eligible: false, reason: "No calendar record selected." };
+    if (isPast) return { eligible: false, reason: "Past events cannot be announced." };
+    if (!item.registrationEnabled) return { eligible: false, reason: "Registration is not enabled for this event." };
+    if (item.registrationClosed) return { eligible: false, reason: "Registration is closed for this event." };
+    const snapshot = getSiteEventRegistrationSnapshot(item);
+    if (snapshot && (snapshot.registrationClosed || isSnapshotRegistrationAtCapacity(snapshot))) {
+      return { eligible: false, reason: "Registration is full or closed." };
+    }
+    return { eligible: true, reason: "Ready to alert subscribers." };
+  }
+
+  function getSiteEventAlertKey(item) {
+    return [
+      normalizeSiteText(item && (item.sourceId || item.id)),
+      normalizeSiteText(item && item.date),
+    ].filter(Boolean).join("|");
+  }
+
   function renderSiteCalendarCard(item, sourceIndex, isPast) {
     const recordType = classifySiteEvent(item);
     const dateText = [formatDate(item.date), item.endDate && item.endDate !== item.date ? formatDate(item.endDate) : ""]
@@ -1386,7 +1789,11 @@
       .join(" - ");
     const timeText = item.time ? (item.endTime ? `${item.time} - ${item.endTime}` : item.time) : "";
     const spotsText = item.registrationCapacity ? `${item.registrationCapacity} spots` : "No cap set";
-    const registrationText = item.registrationClosed
+    const registrationClosed = Boolean(item.registrationClosed || (item.registrationEnabled && isPast));
+    const alertEligibility = getEventAlertEligibility(item, isPast);
+    const alertKey = getSiteEventAlertKey(item);
+    const sendingAlert = alertKey && alertKey === state.eventAlertSendingKey;
+    const registrationText = registrationClosed
       ? "Registration closed"
       : item.registrationEnabled
         ? "Registration open"
@@ -1399,6 +1806,12 @@
       ["Capacity", spotsText],
       ["Registration", registrationText],
     ];
+    const calendarDetails = `
+      <div class="management-calendar-stat-grid">
+        ${statItems.map(([label, value]) => `<span><strong>${escapeHtml(label)}</strong>${escapeHtml(value)}</span>`).join("")}
+      </div>
+      ${summary ? `<p class="management-card-note">${escapeHtml(summary.length > 220 ? `${summary.slice(0, 220)}...` : summary)}</p>` : ""}
+    `;
     const eventUrl = `/pages/events/index.html?event=${encodeURIComponent(item.id || item.sourceId || "")}&date=${encodeURIComponent(item.date || "")}`;
     return `
       <article class="management-calendar-item ${isPast ? "is-past" : ""}" data-calendar-index="${sourceIndex}">
@@ -1410,16 +1823,15 @@
           <div class="management-record-badges">
             <span class="management-badge">${escapeHtml(formatLabel(recordType))}</span>
             ${item.type ? `<span class="management-badge is-waiting">${escapeHtml(item.type)}</span>` : ""}
-            ${item.registrationClosed ? '<span class="management-badge is-waiting">Registration Closed</span>' : item.registrationEnabled ? '<span class="management-badge is-complete">Registration</span>' : ""}
+            ${registrationClosed ? '<span class="management-badge is-waiting">Registration Closed</span>' : item.registrationEnabled ? '<span class="management-badge is-complete">Registration</span>' : ""}
+            ${alertEligibility.eligible ? '<span class="management-badge is-alert-ready">Alert Ready</span>' : ""}
             ${isPast ? '<span class="management-badge is-waiting">Past</span>' : ""}
           </div>
           <h3>${escapeHtml(item.title || "Scheduled Event")}</h3>
-          <div class="management-calendar-stat-grid">
-            ${statItems.map(([label, value]) => `<span><strong>${escapeHtml(label)}</strong>${escapeHtml(value)}</span>`).join("")}
-          </div>
-          ${summary ? `<p>${escapeHtml(summary.length > 220 ? `${summary.slice(0, 220)}...` : summary)}</p>` : ""}
+          ${renderMobileCardDetails("Event details", calendarDetails)}
         </div>
         <div class="management-calendar-actions">
+          <button type="button" data-event-alert-index="${escapeHtml(sourceIndex)}" ${alertEligibility.eligible && !sendingAlert ? "" : "disabled"} title="${escapeHtml(alertEligibility.reason)}">${sendingAlert ? "Sending..." : "Send Alert Email"}</button>
           <a href="${escapeHtml(eventUrl)}" target="_blank" rel="noopener">View Site Event</a>
         </div>
       </article>
@@ -1470,6 +1882,15 @@
   function getVisibleRecords() {
     return state.records
       .filter((record) => !isSiteBackedManagementRecord(record))
+      .filter((record) => {
+        if (!state.focusScope) return true;
+        if (record.recordType === "contact") return false;
+        if (state.focusScope === "overdue") return isOpenRecord(record) && isOverdue(record);
+        if (state.focusScope === "due_today") return isOpenRecord(record) && record.dueDate === todayKey();
+        if (state.focusScope === "open_items") return isOpenRecord(record);
+        if (state.focusScope === "open_balance") return isOpenRecord(record) && getBalance(record) > 0;
+        return true;
+      })
       .filter((record) => record.recordType === "contact"
         ? state.filterType === "contact"
         : state.filterType === "all" || record.recordType === state.filterType)
@@ -1479,6 +1900,7 @@
   }
 
   function getVisibleSiteEventsForRecords() {
+    if (state.focusScope) return [];
     if (!["all", "class", "trip"].includes(state.filterType)) return [];
     if (state.filterType === "class") return [];
     const currentTodayKey = todayKey();
@@ -1621,6 +2043,7 @@
       const deleting = actionKey && actionKey === state.allRegistrationDeletingKey;
       const converting = actionKey && actionKey === state.allRegistrationConvertingKey;
       const approving = actionKey && actionKey === state.allRegistrationApprovingKey;
+      const resending = actionKey && actionKey === state.allRegistrationResendingKey;
       const classRecord = getRegistrationContextClassRecord(context);
       const detailItems = [
         approvalStatus === "approved" ? "Approved" : "Pending approval",
@@ -1633,6 +2056,19 @@
         context.eventDate ? formatDate(context.eventDate) : "",
         context.location,
       ].filter(Boolean).join(" | ");
+      const registrationCardDetails = `
+        <div class="management-contact-card-lines">
+          ${renderContactCopyLine("Email", email, "email")}
+          ${renderContactCopyLine("Phone", phone, "phone")}
+        </div>
+        <div class="management-registration-card-event">
+          <strong>${escapeHtml(context.title || "DMZ Scuba Event")}</strong>
+          <span>${escapeHtml(eventLine)}</span>
+        </div>
+        <div class="management-record-meta">
+          ${detailItems.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
+        </div>
+      `;
       const unregisterButton = canUnregister
         ? `<button type="button" data-unregister-card="${escapeHtml(actionKey)}" ${!registrantId || deleting || state.allRegistrationsLoading ? "disabled" : ""}>${deleting ? "Unregistering..." : "Unregister from Event"}</button>`
         : "";
@@ -1645,22 +2081,13 @@
               ${context.type ? `<span class="management-badge is-trip">${escapeHtml(context.type)}</span>` : ""}
             </div>
             <h3>${escapeHtml(fullName)}</h3>
-            <div class="management-contact-card-lines">
-              ${renderContactCopyLine("Email", email, "email")}
-              ${renderContactCopyLine("Phone", phone, "phone")}
-            </div>
-            <div class="management-registration-card-event">
-              <strong>${escapeHtml(context.title || "DMZ Scuba Event")}</strong>
-              <span>${escapeHtml(eventLine)}</span>
-            </div>
-            <div class="management-record-meta">
-              ${detailItems.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
-            </div>
+            ${renderMobileCardDetails("Signup details", registrationCardDetails)}
           </div>
           <div class="management-record-actions management-registration-card-actions">
             <button type="button" data-open-registration-target="${escapeHtml(actionKey)}">${classRecord ? "Open Roster" : "Open Event"}</button>
             <button type="button" data-approve-registration="${escapeHtml(actionKey)}" ${!registrantId || !canApprove || approving || state.allRegistrationsLoading ? "disabled" : ""}>${approvalStatus === "approved" ? "Approved" : approving ? "Approving..." : "Approve"}</button>
             <button type="button" data-add-registration-contact="${escapeHtml(actionKey)}" ${!registrantId || alreadyContact || converting || state.allRegistrationsLoading ? "disabled" : ""}>${alreadyContact ? "Added to Contacts" : converting ? "Adding..." : "Add to Contacts"}</button>
+            <button type="button" data-resend-registration-email="${escapeHtml(actionKey)}" ${!registrantId || resending || state.allRegistrationsLoading ? "disabled" : ""}>${resending ? "Sending..." : "Resend Email"}</button>
             ${unregisterButton}
           </div>
         </article>
@@ -1731,13 +2158,14 @@
     const visibleRecords = getVisibleRecords();
     const visibleSiteEvents = getVisibleSiteEventsForRecords();
     if (!visibleRecords.length && !visibleSiteEvents.length) {
-      recordList.innerHTML = '<div class="management-empty">No matching management items yet.</div>';
+      recordList.innerHTML = `<div class="management-empty">${state.focusScope ? "No matching dashboard items right now." : "No matching management items yet."}</div>`;
       return;
     }
 
     const recordMarkup = visibleRecords
       .map((record) => {
         const isContact = record.recordType === "contact";
+        const displayStatus = getEffectiveRecordStatus(record) || record.status || "scheduled";
         const extras = getExtras(record);
         const balance = getBalance(record);
         const contactEnrollments = isContact ? getContactClassEnrollments(record) : [];
@@ -1745,6 +2173,7 @@
           ? [
               extras.source ? `Source: ${extras.source}` : "",
               extras.certification ? `Certification: ${extras.certification}` : "",
+              extras.emailAlerts ? "Event alerts" : "",
               contactEnrollments.length ? `${contactEnrollments.length} class${contactEnrollments.length === 1 ? "" : "es"}` : "",
             ].filter(Boolean)
           : record.recordType === "inquiry"
@@ -1775,6 +2204,21 @@
                 ${renderContactCopyLine("Phone", record.contactPhone, "phone")}
               </div>`
             : "";
+        const cardDetailsLabel = record.recordType === "contact"
+          ? "Contact details"
+          : record.recordType === "inquiry"
+            ? "Inquiry details"
+            : record.recordType === "class"
+              ? "Class details"
+              : "Item details";
+        const cardDetails = [
+          summary ? `<p class="management-card-note">${escapeHtml(summary)}</p>` : "",
+          contactCopy,
+          meta.length ? `<div class="management-record-meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>` : "",
+          classDetails,
+          contactDetails,
+          inquiryDetails,
+        ].filter(Boolean).join("");
         const overdueFlag = isOverdue(record) ? `<span class="management-badge is-overdue">Overdue</span>` : "";
         const pinnedFlag = record.pinned ? " is-pinned" : "";
         return `
@@ -1785,7 +2229,7 @@
                 ${
                   record.recordType === "contact"
                     ? ""
-                    : `<span class="management-badge is-${escapeHtml(record.status)}">${escapeHtml(formatLabel(record.status))}</span>`
+                    : `<span class="management-badge is-${escapeHtml(displayStatus)}">${escapeHtml(formatLabel(displayStatus))}</span>`
                 }
                 <span class="management-badge is-${escapeHtml(record.priority)}">${escapeHtml(formatLabel(record.priority))}</span>
                 ${overdueFlag}
@@ -1793,12 +2237,7 @@
               <h3>${escapeHtml(record.title)}</h3>
               ${inquiryPipeline}
               ${inquiryCallout}
-              ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
-              ${contactCopy}
-              ${meta.length ? `<div class="management-record-meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>` : ""}
-              ${classDetails}
-              ${contactDetails}
-              ${inquiryDetails}
+              ${renderMobileCardDetails(cardDetailsLabel, cardDetails)}
             </div>
             <div class="management-record-actions">
               <button class="management-pin-btn ${record.pinned ? "is-pinned" : ""}" type="button" data-pin-record="${escapeHtml(record.id)}" aria-label="${record.pinned ? "Unpin" : "Pin"} ${escapeHtml(record.title)}" title="${record.pinned ? "Unpin" : "Pin"}">${record.pinned ? "★" : "☆"}</button>
@@ -1807,7 +2246,7 @@
                   ? ""
                   : `<select data-status-change="${escapeHtml(record.id)}" aria-label="Change status for ${escapeHtml(record.title)}">
                 ${getStatusOptions(record.recordType)
-                  .map((status) => `<option value="${status}" ${record.status === status ? "selected" : ""}>${formatLabel(status)}</option>`)
+                  .map((status) => `<option value="${status}" ${displayStatus === status ? "selected" : ""}>${formatLabel(status)}</option>`)
                   .join("")}
               </select>`
               }
@@ -1898,15 +2337,20 @@
         ].filter(Boolean);
         const deleting = registrantId && registrantId === state.registrationDeletingId;
         const converting = registrantId && registrantId === state.registrationConvertingId;
+        const approving = registrantId && registrantId === state.registrationApprovingId;
+        const resending = registrantId && registrantId === state.registrationResendingId;
         const alreadyContact = registrantEmail && contactEmails.has(registrantEmail);
+        const approvalStatus = getRegistrationApprovalStatus(registrant);
         return `
           <div class="management-registration-item">
             <div>
               <strong>${escapeHtml(normalizeSiteText(registrant && registrant.name) || "Unnamed registrant")}</strong>
-              <span>${escapeHtml(details.join(" | "))}</span>
+              <span>${escapeHtml([approvalStatus === "approved" ? "Approved" : "Pending approval", ...details].join(" | "))}</span>
             </div>
             <div class="management-registration-actions">
+              <button type="button" data-approve-event-registration="${escapeHtml(registrantId)}" ${!registrantId || approvalStatus === "approved" || approving || state.registrationLoading ? "disabled" : ""}>${approvalStatus === "approved" ? "Approved" : approving ? "Approving..." : "Approve"}</button>
               <button type="button" data-convert-event-registration="${escapeHtml(registrantId)}" ${!registrantId || alreadyContact || converting || state.registrationLoading ? "disabled" : ""}>${alreadyContact ? "Added" : converting ? "Adding..." : "Add Contact"}</button>
+              <button type="button" data-resend-event-registration-email="${escapeHtml(registrantId)}" ${!registrantId || resending || state.registrationLoading ? "disabled" : ""}>${resending ? "Sending..." : "Resend Email"}</button>
               <button type="button" data-remove-registration="${escapeHtml(registrantId)}" ${!registrantId || deleting || state.registrationLoading ? "disabled" : ""}>${deleting ? "Removing..." : "Unregister"}</button>
             </div>
           </div>
@@ -1955,8 +2399,59 @@
       return;
     }
     state.registrationSnapshot = data;
+    syncActiveRegistrationStateFromSnapshot(data);
     setStatus(recordStatus, "Registration removed.", "success");
     renderRegistrationManager();
+  }
+
+  async function approveEventRegistration(registrationId) {
+    const context = getActiveRegistrationContext();
+    const safeId = normalizeSiteText(registrationId);
+    if (!context || !safeId) return;
+    state.registrationApprovingId = safeId;
+    renderRegistrationManager();
+    try {
+      const data = await updateRegistrationApproval(context, safeId, "approved");
+      state.registrationSnapshot = data;
+      syncActiveRegistrationStateFromSnapshot(data);
+      updateAllRegistrationSnapshot(context, data);
+      setStatus(recordStatus, "Registration approved.", "success");
+    } catch (error) {
+      setStatus(recordStatus, error && error.message ? error.message : "Could not approve this registration.", "error");
+    } finally {
+      state.registrationApprovingId = "";
+      renderRegistrationManager();
+      renderRecords();
+    }
+  }
+
+  async function resendRegistrationEmail(context, registrationId) {
+    const safeId = normalizeSiteText(registrationId);
+    if (!context || !context.sourceId || !context.eventDate || !safeId) return null;
+    const url = `${adminEventsUrl}/${encodeURIComponent(context.sourceId)}/registrations/${encodeURIComponent(safeId)}/email?date=${encodeURIComponent(context.eventDate)}`;
+    const resp = await apiFetch(url, { method: "POST" }).catch(() => null);
+    const data = resp ? await resp.json().catch(() => ({})) : {};
+    if (!resp || !resp.ok || !data.ok) {
+      throw new Error(data.error || "Could not resend registration email.");
+    }
+    return data;
+  }
+
+  async function resendActiveRegistrationEmail(registrationId) {
+    const context = getActiveRegistrationContext();
+    const safeId = normalizeSiteText(registrationId);
+    if (!context || !safeId) return;
+    state.registrationResendingId = safeId;
+    renderRegistrationManager();
+    try {
+      await resendRegistrationEmail(context, safeId);
+      setStatus(recordStatus, "Registration email resent.", "success");
+    } catch (error) {
+      setStatus(recordStatus, error && error.message ? error.message : "Could not resend registration email.", "error");
+    } finally {
+      state.registrationResendingId = "";
+      renderRegistrationManager();
+    }
   }
 
   function findAllRegistrationEntry(actionKey) {
@@ -1990,6 +2485,16 @@
       }
       return snapshot;
     });
+    syncSiteEventRegistrationClosed(context, data);
+    const activeContext = getActiveRegistrationContext();
+    if (
+      activeContext &&
+      normalizeSiteText(activeContext.sourceId) === normalizeSiteText(context.sourceId) &&
+      normalizeSiteText(activeContext.eventDate) === normalizeSiteText(context.eventDate)
+    ) {
+      state.registrationSnapshot = data;
+      syncActiveRegistrationStateFromSnapshot(data);
+    }
     setStatus(recordStatus, "Registration removed.", "success");
     renderRecords();
   }
@@ -2006,6 +2511,71 @@
       setStatus(recordStatus, error && error.message ? error.message : "Could not approve this registration.", "error");
     } finally {
       state.allRegistrationApprovingKey = "";
+      renderRecords();
+    }
+  }
+
+  async function resendRegistrationCardEmail(actionKey) {
+    const entry = findAllRegistrationEntry(actionKey);
+    const context = entry && entry.context;
+    const registrantId = normalizeSiteText(entry && entry.registrant && entry.registrant.id);
+    if (!context || !registrantId) return;
+    state.allRegistrationResendingKey = normalizeSiteText(actionKey);
+    renderRecords();
+    try {
+      await resendRegistrationEmail(context, registrantId);
+      setStatus(recordStatus, "Registration email resent.", "success");
+    } catch (error) {
+      setStatus(recordStatus, error && error.message ? error.message : "Could not resend registration email.", "error");
+    } finally {
+      state.allRegistrationResendingKey = "";
+      renderRecords();
+    }
+  }
+
+  async function sendEventAlertForCalendarIndex(indexValue) {
+    const index = Number(indexValue);
+    const item = Number.isFinite(index) ? state.siteEvents[index] : null;
+    const sourceId = normalizeSiteText(item && (item.sourceId || item.id));
+    const eventDate = normalizeSiteText(item && item.date);
+    const alertKey = getSiteEventAlertKey(item);
+    const isPast = eventDate && eventDate < todayKey();
+    const eligibility = getEventAlertEligibility(item, isPast);
+    if (!item || !sourceId || !eventDate) {
+      setStatus(recordStatus, "Could not find this calendar event.", "error");
+      return;
+    }
+    if (!eligibility.eligible) {
+      setStatus(recordStatus, eligibility.reason || "This event is not eligible for alert emails.", "error");
+      return;
+    }
+    const name = normalizeSiteText(item.title) || "this event";
+    if (!window.confirm(`Send an event alert email to all opted-in subscribers for "${name}"?`)) return;
+
+    state.eventAlertSendingKey = alertKey;
+    renderRecords();
+    setStatus(recordStatus, "Sending event alert emails...");
+    try {
+      const url = `${adminEventsUrl}/${encodeURIComponent(sourceId)}/alerts?date=${encodeURIComponent(eventDate)}`;
+      const resp = await apiFetch(url, { method: "POST" }).catch(() => null);
+      const data = resp ? await resp.json().catch(() => ({})) : {};
+      if (!resp || !resp.ok || (data.ok === false && data.sentCount === undefined && data.failedCount === undefined)) {
+        throw new Error(data.error || "Could not send event alert emails.");
+      }
+      const sent = Math.max(0, Number(data.sentCount || 0) || 0);
+      const failed = Math.max(0, Number(data.failedCount || 0) || 0);
+      const total = Math.max(sent + failed, Number(data.subscriberCount || 0) || 0);
+      setStatus(
+        recordStatus,
+        failed
+          ? `Event alert sent to ${sent} of ${total} subscriber${total === 1 ? "" : "s"}. ${failed} failed.`
+          : `Event alert sent to ${sent} subscriber${sent === 1 ? "" : "s"}.`,
+        failed ? "error" : "success"
+      );
+    } catch (error) {
+      setStatus(recordStatus, error && error.message ? error.message : "Could not send event alert emails.", "error");
+    } finally {
+      state.eventAlertSendingKey = "";
       renderRecords();
     }
   }
@@ -2109,6 +2679,48 @@
         return { ...data, context: snapshotContext };
       }
       return snapshot;
+    });
+  }
+
+  function syncActiveRegistrationStateFromSnapshot(snapshot) {
+    if (!state.activeSiteRecord || !snapshot) return;
+    const extras = getExtras(state.activeSiteRecord);
+    const nextClosed = Boolean(snapshot.registrationClosed) ? "1" : "";
+    syncSiteEventRegistrationClosed(
+      {
+        sourceId: extras.sourceId || extras.eventId,
+        eventDate: extras.eventDate || extras.startDate,
+      },
+      snapshot
+    );
+    state.activeSiteRecord = {
+      ...state.activeSiteRecord,
+      extras: {
+        ...extras,
+        registrationClosed: nextClosed,
+      },
+    };
+    if (recordForm && recordForm.elements.registrationClosed && !recordForm.elements.registrationClosed.disabled) {
+      recordForm.elements.registrationClosed.checked = Boolean(nextClosed);
+    }
+  }
+
+  function syncSiteEventRegistrationClosed(context, snapshot) {
+    if (!context || !snapshot) return;
+    const sourceId = normalizeSiteText(context.sourceId);
+    const eventDate = normalizeSiteText(context.eventDate);
+    const nextClosed = Boolean(snapshot.registrationClosed);
+    if (!sourceId || !eventDate) return;
+    [state.siteEvents, state.allSiteEvents].forEach((list) => {
+      if (!Array.isArray(list)) return;
+      list.forEach((item) => {
+        if (
+          normalizeSiteText(item && (item.sourceId || item.id)) === sourceId &&
+          normalizeSiteText(item && item.date) === eventDate
+        ) {
+          item.registrationClosed = nextClosed;
+        }
+      });
     });
   }
 
@@ -2472,13 +3084,38 @@
         recordForm.elements.registrationClosed && !recordForm.elements.registrationClosed.disabled
           ? (recordForm.elements.registrationClosed.checked ? "1" : "")
           : String(existingExtras.registrationClosed || ""),
+      registrationEmailSubject: textValue("registrationEmailSubject", existingExtras.registrationEmailSubject),
+      registrationEmailTemplateId: textValue("registrationEmailTemplateId", existingExtras.registrationEmailTemplateId),
+      registrationEmailUseTemplate:
+        recordForm.elements.registrationEmailUseTemplate && !recordForm.elements.registrationEmailUseTemplate.disabled
+          ? (recordForm.elements.registrationEmailUseTemplate.checked || Boolean(textValue("registrationEmailTemplateId", existingExtras.registrationEmailTemplateId)) ? "1" : "")
+          : String(existingExtras.registrationEmailUseTemplate || ""),
+      registrationEmailIsHtml:
+        recordForm.elements.registrationEmailIsHtml && !recordForm.elements.registrationEmailIsHtml.disabled
+          ? (recordForm.elements.registrationEmailIsHtml.checked ? "1" : "")
+          : String(existingExtras.registrationEmailIsHtml || ""),
+      registrationEmailContent: textValue("registrationEmailContent", existingExtras.registrationEmailContent),
+      registrationEmailUseFullHtml:
+        recordForm.elements.registrationEmailUseFullHtml && !recordForm.elements.registrationEmailUseFullHtml.disabled
+          ? (recordForm.elements.registrationEmailUseFullHtml.checked ? "1" : "")
+          : String(existingExtras.registrationEmailUseFullHtml || ""),
+      registrationEmailFullHtml: textValue("registrationEmailFullHtml", existingExtras.registrationEmailFullHtml),
       capacity: textValue("capacity", existingExtras.capacity),
       certification: textValue("certification", existingExtras.certification),
+      emailAlerts:
+        recordForm.elements.emailAlerts && !recordForm.elements.emailAlerts.disabled
+          ? (recordForm.elements.emailAlerts.checked ? "1" : "")
+          : String(existingExtras.emailAlerts || ""),
       amountOwed: textValue("amountOwed", existingExtras.amountOwed),
       amountPaid: textValue("amountPaid", existingExtras.amountPaid),
       nextStep: textValue("nextStep", existingExtras.nextStep),
     };
     const recordType = textValue("recordType", existing && existing.recordType) || "inquiry";
+    if (recordType === "inquiry") {
+      extras.inquiryContactIds = getSelectedInquiryContactIds();
+    } else if (Array.isArray(existingExtras.inquiryContactIds)) {
+      extras.inquiryContactIds = existingExtras.inquiryContactIds;
+    }
     const contactFullName = [extras.firstName, extras.lastName].filter(Boolean).join(" ").trim();
     const title = recordType === "contact" ? contactFullName : textValue("title", existing && existing.title);
     if (recordType === "class" && !extras.classId) {
@@ -2490,8 +3127,11 @@
           .sort()[0] || "";
       extras.classId = slugify(`${title || "class"} ${firstSessionDate}`, "class");
     }
+    const primaryInquiryContact = recordType === "inquiry" && extras.inquiryContactIds.length
+      ? getContactRecords().find((contact) => contact.id === extras.inquiryContactIds[0])
+      : null;
     const contactName =
-      recordType === "contact" ? contactFullName : textValue("contactName", existing && existing.contactName);
+      recordType === "contact" ? contactFullName : primaryInquiryContact ? getContactDisplayName(primaryInquiryContact) : textValue("contactName", existing && existing.contactName);
     const rawPriority = textValue("priority", existing && existing.priority) || "normal";
     const priority = recordType === "contact" && rawPriority !== "high" ? "normal" : rawPriority;
     return {
@@ -2502,13 +3142,13 @@
         recordType === "contact"
           ? "active"
           : recordType === "class"
-            ? "scheduled"
+            ? getEffectiveClassStatus({ ...(existing || {}), recordType, status: normalizeSiteText(existing && existing.status) || "scheduled", title, extras })
             : textValue("status", existing && existing.status) || "new",
       priority,
       owner: textValue("owner", existing && existing.owner),
       contactName,
-      contactEmail: textValue("contactEmail", existing && existing.contactEmail),
-      contactPhone: textValue("contactPhone", existing && existing.contactPhone),
+      contactEmail: primaryInquiryContact ? normalizeSiteText(primaryInquiryContact.contactEmail) : textValue("contactEmail", existing && existing.contactEmail),
+      contactPhone: primaryInquiryContact ? normalizeSiteText(primaryInquiryContact.contactPhone) : textValue("contactPhone", existing && existing.contactPhone),
       dueDate: textValue("dueDate", existing && existing.dueDate),
       relatedEvent: textValue("relatedEvent", existing && existing.relatedEvent),
       notes: textValue("notes", existing && existing.notes),
@@ -2554,6 +3194,8 @@
     renderClassSchedule(getExtras(item).classSessions || {});
     renderClassRoster(item);
     renderContactClassManager(item);
+    if (inquiryContactSearch) inquiryContactSearch.value = "";
+    renderInquiryContactManager(item);
     if (item.recordType === "contact") {
       const extras = getExtras(item);
       const nameParts = String(item.contactName || item.title || "").trim().split(/\s+/);
@@ -2570,7 +3212,8 @@
       resetRegistrationManager();
       if (item.recordType === "class" && item.id) loadClassRegistrationEscrow();
     }
-    if (deleteButton) deleteButton.hidden = !state.selectedId || Boolean(state.activeSiteRecord);
+    updateRegistrationEmailCounters();
+    if (deleteButton) deleteButton.hidden = !state.selectedId;
     const duplicateButton = app.querySelector("[data-duplicate-record]");
     if (duplicateButton) duplicateButton.hidden = !state.selectedId || Boolean(state.activeSiteRecord);
     setStatus(recordStatus, "");
@@ -2687,6 +3330,13 @@
     const remaining = events.filter((item) => String(item && item.managementClassId || "").trim().toLowerCase() !== classId);
     const capacity = Math.max(0, Math.trunc(Number(extras.capacity || 0) || 0));
     const description = String(record.notes || "").trim();
+    const registrationEmailSubject = String(extras.registrationEmailSubject || "").trim();
+    const registrationEmailUseTemplate = Boolean(extras.registrationEmailUseTemplate);
+    const registrationEmailTemplateId = String(extras.registrationEmailTemplateId || "").trim();
+    const registrationEmailIsHtml = Boolean(extras.registrationEmailIsHtml);
+    const registrationEmailContent = String(extras.registrationEmailContent || "").trim();
+    const registrationEmailUseFullHtml = Boolean(extras.registrationEmailUseFullHtml);
+    const registrationEmailFullHtml = String(extras.registrationEmailFullHtml || "").trim();
     const roster = getClassRosterSnapshot({ ...record, extras: { ...extras, classId } }, classId);
     const generated = sessions.map((session, index) => {
       const primary = index === 0;
@@ -2700,12 +3350,19 @@
         time: session.startTime,
         endTime: session.endTime,
         type: "Training",
-        status: record.status || "scheduled",
+        status: getEffectiveRecordStatus(record) || "scheduled",
         location: session.location,
         summary: description,
         registrationEnabled: primary && capacity > 0,
         registrationClosed: primary && (Boolean(extras.registrationClosed) || registrationClosed),
         registrationCapacity: primary ? capacity : 0,
+        registrationEmailSubject: primary ? registrationEmailSubject : "",
+        registrationEmailUseTemplate: primary && registrationEmailUseTemplate,
+        registrationEmailTemplateId: primary ? registrationEmailTemplateId : "",
+        registrationEmailIsHtml: primary && registrationEmailIsHtml,
+        registrationEmailContent: primary ? registrationEmailContent : "",
+        registrationEmailUseFullHtml: primary && registrationEmailUseFullHtml,
+        registrationEmailFullHtml: primary ? registrationEmailFullHtml : "",
         ctaLabel: primary ? "Register For Class" : "",
         ctaHref: "",
         managementClassId: classId,
@@ -2744,6 +3401,10 @@
       );
       return;
     }
+    if (record.recordType === "inquiry" && !getInquiryContactIds(record).length) {
+      setStatus(recordStatus, "Choose at least one contact for this inquiry.", "error");
+      return;
+    }
     if (isSiteBackedManagementRecord(record)) {
       try {
         const saved = await saveSiteEventRecord(record);
@@ -2753,6 +3414,18 @@
         closeEditorModal();
       } catch (error) {
         setStatus(recordStatus, error && error.message ? error.message : "Could not save site calendar record.", "error");
+      }
+      return;
+    }
+    if (record.recordType === "trip" && !record.id) {
+      try {
+        const saved = await createSiteEventRecord(record);
+        fillForm(saved);
+        setStatus(recordStatus, "Calendar item added to site calendar.", "success");
+        renderRecords();
+        closeEditorModal();
+      } catch (error) {
+        setStatus(recordStatus, error && error.message ? error.message : "Could not add site calendar record.", "error");
       }
       return;
     }
@@ -2820,6 +3493,17 @@
     return saved;
   }
 
+  function refreshSiteEventState(payload) {
+    state.eventsPayload = payload || state.eventsPayload;
+    state.allSiteEvents = expandSiteEventPayload(state.eventsPayload).filter((entry) =>
+      ["class", "trip"].includes(classifySiteEvent(entry))
+    );
+    state.siteEvents = state.allSiteEvents;
+    state.allRegistrationSnapshots = [];
+    state.allRegistrationsLoaded = false;
+    updateMetrics();
+  }
+
   function findSiteEventPayloadItem(record) {
     const extras = getExtras(record);
     if (!state.eventsPayload) return null;
@@ -2833,6 +3517,73 @@
       return String(entry.date || "").trim() === eventDate;
     });
     return item ? { item, listName } : null;
+  }
+
+  async function publishSiteEventPayload(errorMessage) {
+    if (state.eventsPayload) state.eventsPayload.updated = todayKey();
+    const resp = await apiFetch(adminEventsUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload: state.eventsPayload }),
+    }).catch(() => null);
+    const data = resp ? await resp.json().catch(() => ({})) : {};
+    if (!resp || !resp.ok) throw new Error(data.error || errorMessage || "Could not save site calendar.");
+    refreshSiteEventState(data.payload || state.eventsPayload);
+    return data.payload || state.eventsPayload;
+  }
+
+  async function createSiteEventRecord(record) {
+    if (!state.eventsPayload) {
+      await loadSiteCalendar({ silent: true });
+    }
+    if (!state.eventsPayload) throw new Error("Could not load site calendar.");
+    if (!Array.isArray(state.eventsPayload.events)) state.eventsPayload.events = [];
+    const extras = getExtras(record);
+    const startDate = normalizeSiteText(extras.startDate);
+    if (!startDate) throw new Error("Start date is required for new calendar items.");
+    const endDate = normalizeSiteText(extras.endDate) || startDate;
+    const id = getUniqueSiteEventId(record.title, startDate);
+    const capacity = Math.max(0, Math.trunc(Number(extras.capacity || 0) || 0));
+    const item = {
+      id,
+      eventId: slugify(record.title, id),
+      title: record.title,
+      date: startDate,
+      endDate: endDate >= startDate ? endDate : startDate,
+      time: normalizeSiteText(extras.startTime),
+      endTime: normalizeSiteText(extras.endTime),
+      type: normalizeSiteText(extras.eventTag) || "Training",
+      status: normalizeSiteText(record.status) || "scheduled",
+      location: normalizeSiteText(extras.eventLocation),
+      summary: normalizeSiteText(record.notes),
+      registrationEnabled: Boolean(extras.registrationEnabled),
+      registrationClosed: Boolean(extras.registrationClosed),
+      registrationCapacity: capacity,
+      registrationEmailSubject: normalizeSiteText(extras.registrationEmailSubject),
+      registrationEmailUseTemplate: Boolean(extras.registrationEmailUseTemplate),
+      registrationEmailTemplateId: normalizeSiteText(extras.registrationEmailTemplateId),
+      registrationEmailIsHtml: Boolean(extras.registrationEmailIsHtml),
+      registrationEmailContent: normalizeSiteText(extras.registrationEmailContent),
+      registrationEmailUseFullHtml: Boolean(extras.registrationEmailUseFullHtml),
+      registrationEmailFullHtml: normalizeSiteText(extras.registrationEmailFullHtml),
+      ctaLabel: extras.registrationEnabled ? "Register For Event" : "",
+      ctaHref: "",
+      managementPriority: normalizeSiteText(record.priority),
+      managementOwner: normalizeSiteText(record.owner),
+      managementContactName: normalizeSiteText(record.contactName),
+      managementContactEmail: normalizeSiteText(record.contactEmail),
+      managementContactPhone: normalizeSiteText(record.contactPhone),
+      managementDueDate: normalizeSiteText(record.dueDate),
+      managementAmountOwed: normalizeSiteText(extras.amountOwed),
+      managementAmountPaid: normalizeSiteText(extras.amountPaid),
+      managementNextStep: normalizeSiteText(extras.nextStep),
+      managementNotes: normalizeSiteText(record.notes),
+    };
+    state.eventsPayload.events = [...state.eventsPayload.events, item]
+      .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    await publishSiteEventPayload("Could not add site calendar record.");
+    const refreshed = state.siteEvents.find((entry) => getSiteEventKey(entry) === [id, startDate].join("|"));
+    return buildManagementRecordFromSiteEvent(refreshed || { ...item, sourceId: id, eventKind: "event" });
   }
 
   async function saveSiteEventRecord(record) {
@@ -2850,6 +3601,13 @@
     item.registrationEnabled = Boolean(extras.registrationEnabled);
     item.registrationClosed = Boolean(extras.registrationClosed);
     item.registrationCapacity = Math.max(0, Math.trunc(Number(extras.capacity || item.registrationCapacity || 0) || 0));
+    item.registrationEmailSubject = extras.registrationEmailSubject || "";
+    item.registrationEmailUseTemplate = Boolean(extras.registrationEmailUseTemplate);
+    item.registrationEmailTemplateId = extras.registrationEmailTemplateId || "";
+    item.registrationEmailIsHtml = Boolean(extras.registrationEmailIsHtml);
+    item.registrationEmailContent = extras.registrationEmailContent || "";
+    item.registrationEmailUseFullHtml = Boolean(extras.registrationEmailUseFullHtml);
+    item.registrationEmailFullHtml = extras.registrationEmailFullHtml || "";
     item.managementPriority = record.priority || "";
     item.managementOwner = record.owner || "";
     item.managementContactName = record.contactName || "";
@@ -2868,21 +3626,31 @@
       item.endDate = extras.endDate || item.startDate;
     }
 
-    const resp = await apiFetch(adminEventsUrl, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payload: state.eventsPayload }),
-    }).catch(() => null);
-    const data = resp ? await resp.json().catch(() => ({})) : {};
-    if (!resp || !resp.ok) throw new Error(data.error || "Could not save site calendar.");
-    state.eventsPayload = data.payload || state.eventsPayload;
-    state.allSiteEvents = expandSiteEventPayload(state.eventsPayload).filter((entry) =>
-      ["class", "trip"].includes(classifySiteEvent(entry))
-    );
-    state.siteEvents = state.allSiteEvents;
+    await publishSiteEventPayload("Could not save site calendar.");
     const updatedEventDate = match.listName === "events" ? item.date : (extras.eventDate || extras.startDate || item.startDate);
     const refreshed = state.siteEvents.find((entry) => getSiteEventKey(entry) === [extras.sourceId || "", updatedEventDate || ""].join("|"));
     return buildManagementRecordFromSiteEvent(refreshed || item);
+  }
+
+  async function deleteSiteEventRecord(record) {
+    const match = findSiteEventPayloadItem(record);
+    if (!match) throw new Error("Site calendar item was not found.");
+    const extras = getExtras(record);
+    const list = Array.isArray(state.eventsPayload && state.eventsPayload[match.listName])
+      ? state.eventsPayload[match.listName]
+      : [];
+    if (match.listName === "templates" && extras.eventDate) {
+      const excluded = Array.isArray(match.item.excludedDates) ? match.item.excludedDates : [];
+      match.item.excludedDates = Array.from(new Set([...excluded, extras.eventDate])).sort();
+      await publishSiteEventPayload("Could not delete site calendar record.");
+      return;
+    }
+    state.eventsPayload[match.listName] = list.filter((entry) => {
+      if (!entry || String(entry.id || "").trim() !== String(match.item.id || "").trim()) return true;
+      if (match.listName === "templates") return false;
+      return String(entry.date || "").trim() !== String(extras.eventDate || "").trim();
+    });
+    await publishSiteEventPayload("Could not delete site calendar record.");
   }
 
   async function openCalendarRecord(indexValue) {
@@ -2927,6 +3695,22 @@
   async function deleteSelectedRecord() {
     const id = state.selectedId;
     if (!id) return;
+    const activeSiteRecord = state.activeSiteRecord && state.activeSiteRecord.id === id ? state.activeSiteRecord : null;
+    if (activeSiteRecord) {
+      const name = activeSiteRecord.title || "this calendar item";
+      if (!window.confirm(`Delete calendar record "${name}" from the site calendar?`)) return;
+      setStatus(recordStatus, "Deleting calendar record...");
+      try {
+        await deleteSiteEventRecord(activeSiteRecord);
+        fillForm();
+        closeEditorModal();
+        renderRecords();
+        setStatus(recordStatus, "Calendar record deleted.", "success");
+      } catch (error) {
+        setStatus(recordStatus, error && error.message ? error.message : "Could not delete site calendar record.", "error");
+      }
+      return;
+    }
     const record = state.records.find((item) => item.id === id);
     const name = record ? record.title : "this item";
     if (!window.confirm(`Delete "${name}"?`)) return;
@@ -2947,7 +3731,7 @@
 
   async function updateRecordStatus(id, status) {
     const record = state.records.find((item) => item.id === id);
-    if (!record || record.status === status) return;
+    if (!record || (record.status === status && getEffectiveRecordStatus(record) === status)) return;
     const next = { ...record, status };
     const resp = await apiFetch(`${managementUrl}/${encodeURIComponent(id)}`, {
       method: "PUT",
@@ -2986,6 +3770,11 @@
     }
     setToken(data.token);
     setStatus(loginStatus, "");
+    const redirectTo = new URLSearchParams(window.location.search).get("redirect");
+    if (redirectTo && redirectTo.startsWith("/")) {
+      window.location.href = redirectTo;
+      return;
+    }
     showAuthed(true);
     await loadRecords();
     await loadSiteCalendar();
@@ -3098,7 +3887,7 @@
       const saved = await saveRecordPayload(next);
       if (state.selectedId === id) {
         const duplicateButton = app.querySelector("[data-duplicate-record]");
-        if (deleteButton) deleteButton.hidden = !saved.id || Boolean(state.activeSiteRecord);
+        if (deleteButton) deleteButton.hidden = !saved.id;
         if (duplicateButton) duplicateButton.hidden = !saved.id || Boolean(state.activeSiteRecord);
       }
       renderRecords();
@@ -3110,10 +3899,20 @@
   function bindEvents() {
     if (loginForm) loginForm.addEventListener("submit", login);
     if (recordForm) recordForm.addEventListener("submit", saveRecord);
+    if (recordForm) {
+      recordForm.addEventListener("input", (event) => {
+        const name = event.target && event.target.name;
+        if (name === "registrationEmailSubject" || name === "registrationEmailContent") {
+          updateCharacterCounter(name);
+        }
+      });
+    }
     if (recordForm && recordForm.elements.recordType) {
       recordForm.elements.recordType.addEventListener("change", () => {
         applyTypeConfig(recordForm.elements.recordType.value || "contact", Boolean(state.selectedId));
         if (recordForm.elements.recordType.value === "class" && classScheduleEl) renderClassSchedule(readClassSessions());
+        renderInquiryContactManager({ recordType: recordForm.elements.recordType.value || "contact", extras: { inquiryContactIds: getSelectedInquiryContactIds() } });
+        updateRegistrationEmailCounters();
       });
     }
     if (classScheduleEl) {
@@ -3164,6 +3963,23 @@
         await syncClassCalendarAfterRosterChange(classRecord, "Contact removed from this class.");
       });
     }
+    if (inquiryContactSearch) {
+      inquiryContactSearch.addEventListener("input", () => {
+        renderInquiryContactManager({ recordType: "inquiry", extras: { inquiryContactIds: getSelectedInquiryContactIds() } });
+      });
+    }
+    if (inquiryContactSelect) inquiryContactSelect.addEventListener("change", syncInquiryContactSelectedList);
+    if (inquiryContactList) {
+      inquiryContactList.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove-inquiry-contact]");
+        if (!button || !inquiryContactSelect) return;
+        const removeId = button.getAttribute("data-remove-inquiry-contact") || "";
+        Array.from(inquiryContactSelect.options).forEach((option) => {
+          if (option.value === removeId) option.selected = false;
+        });
+        syncInquiryContactSelectedList();
+      });
+    }
     if (classRegistrationList) {
       classRegistrationList.addEventListener("click", (event) => {
         const button = event.target.closest("[data-convert-registration]");
@@ -3183,7 +3999,22 @@
     if (quickAddForm) quickAddForm.addEventListener("submit", quickAddTask);
     if (refreshCalendarButton) refreshCalendarButton.addEventListener("click", () => loadSiteCalendar());
     if (showPastCalendarToggle) showPastCalendarToggle.addEventListener("change", renderRecords);
-    if (openHomeTickerButton) openHomeTickerButton.addEventListener("click", openHomeTickerModal);
+    openManagementCalendarButtons.forEach((button) => {
+      button.addEventListener("click", openManagementCalendarList);
+    });
+    openHomeTickerButtons.forEach((button) => {
+      button.addEventListener("click", openHomeTickerModal);
+    });
+    siteStudioTabs.forEach((button) => {
+      button.addEventListener("click", () => {
+        openSiteStudioPanel(button.getAttribute("data-site-studio-tab") || "operations");
+      });
+    });
+    siteStudioOpenButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        openSiteStudioPanel(button.getAttribute("data-site-studio-open") || "operations");
+      });
+    });
     closeHomeTickerButtons.forEach((button) => {
       button.addEventListener("click", closeHomeTickerModal);
     });
@@ -3196,6 +4027,16 @@
     if (refreshRegistrationsButton) refreshRegistrationsButton.addEventListener("click", () => loadRegistrationSnapshot());
     if (registrationList) {
       registrationList.addEventListener("click", (event) => {
+        const resendButton = event.target.closest("[data-resend-event-registration-email]");
+        if (resendButton) {
+          resendActiveRegistrationEmail(resendButton.getAttribute("data-resend-event-registration-email") || "");
+          return;
+        }
+        const approveButton = event.target.closest("[data-approve-event-registration]");
+        if (approveButton) {
+          approveEventRegistration(approveButton.getAttribute("data-approve-event-registration") || "");
+          return;
+        }
         const convertButton = event.target.closest("[data-convert-event-registration]");
         if (convertButton) {
           convertEventRegistrationToContact(convertButton.getAttribute("data-convert-event-registration") || "");
@@ -3228,6 +4069,7 @@
     if (searchInput) {
       searchInput.addEventListener("input", () => {
         state.search = searchInput.value || "";
+        state.focusScope = "";
         renderRecords();
       });
     }
@@ -3240,10 +4082,28 @@
     filterButtons.forEach((button) => {
       button.addEventListener("click", () => {
         state.filterType = button.getAttribute("data-filter-type") || "all";
+        state.focusScope = "";
         filterButtons.forEach((item) => item.classList.toggle("is-active", item === button));
         renderRecords();
         if (state.filterType === "registration" || state.filterType === "class") loadAllRegistrationSnapshots();
       });
+    });
+    app.addEventListener("dmzManagementFocus", (event) => {
+      const scope = String((event && event.detail && event.detail.scope) || "").trim();
+      if (!scope) return;
+      state.focusScope = scope;
+      state.filterType = "all";
+      state.search = "";
+      if (searchInput) searchInput.value = "";
+      if (scope === "open_balance") state.sortBy = "balance";
+      else if (scope === "overdue" || scope === "due_today") state.sortBy = "due";
+      if (sortSelect) sortSelect.value = state.sortBy;
+      filterButtons.forEach((item) => {
+        item.classList.toggle("is-active", (item.getAttribute("data-filter-type") || "") === "all");
+      });
+      openSiteStudioPanel("operations");
+      renderRecords();
+      if (recordList) recordList.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     if (recordList) {
       recordList.addEventListener("click", (event) => {
@@ -3275,6 +4135,20 @@
           unregisterFromRegistrationCard(unregisterButton.getAttribute("data-unregister-card") || "");
           return;
         }
+        const resendRegistrationButton = event.target.closest("[data-resend-registration-email]");
+        if (resendRegistrationButton) {
+          event.preventDefault();
+          event.stopPropagation();
+          resendRegistrationCardEmail(resendRegistrationButton.getAttribute("data-resend-registration-email") || "");
+          return;
+        }
+        const eventAlertButton = event.target.closest("[data-event-alert-index]");
+        if (eventAlertButton) {
+          event.preventDefault();
+          event.stopPropagation();
+          sendEventAlertForCalendarIndex(eventAlertButton.getAttribute("data-event-alert-index") || "");
+          return;
+        }
         const pinButton = event.target.closest("[data-pin-record]");
         if (pinButton) {
           event.preventDefault();
@@ -3297,6 +4171,11 @@
         }
         const detailToggle = event.target.closest(".management-record-details");
         if (detailToggle) {
+          event.stopPropagation();
+          return;
+        }
+        const calendarAction = event.target.closest(".management-calendar-actions a");
+        if (calendarAction) {
           event.stopPropagation();
           return;
         }

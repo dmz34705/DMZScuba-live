@@ -330,6 +330,11 @@
     return normalizeText(eventItem && eventItem.date);
   }
 
+  function isEventRegistrationPast(eventItem) {
+    const endDate = eventLastDateKey(eventItem);
+    return Boolean(endDate && endDate < dateKey(startOfDay(new Date())));
+  }
+
   function isRegistrationEnabled(eventItem) {
     const enabled = Boolean(eventItem && eventItem.registrationEnabled);
     const capacity = Math.max(0, Number((eventItem && eventItem.registrationCapacity) || 0) || 0);
@@ -337,7 +342,7 @@
   }
 
   function isRegistrationClosed(eventItem) {
-    return Boolean(eventItem && eventItem.registrationClosed);
+    return Boolean((eventItem && eventItem.registrationClosed) || isEventRegistrationPast(eventItem));
   }
 
   function getRegistrationApprovalStatus(registrant) {
@@ -398,6 +403,25 @@
       button.setAttribute("data-events-open-register", "true");
     }
     return button;
+  }
+
+  function attachRemainingSpotsLine(eventItem, host) {
+    if (!host || !isRegistrationEnabled(eventItem)) return;
+    const sourceId = getRegistrationSourceId(eventItem);
+    const eventDate = getRegistrationDateKey(eventItem);
+    if (!sourceId || !eventDate) return;
+
+    host.textContent = "Checking open spots...";
+    fetchRegistrationSnapshot(sourceId, eventDate).then((snapshot) => {
+      if (!snapshot || !snapshot.ok) {
+        host.textContent = "Open spots unavailable";
+        return;
+      }
+      const closed = Boolean(snapshot.registrationClosed || isRegistrationClosed(eventItem));
+      const remaining = Math.max(0, Number(snapshot.remainingSpots) || 0);
+      const capacity = Math.max(0, Number(snapshot.registrationCapacity) || 0);
+      host.textContent = closed ? "Registration closed" : `${remaining} of ${capacity} spots remaining`;
+    });
   }
 
   function buildEventShareUrl(eventItem, options = {}) {
@@ -970,6 +994,10 @@
     summary.textContent =
       compact && summaryText.length > 110 ? `${summaryText.slice(0, 107).trimEnd()}...` : summaryText;
 
+    const spotsLine = document.createElement("p");
+    spotsLine.className = "event-card-spots event-card-preview-spots";
+    attachRemainingSpotsLine(eventItem, spotsLine);
+
     const actions = document.createElement("div");
     actions.className = "event-card-actions";
     const ctaLabel = previewWantsRegister ? "Register" : compact ? "Details" : agenda ? "View" : "Event Details";
@@ -999,7 +1027,9 @@
       return article;
     }
 
-    article.append(meta, title, dateLine, location, summary, actions);
+    article.append(meta, title, dateLine, location, summary);
+    if (spotsLine.textContent) article.appendChild(spotsLine);
+    article.appendChild(actions);
     return article;
   }
 

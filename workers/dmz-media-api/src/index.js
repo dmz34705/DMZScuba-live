@@ -399,6 +399,96 @@ function buildGeneralInquiryConfirmationEmail(name = "") {
   return { subject, html, text };
 }
 
+function emailTextBlock(value) {
+  return escapeHtml(value).replace(/\r?\n/g, "<br/>");
+}
+
+function buildEmailRichText(value) {
+  const blocks = String(value || "")
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+  if (!blocks.length) return "";
+  return blocks
+    .map((block) => {
+      return `<p style="margin:0 0 14px 0;color:#dce8f8;font-size:14px;line-height:1.72;">${emailTextBlock(block)}</p>`;
+    })
+    .join("");
+}
+
+function htmlToPlainText(value) {
+  return String(value || "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|section|article|tr|li|h[1-6])>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function buildEmailDetailRows(rows = []) {
+  return rows
+    .filter((row) => row && row.label)
+    .map((row) => {
+      const value = row.value === undefined || row.value === null || row.value === "" ? "-" : row.value;
+      return `
+        <tr>
+          <td style="padding:12px 0;border-bottom:1px solid #1d324d;color:#9bd3ff;font-size:13px;font-weight:700;vertical-align:top;width:38%;">${escapeHtml(row.label)}</td>
+          <td style="padding:12px 0;border-bottom:1px solid #1d324d;color:#f2f7ff;font-size:14px;line-height:1.55;vertical-align:top;">${emailTextBlock(value)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function buildDmzEventEmailShell({ kicker, title, intro, rows = [], bodyHtml = "", footerHtml = "" }) {
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="supported-color-schemes" content="dark" />
+    <style>
+      :root { color-scheme: dark; supported-color-schemes: dark; }
+      body, table, td, p, a { -webkit-text-size-adjust: 100%; }
+    </style>
+  </head>
+  <body bgcolor="#050b14" style="margin:0;padding:0;background-color:#050b14;color:#eaf2ff;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#050b14" style="background-color:#050b14;padding:22px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#071325" style="max-width:640px;border:1px solid #1d324d;border-radius:18px;overflow:hidden;background-color:#071325;">
+            <tr>
+              <td bgcolor="#0b2840" style="padding:24px;background-color:#0b2840;border-bottom:1px solid #1d324d;">
+                <p style="margin:0 0 8px 0;color:#55b9ff;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;">${escapeHtml(kicker)}</p>
+                <h1 style="margin:0;color:#ffffff;font-size:28px;line-height:1.2;font-weight:800;">${escapeHtml(title)}</h1>
+                ${intro ? `<p style="margin:12px 0 0 0;color:#eaf2ff;font-size:15px;line-height:1.65;">${emailTextBlock(intro)}</p>` : ""}
+              </td>
+            </tr>
+            <tr>
+              <td bgcolor="#071325" style="padding:24px;background-color:#071325;">
+                ${rows.length ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${buildEmailDetailRows(rows)}</table>` : ""}
+                ${bodyHtml}
+                ${footerHtml}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
 function buildEventRegistrationNotifyEmail(details = {}) {
   const title = String(details.title || "DMZ Scuba Event").trim();
   const scheduleLine = String(details.scheduleLine || "").trim();
@@ -421,26 +511,114 @@ function buildEventRegistrationNotifyEmail(details = {}) {
     `Additional Guests: ${additionalGuests}`,
     `Remaining Spots: ${remainingSpots}`,
   ].filter(Boolean).join("\n");
-  const html = `<!doctype html><html><body style="margin:0;padding:20px;background:#050b14;color:#eaf2ff;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;border:1px solid rgba(255,255,255,0.12);border-radius:18px;overflow:hidden;background:#071325;"><tr><td style="padding:24px;"><p style="margin:0 0 8px 0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#55b9ff;">Event Registration</p><h1 style="margin:0 0 12px 0;font-size:24px;color:#eaf2ff;">${title}</h1><p style="margin:0 0 14px 0;color:#dce8f8;line-height:1.7;">A new signup was received for this event.</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr><td style="padding:8px 0;color:#8fb2d6;">Registrant</td><td style="padding:8px 0;color:#eaf2ff;">${registrantName}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Schedule</td><td style="padding:8px 0;color:#eaf2ff;">${scheduleLine || "Date coming soon"}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Email</td><td style="padding:8px 0;color:#eaf2ff;">${email || "-"}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Phone</td><td style="padding:8px 0;color:#eaf2ff;">${phone || "-"}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Certification</td><td style="padding:8px 0;color:#eaf2ff;">${certLevel || "-"}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Party Size</td><td style="padding:8px 0;color:#eaf2ff;">${partySize}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Additional Guests</td><td style="padding:8px 0;color:#eaf2ff;">${additionalGuests}</td></tr><tr><td style="padding:8px 0;color:#8fb2d6;">Remaining Spots</td><td style="padding:8px 0;color:#eaf2ff;">${remainingSpots}</td></tr></table></td></tr></table></td></tr></table></body></html>`;
+  const html = buildDmzEventEmailShell({
+    kicker: "Event Registration",
+    title,
+    intro: "A new signup was received for this event.",
+    rows: [
+      { label: "Registrant", value: registrantName },
+      { label: "Schedule", value: scheduleLine || "Date coming soon" },
+      { label: "Email", value: email },
+      { label: "Phone", value: phone },
+      { label: "Certification", value: certLevel },
+      { label: "Party Size", value: partySize },
+      { label: "Additional Guests", value: additionalGuests },
+      { label: "Remaining Spots", value: remainingSpots },
+    ],
+    footerHtml: email
+      ? `<p style="margin:18px 0 0 0;color:#dce8f8;font-size:14px;line-height:1.65;">Reply directly to this email to contact ${escapeHtml(registrantName)}.</p>`
+      : "",
+  });
   return { subject, html, text };
+}
+
+function applyEventRegistrationMergeTags(value, details = {}) {
+  const firstName = String(details.firstName || details.registrantName || "Diver").trim();
+  const lastName = String(details.lastName || "").trim();
+  const fullName = String(details.fullName || [firstName, lastName].filter(Boolean).join(" ")).trim();
+  const tags = {
+    first_name: firstName,
+    firstname: firstName,
+    last_name: lastName,
+    lastname: lastName,
+    full_name: fullName || firstName,
+    name: fullName || firstName,
+    event_title: String(details.title || "").trim(),
+    title: String(details.title || "").trim(),
+    event_date: String(details.eventDate || "").trim(),
+    date: String(details.eventDate || "").trim(),
+    schedule: String(details.scheduleLine || "").trim(),
+    party_size: String(Math.max(1, Number(details.partySize) || 1)),
+    spots_remaining: String(Math.max(0, Number(details.remainingSpots) || 0)),
+    contact_email: String(details.contactEmail || "info@dmzscuba.com").trim() || "info@dmzscuba.com",
+  };
+  return String(value || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, key) => {
+    const normalized = String(key || "").trim().toLowerCase();
+    return Object.prototype.hasOwnProperty.call(tags, normalized) ? tags[normalized] : match;
+  });
+}
+
+function buildEventRegistrationTemplateVariables(details = {}) {
+  const firstName = String(details.firstName || details.registrantName || "Diver").trim();
+  const lastName = String(details.lastName || "").trim();
+  const fullName = String(details.fullName || [firstName, lastName].filter(Boolean).join(" ")).trim() || firstName;
+  return {
+    first_name: firstName,
+    firstname: firstName,
+    last_name: lastName,
+    lastname: lastName,
+    full_name: fullName,
+    name: fullName,
+    event_title: String(details.title || "").trim(),
+    title: String(details.title || "").trim(),
+    event_date: String(details.eventDate || "").trim(),
+    date: String(details.eventDate || "").trim(),
+    schedule: String(details.scheduleLine || "").trim(),
+    party_size: String(Math.max(1, Number(details.partySize) || 1)),
+    spots_remaining: String(Math.max(0, Number(details.remainingSpots) || 0)),
+    contact_email: String(details.contactEmail || "info@dmzscuba.com").trim() || "info@dmzscuba.com",
+    registrant_email: String(details.email || "").trim(),
+    phone: String(details.phone || "").trim(),
+    certification: String(details.certLevel || "").trim(),
+  };
+}
+
+function looksLikeFullHtmlEmail(value) {
+  const text = String(value || "").trim().toLowerCase();
+  return text.startsWith("<!doctype html") || text.startsWith("<html") || (text.includes("<html") && text.includes("<body"));
 }
 
 function buildEventRegistrationConfirmationEmail(details = {}) {
   const title = String(details.title || "your DMZ Scuba event").trim();
   const scheduleLine = String(details.scheduleLine || "").trim();
   const registrantName = String(details.registrantName || "Diver").trim();
-  const description = String(details.description || "").trim();
+  const customSubject = applyEventRegistrationMergeTags(details.subject || "", details).trim();
+  const subject = customSubject || `You're signed up for ${title}`;
+  const fullHtmlSource = String(details.fullHtml || "").trim();
+  const descriptionSource = String(details.description || "").trim();
+  const shouldUseFullHtml = (details.useFullHtml && fullHtmlSource) || looksLikeFullHtmlEmail(descriptionSource);
+  if (shouldUseFullHtml) {
+    const html = applyEventRegistrationMergeTags(fullHtmlSource || descriptionSource, details).trim();
+    const fallbackText = htmlToPlainText(html);
+    return {
+      subject,
+      html,
+      text: fallbackText || `Hi ${registrantName},\n\nYou're signed up for ${title}.\n\nDMZ Scuba`,
+    };
+  }
+  const description = applyEventRegistrationMergeTags(details.description || "", details).trim();
+  const descriptionIsHtml = Boolean(details.descriptionIsHtml);
+  const descriptionText = descriptionIsHtml ? htmlToPlainText(description) : description;
   const contactEmail = String(details.contactEmail || "info@dmzscuba.com").trim() || "info@dmzscuba.com";
   const partySize = Math.max(1, Number(details.partySize) || 1);
   const remainingSpots = Math.max(0, Number(details.remainingSpots) || 0);
-  const subject = `You're signed up for ${title}`;
   const text = [
     `Hi ${registrantName},`,
     "",
     `You're signed up for ${title}.`,
     scheduleLine ? `Schedule: ${scheduleLine}` : "",
-    description ? "" : "",
-    description ? `Event Details: ${description}` : "",
+    descriptionText ? "" : "",
+    descriptionText ? `Registration Details: ${descriptionText}` : "",
     `Party Size: ${partySize}`,
     `Remaining Spots: ${remainingSpots}`,
     "",
@@ -448,7 +626,21 @@ function buildEventRegistrationConfirmationEmail(details = {}) {
     "",
     "DMZ Scuba",
   ].filter(Boolean).join("\n");
-  const html = `<!doctype html><html><body style="margin:0;padding:20px;background:#050b14;color:#eaf2ff;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;border:1px solid rgba(255,255,255,0.12);border-radius:18px;overflow:hidden;background:#071325;"><tr><td style="padding:24px;"><p style="margin:0 0 8px 0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#55b9ff;">Event Confirmation</p><h1 style="margin:0 0 12px 0;font-size:24px;color:#eaf2ff;">You're signed up.</h1><p style="margin:0 0 12px 0;color:#dce8f8;line-height:1.7;">Hi ${escapeHtml(registrantName)}, thanks for registering for <strong>${escapeHtml(title)}</strong>.</p><p style="margin:0 0 12px 0;color:#dce8f8;line-height:1.7;">${escapeHtml(scheduleLine || "We'll follow up with the final schedule details if anything changes.")}</p>${description ? `<p style="margin:0 0 12px 0;color:#dce8f8;line-height:1.7;">${escapeHtml(description)}</p>` : ""}<p style="margin:0 0 12px 0;color:#dce8f8;line-height:1.7;">Your party size is <strong>${partySize}</strong>. There are currently <strong>${remainingSpots}</strong> spots remaining.</p><p style="margin:0;color:#dce8f8;line-height:1.7;">If you need to update anything before the event, email <a href="mailto:${escapeHtml(contactEmail)}" style="color:#9bd3ff;text-decoration:none;">${escapeHtml(contactEmail)}</a>.</p></td></tr></table></td></tr></table></body></html>`;
+  const html = buildDmzEventEmailShell({
+    kicker: "Event Confirmation",
+    title: "You're signed up.",
+    intro: `Hi ${registrantName}, thanks for registering for ${title}.`,
+    rows: [
+      { label: "Event", value: title },
+      { label: "Schedule", value: scheduleLine || "We will follow up with final schedule details if anything changes." },
+      { label: "Party Size", value: partySize },
+      { label: "Remaining Spots", value: remainingSpots },
+    ],
+    bodyHtml: description
+      ? `<div style="margin-top:18px;padding:16px;border:1px solid #1d324d;border-radius:14px;background-color:#0b1f36;"><p style="margin:0 0 12px 0;color:#55b9ff;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Registration Details</p>${descriptionIsHtml ? description : buildEmailRichText(description)}</div>`
+      : "",
+    footerHtml: `<p style="margin:18px 0 0 0;color:#eaf2ff;font-size:14px;line-height:1.65;">If you need to update anything before the event, email <a href="mailto:${escapeHtml(contactEmail)}" style="color:#9bd3ff;text-decoration:none;">${escapeHtml(contactEmail)}</a>.</p>`,
+  });
   return { subject, html, text };
 }
 
@@ -469,6 +661,133 @@ async function sendResendEmail(env, payload, logLabel = "Resend email") {
     return { ok: false, error: errorText || `HTTP ${resp.status}` };
   }
   return { ok: true };
+}
+
+async function sendEventRegistrationAttendeeEmail(env, config, details = {}, logLabel = "Event attendee confirmation email") {
+  const fromEmail = String(env.RESEND_FROM_EMAIL || "").trim() || "no-reply@dmzscuba.com";
+  const fromName = String(env.RESEND_FROM_NAME || "").trim() || "DMZ Scuba";
+  const toEmail = String(env.RESEND_TO || "").trim() || "info@dmzscuba.com";
+  const attendeeDetails = {
+    title: config.title || "DMZ Scuba Event",
+    subject: config.registrationEmailSubject || "",
+    scheduleLine: details.scheduleLine || [String(config.title || "").trim(), String(details.eventDate || "").trim()].filter(Boolean).join(" | "),
+    eventDate: details.eventDate || "",
+    description: config.registrationEmailContent || "",
+    descriptionIsHtml: Boolean(config.registrationEmailIsHtml),
+    useFullHtml: Boolean(config.registrationEmailUseFullHtml),
+    fullHtml: config.registrationEmailFullHtml || "",
+    contactEmail: toEmail,
+    registrantName: details.firstName || details.registrantName || details.fullName || "Diver",
+    firstName: details.firstName || "",
+    lastName: details.lastName || "",
+    fullName: details.fullName || [details.firstName, details.lastName].filter(Boolean).join(" "),
+    email: details.email || "",
+    phone: details.phone || "",
+    certLevel: details.certLevel || "",
+    partySize: Math.max(1, Number(details.partySize) || 1),
+    remainingSpots: Math.max(0, Number(details.remainingSpots) || 0),
+  };
+  const attendeeSubject = applyEventRegistrationMergeTags(
+    config.registrationEmailSubject || `You're signed up for {{event_title}}`,
+    attendeeDetails
+  ).trim();
+  const payload = {
+    from: `${fromName} <${fromEmail}>`,
+    to: [attendeeDetails.email],
+    reply_to: [toEmail],
+    ...(config.registrationEmailTemplateId
+      ? {
+          subject: attendeeSubject,
+          template: {
+            id: String(config.registrationEmailTemplateId || "").trim(),
+            variables: buildEventRegistrationTemplateVariables(attendeeDetails),
+          },
+        }
+      : (() => {
+          const attendeeContent = buildEventRegistrationConfirmationEmail(attendeeDetails);
+          return {
+            subject: attendeeContent.subject,
+            html: attendeeContent.html,
+            text: attendeeContent.text,
+          };
+        })()),
+  };
+  return sendResendEmail(env, payload, logLabel);
+}
+
+function formatEventAlertDate(value) {
+  const text = String(value || "").trim();
+  const parts = text.split("-");
+  if (parts.length !== 3) return text;
+  return `${parts[1]}/${parts[2]}/${parts[0]}`;
+}
+
+function buildEventAlertTemplateVariables(details = {}) {
+  return {
+    first_name: String(details.firstName || "Diver").trim(),
+    name: String(details.name || details.firstName || "Diver").trim(),
+    event_title: String(details.title || "DMZ Scuba Event").trim(),
+    event_date: String(details.eventDate || "").trim(),
+    event_date_formatted: formatEventAlertDate(details.eventDate),
+    event_time: String(details.time || "").trim(),
+    event_location: String(details.location || "").trim(),
+    event_type: String(details.type || "").trim(),
+    event_summary: String(details.summary || "").trim(),
+    registration_link: String(details.registrationLink || "").trim(),
+    spots_remaining: String(Math.max(0, Number(details.remainingSpots) || 0)),
+    contact_email: String(details.contactEmail || "info@dmzscuba.com").trim(),
+  };
+}
+
+function buildEventAlertEmail(details = {}) {
+  const firstName = String(details.firstName || "Diver").trim();
+  const title = String(details.title || "DMZ Scuba Event").trim();
+  const eventDate = String(details.eventDate || "").trim();
+  const time = String(details.time || "").trim();
+  const location = String(details.location || "").trim();
+  const type = String(details.type || "").trim();
+  const summary = String(details.summary || "").trim();
+  const registrationLink = String(details.registrationLink || "").trim();
+  const remainingSpots = Math.max(0, Number(details.remainingSpots) || 0);
+  const contactEmail = String(details.contactEmail || "info@dmzscuba.com").trim() || "info@dmzscuba.com";
+  const subject = `New DMZ Scuba event open: ${title}`;
+  const text = [
+    `Hi ${firstName},`,
+    "",
+    `A new DMZ Scuba event is open for registration: ${title}.`,
+    eventDate ? `Date: ${formatEventAlertDate(eventDate)}` : "",
+    time ? `Time: ${time}` : "",
+    location ? `Location: ${location}` : "",
+    type ? `Type: ${type}` : "",
+    remainingSpots ? `Spots remaining: ${remainingSpots}` : "",
+    summary ? `\nDetails:\n${summary}` : "",
+    registrationLink ? `\nRegister here: ${registrationLink}` : "",
+    "",
+    `Questions? Email ${contactEmail}.`,
+    "",
+    "DMZ Scuba",
+  ].filter(Boolean).join("\n");
+  const html = buildDmzEventEmailShell({
+    kicker: "New Event Alert",
+    title,
+    intro: `Hi ${firstName}, a new DMZ Scuba event is open for registration.`,
+    rows: [
+      { label: "Event", value: title },
+      { label: "Date", value: eventDate ? formatEventAlertDate(eventDate) : "" },
+      { label: "Time", value: time || "Time coming soon" },
+      { label: "Location", value: location || "Location coming soon" },
+      { label: "Type", value: type },
+      { label: "Spots Remaining", value: remainingSpots || "Open registration" },
+    ],
+    bodyHtml: summary
+      ? `<div style="margin-top:18px;padding:16px;border:1px solid #1d324d;border-radius:14px;background-color:#0b1f36;"><p style="margin:0 0 12px 0;color:#55b9ff;font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Event Details</p>${buildEmailRichText(summary)}</div>`
+      : "",
+    footerHtml: `
+      ${registrationLink ? `<p style="margin:20px 0 0 0;"><a href="${escapeHtml(registrationLink)}" style="display:inline-block;padding:12px 16px;border-radius:12px;background-color:#e21b23;color:#ffffff;font-weight:800;text-decoration:none;">View Event & Register</a></p>` : ""}
+      <p style="margin:18px 0 0 0;color:#eaf2ff;font-size:14px;line-height:1.65;">If you have questions, email <a href="mailto:${escapeHtml(contactEmail)}" style="color:#9bd3ff;text-decoration:none;">${escapeHtml(contactEmail)}</a>.</p>
+    `,
+  });
+  return { subject, html, text };
 }
 
 async function handleLogin(request, env) {
@@ -545,6 +864,283 @@ async function savePublicInquiryManagementRecord(env, recordInput) {
     console.log("Management inquiry save error", error && error.message ? error.message : error);
     return null;
   }
+}
+
+function splitSubscriberName(name) {
+  const parts = normalizeManagementText(name, 160).split(" ").filter(Boolean);
+  return {
+    firstName: parts[0] || "",
+    lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
+  };
+}
+
+async function findContactByEmail(env, email) {
+  const safeEmail = normalizeManagementText(email, 180).toLowerCase();
+  if (!safeEmail) return null;
+  await ensureManagementRecordsTable(env);
+  const row = await env.DB.prepare(
+    "SELECT * FROM management_records WHERE record_type = 'contact' AND lower(contact_email) = ? ORDER BY updated_at DESC LIMIT 1"
+  )
+    .bind(safeEmail)
+    .first();
+  return row ? managementRecordFromRow(row) : null;
+}
+
+async function saveEventAlertSubscriber(env, details) {
+  const submittedAt = new Date().toISOString();
+  const email = normalizeManagementText(details && details.email, 180).toLowerCase();
+  const name = normalizeManagementText(details && details.name, 160);
+  const phone = normalizeManagementText(details && details.phone, 60);
+  const pageUrl = normalizeManagementText(details && details.pageUrl, 500);
+  const nameParts = splitSubscriberName(name);
+  const existing = await findContactByEmail(env, email);
+  const existingExtras = existing && existing.extras && typeof existing.extras === "object" ? existing.extras : {};
+  const extras = {
+    ...existingExtras,
+    firstName: existingExtras.firstName || nameParts.firstName,
+    lastName: existingExtras.lastName || nameParts.lastName,
+    source: existingExtras.source || "Public event alert signup",
+    emailAlerts: "1",
+    emailAlertsSubscribedAt: existingExtras.emailAlertsSubscribedAt || submittedAt,
+    emailAlertsUpdatedAt: submittedAt,
+    emailAlertsSource: "public_site",
+    emailAlertsPageUrl: pageUrl,
+  };
+
+  if (!existing) {
+    return createManagementRecord(env, {
+      recordType: "contact",
+      title: name || email,
+      status: "active",
+      priority: "normal",
+      contactName: name,
+      contactEmail: email,
+      contactPhone: phone,
+      notes: [
+        "Subscribed to DMZ Scuba event alert emails from the public website.",
+        `Submitted: ${submittedAt}`,
+        pageUrl ? `Page: ${pageUrl}` : "",
+      ].filter(Boolean).join("\n"),
+      extras,
+    });
+  }
+
+  const next = normalizeManagementRecord({
+    ...existing,
+    title: existing.title || name || email,
+    status: existing.status || "active",
+    priority: existing.priority || "normal",
+    contactName: existing.contactName || name,
+    contactEmail: email,
+    contactPhone: existing.contactPhone || phone,
+    notes: existing.notes || [
+      "Subscribed to DMZ Scuba event alert emails from the public website.",
+      `Submitted: ${submittedAt}`,
+      pageUrl ? `Page: ${pageUrl}` : "",
+    ].filter(Boolean).join("\n"),
+    extras,
+  }, existing);
+  const now = submittedAt;
+  await env.DB.prepare(
+    `UPDATE management_records
+     SET record_type = ?, title = ?, status = ?, priority = ?, owner = ?, contact_name = ?, contact_email = ?, contact_phone = ?, due_date = ?, related_event = ?, notes = ?, data_json = ?, updated_at = ?
+     WHERE id = ?`
+  )
+    .bind(
+      next.recordType,
+      next.title,
+      next.status,
+      next.priority,
+      next.owner,
+      next.contactName,
+      next.contactEmail,
+      next.contactPhone,
+      next.dueDate,
+      next.relatedEvent,
+      next.notes,
+      JSON.stringify({ extras: next.extras }),
+      now,
+      existing.id
+    )
+    .run();
+  return { ...next, id: existing.id, createdAt: existing.createdAt, updatedAt: now };
+}
+
+async function saveQuizLeadContact(env, details) {
+  const submittedAt = normalizeManagementText(details && details.submittedAt, 40) || new Date().toISOString();
+  const fields = details && details.fields && typeof details.fields === "object" ? details.fields : {};
+  const name = normalizeManagementText(details && details.name, 160);
+  const email = normalizeManagementText(details && details.email, 180).toLowerCase();
+  const phone = normalizeManagementText((details && details.phone) || getFieldValue(fields, "phone"), 60);
+  const pageUrl = normalizeManagementText(details && details.pageUrl, 500);
+  const subject = normalizeManagementText(details && details.subject, 180);
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+
+  const nameParts = splitSubscriberName(name);
+  const existing = await findContactByEmail(env, email);
+  const existingExtras = existing && existing.extras && typeof existing.extras === "object" ? existing.extras : {};
+  const quizRoute = normalizeManagementText(getFieldValue(fields, "quiz_route"), 120);
+  const quizMode = normalizeManagementText(getFieldValue(fields, "quiz_mode"), 80);
+  const quizPath = normalizeManagementText(getFieldValue(fields, "quiz_path"), 120);
+  const quizAnswers = normalizeManagementLongText(getFieldValue(fields, "quiz_answers_summary"), 1200);
+  const goals = normalizeManagementLongText(getFieldValue(fields, "goals"), 1200);
+  const message = normalizeManagementLongText((details && details.message) || getFieldValue(fields, "message"), 1200);
+  const subjectMatch = subject.match(/^Dive Quiz Lead:\s*(.+)$/i);
+  const messageMatch = message.match(/Recommended start:\s*([^|]+)/i);
+  const quizRecommendedStart = normalizeManagementText(
+    (subjectMatch && subjectMatch[1]) || (messageMatch && messageMatch[1]) || "",
+    180
+  );
+  const noteBlock = [
+    `Dive quiz submitted: ${submittedAt}`,
+    quizRecommendedStart ? `Recommended start: ${quizRecommendedStart}` : "",
+    quizRoute ? `Recommended route: ${quizRoute}` : "",
+    quizMode ? `Quiz mode: ${quizMode}` : "",
+    quizPath ? `Quiz path: ${quizPath}` : "",
+    goals ? `Goals: ${goals}` : "",
+    message ? `Message: ${message}` : "",
+    quizAnswers ? `Answers: ${quizAnswers}` : "",
+    pageUrl ? `Page: ${pageUrl}` : "",
+  ].filter(Boolean).join("\n");
+  const extras = {
+    ...existingExtras,
+    firstName: existingExtras.firstName || nameParts.firstName,
+    lastName: existingExtras.lastName || nameParts.lastName,
+    source: existingExtras.source || "Dive Path Quiz",
+    quizLead: "1",
+    quizLastSubmittedAt: submittedAt,
+    quizRoute,
+    quizMode,
+    quizPath,
+    quizRecommendedStart,
+    quizAnswers,
+    quizPageUrl: pageUrl,
+  };
+
+  if (!existing) {
+    return createManagementRecord(env, {
+      recordType: "contact",
+      title: name || email,
+      status: "active",
+      priority: "normal",
+      contactName: name,
+      contactEmail: email,
+      contactPhone: phone,
+      notes: noteBlock,
+      extras,
+    });
+  }
+
+  const notes = normalizeManagementLongText(
+    [noteBlock, existing.notes].filter(Boolean).join(existing.notes ? "\n\n" : ""),
+    4000
+  );
+  const next = normalizeManagementRecord({
+    ...existing,
+    title: existing.title || name || email,
+    status: existing.status || "active",
+    priority: existing.priority || "normal",
+    contactName: existing.contactName || name,
+    contactEmail: email,
+    contactPhone: existing.contactPhone || phone,
+    notes,
+    extras,
+  }, existing);
+  const now = submittedAt;
+  await env.DB.prepare(
+    `UPDATE management_records
+     SET record_type = ?, title = ?, status = ?, priority = ?, owner = ?, contact_name = ?, contact_email = ?, contact_phone = ?, due_date = ?, related_event = ?, notes = ?, data_json = ?, updated_at = ?
+     WHERE id = ?`
+  )
+    .bind(
+      next.recordType,
+      next.title,
+      next.status,
+      next.priority,
+      next.owner,
+      next.contactName,
+      next.contactEmail,
+      next.contactPhone,
+      next.dueDate,
+      next.relatedEvent,
+      next.notes,
+      JSON.stringify({ extras: next.extras }),
+      now,
+      existing.id
+    )
+    .run();
+  return { ...next, id: existing.id, createdAt: existing.createdAt, updatedAt: now };
+}
+
+function getQuizRouteTitleLabel(route) {
+  const key = normalizeManagementText(route, 80);
+  const labels = {
+    cert: "Open Water Certification",
+    refresh: "Skill Refresh",
+    travel: "Trip-Ready Coaching",
+    contact: "Discovery Consult",
+  };
+  return labels[key] || key;
+}
+
+function buildQuizInquiryTitle(contact, fallbackTitle = "") {
+  const contactName = normalizeManagementText(contact && (contact.contactName || contact.title || contact.contactEmail), 160);
+  const extras = contact && contact.extras && typeof contact.extras === "object" ? contact.extras : {};
+  const quizResult =
+    normalizeManagementText(extras.quizRecommendedStart, 180) ||
+    getQuizRouteTitleLabel(extras.quizRoute) ||
+    normalizeManagementText(extras.quizPath, 120);
+  const detail = ["Dive Path Quiz", quizResult].filter(Boolean).join(": ");
+  return [contactName, detail].filter(Boolean).join(" - ") || fallbackTitle;
+}
+
+function buildQuizInquiryNotes(contact, fallbackNotes = "") {
+  const contactName = normalizeManagementText(contact && (contact.contactName || contact.title || contact.contactEmail), 160);
+  const extras = contact && contact.extras && typeof contact.extras === "object" ? contact.extras : {};
+  const quizRoute = normalizeManagementText(extras.quizRoute, 120);
+  const quizRecommendedStart = normalizeManagementText(extras.quizRecommendedStart, 180);
+  const quizMode = normalizeManagementText(extras.quizMode, 80);
+  const quizPath = normalizeManagementText(extras.quizPath, 120);
+  const quizAnswers = normalizeManagementLongText(extras.quizAnswers, 1200);
+  const contactNotes = normalizeManagementLongText(contact && contact.notes, 2400);
+  const lines = [
+    "Dive Path Quiz Result",
+    "",
+    contactName ? `Contact: ${contactName}` : "",
+    contact && contact.contactEmail ? `Email: ${contact.contactEmail}` : "",
+    contact && contact.contactPhone ? `Phone: ${contact.contactPhone}` : "",
+    "",
+    quizRecommendedStart ? `Recommended start: ${quizRecommendedStart}` : "",
+    quizRoute ? `Recommended route: ${quizRoute}` : "",
+    quizMode ? `Quiz mode: ${quizMode}` : "",
+    quizPath ? `Quiz path: ${quizPath}` : "",
+    quizAnswers ? `Answers: ${quizAnswers}` : "",
+    "",
+    "Original contact notes:",
+    contactNotes || normalizeManagementLongText(fallbackNotes, 1200),
+  ].filter((line) => line !== "");
+  return normalizeManagementLongText(lines.join("\n"), 4000);
+}
+
+async function handleEventAlertSubscribe(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const honey = String(body.honey || body.website || body.company || "").trim();
+  if (honey) return jsonResponse({ ok: true }, 200, { "Cache-Control": "no-store" });
+
+  const fields = body.fields && typeof body.fields === "object" ? body.fields : {};
+  const name = normalizeManagementText(body.name || fields.name || fields["subscriber-name"], 160);
+  const email = normalizeManagementText(body.email || fields.email || fields["subscriber-email"], 180).toLowerCase();
+  const phone = normalizeManagementText(body.phone || fields.phone || fields["subscriber-phone"], 60);
+  const pageUrl = normalizeManagementText(body.pageUrl, 500);
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return jsonResponse({ ok: false, error: "Valid email is required." }, 400, { "Cache-Control": "no-store" });
+  }
+
+  const saved = await saveEventAlertSubscriber(env, { name, email, phone, pageUrl });
+  if (!saved || !saved.id) {
+    return jsonResponse({ ok: false, error: "Could not save subscriber." }, 500, { "Cache-Control": "no-store" });
+  }
+  return jsonResponse({ ok: true, contactSaved: true }, 200, { "Cache-Control": "no-store" });
 }
 
 async function handleContact(request, env) {
@@ -800,9 +1396,9 @@ async function handleContact(request, env) {
     );
   }
 
+  const isQuizSubmission = shouldSendQuizResultsAutoReply(formName);
   let generalAutoReplySent = false;
   if (email && isValidEmail(email) && shouldSendGeneralInquiryAutoReply(formName)) {
-    const isQuizSubmission = shouldSendQuizResultsAutoReply(formName);
     const generalTemplateId = String(env.RESEND_TEMPLATE_GENERAL_INQUIRY || "").trim();
     const quizTemplateId =
       String(env.RESEND_TEMPLATE_QUIZ_RESULTS || "").trim() || QUIZ_RESULTS_TEMPLATE_ID_FALLBACK;
@@ -849,8 +1445,52 @@ async function handleContact(request, env) {
     generalAutoReplySent = true;
   }
 
+  const savedQuizContact = isQuizSubmission
+    ? await saveQuizLeadContact(env, {
+        name,
+        email,
+        phone: getFieldValue(fields, "phone"),
+        fields,
+        message: body.message,
+        subject,
+        pageUrl,
+        submittedAt,
+      })
+    : null;
+  if (savedQuizContact && savedQuizContact.id) {
+    const savedQuizExtras = savedQuizContact.extras && typeof savedQuizContact.extras === "object"
+      ? savedQuizContact.extras
+      : {};
+    managementRecord.extras = {
+      ...(managementRecord.extras || {}),
+      source: "Dive Path Quiz",
+      inquiryDirection: "incoming",
+      inquiryCategory: "customer",
+      quizRoute: savedQuizExtras.quizRoute || "",
+      quizMode: savedQuizExtras.quizMode || "",
+      quizPath: savedQuizExtras.quizPath || "",
+      quizRecommendedStart: savedQuizExtras.quizRecommendedStart || "",
+      quizAnswers: savedQuizExtras.quizAnswers || "",
+      inquiryContactIds: [savedQuizContact.id],
+    };
+    managementRecord.title = buildQuizInquiryTitle(savedQuizContact, managementRecord.title);
+    managementRecord.relatedEvent =
+      savedQuizExtras.quizRecommendedStart ||
+      getQuizRouteTitleLabel(savedQuizExtras.quizRoute) ||
+      savedQuizExtras.quizPath ||
+      managementRecord.relatedEvent;
+    managementRecord.notes = buildQuizInquiryNotes(savedQuizContact, managementRecord.notes);
+    managementRecord.contactName = savedQuizContact.contactName || managementRecord.contactName;
+    managementRecord.contactEmail = savedQuizContact.contactEmail || managementRecord.contactEmail;
+    managementRecord.contactPhone = savedQuizContact.contactPhone || managementRecord.contactPhone;
+  }
   const savedRecord = await savePublicInquiryManagementRecord(env, managementRecord);
-  return jsonResponse({ ok: true, generalAutoReplySent, managementRecordSaved: Boolean(savedRecord) });
+  return jsonResponse({
+    ok: true,
+    generalAutoReplySent,
+    managementRecordSaved: Boolean(savedRecord),
+    contactSaved: Boolean(savedQuizContact && savedQuizContact.id),
+  });
 }
 
 function normalizeItem(row) {
@@ -1140,6 +1780,69 @@ function managementRecordFromRow(row) {
   };
 }
 
+function isManagementContactEmailAlertSubscriber(record) {
+  if (!record || record.recordType !== "contact") return false;
+  const email = normalizeManagementText(record.contactEmail, 180).toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+  const extras = record.extras && typeof record.extras === "object" && !Array.isArray(record.extras)
+    ? record.extras
+    : {};
+  const optedIn = String(extras.emailAlerts || "").trim().toLowerCase();
+  const optedOut = String(extras.emailAlertsOptOut || extras.unsubscribed || "").trim().toLowerCase();
+  if (["1", "true", "yes", "on", "subscribed"].includes(optedOut)) return false;
+  return extras.emailAlerts === true || ["1", "true", "yes", "on", "subscribed"].includes(optedIn);
+}
+
+function toEventAlertSubscriber(record) {
+  const extras = record.extras && typeof record.extras === "object" && !Array.isArray(record.extras)
+    ? record.extras
+    : {};
+  const firstName = normalizeManagementText(extras.firstName, 80);
+  const lastName = normalizeManagementText(extras.lastName, 80);
+  const fullName = normalizeManagementText(
+    record.contactName || [firstName, lastName].filter(Boolean).join(" ") || record.title,
+    160
+  );
+  return {
+    id: record.id,
+    name: fullName,
+    firstName,
+    lastName,
+    email: normalizeManagementText(record.contactEmail, 180).toLowerCase(),
+    phone: normalizeManagementText(record.contactPhone, 60),
+    source: normalizeManagementText(extras.source || extras.emailAlertsSource, 120),
+    subscribedAt: normalizeManagementText(extras.emailAlertsSubscribedAt || record.createdAt, 40),
+    updatedAt: normalizeManagementText(extras.emailAlertsUpdatedAt || record.updatedAt, 40),
+  };
+}
+
+async function listEventAlertSubscribers(env) {
+  await ensureManagementRecordsTable(env);
+  const rows = await env.DB.prepare(
+    "SELECT * FROM management_records WHERE record_type = 'contact' ORDER BY updated_at DESC"
+  ).all();
+  const byEmail = new Map();
+  (rows.results || [])
+    .map(managementRecordFromRow)
+    .filter(isManagementContactEmailAlertSubscriber)
+    .forEach((record) => {
+      const subscriber = toEventAlertSubscriber(record);
+      if (!subscriber.email || byEmail.has(subscriber.email)) return;
+      byEmail.set(subscriber.email, subscriber);
+    });
+  return Array.from(byEmail.values()).sort((a, b) =>
+    String(a.name || a.email).localeCompare(String(b.name || b.email))
+  );
+}
+
+async function handleListEventAlertSubscribers(request, env) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401, { "Cache-Control": "no-store" });
+
+  const subscribers = await listEventAlertSubscribers(env);
+  return jsonResponse({ ok: true, count: subscribers.length, subscribers }, 200, { "Cache-Control": "no-store" });
+}
+
 async function handleListManagementRecords(request, env) {
   const authed = await requireAuth(request, env);
   if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401, { "Cache-Control": "no-store" });
@@ -1373,6 +2076,13 @@ function normalizeEventEntry(item, kind = "event") {
     registrationEnabled: Boolean(next.registrationEnabled),
     registrationClosed: Boolean(next.registrationClosed),
     registrationCapacity: Math.max(0, Math.trunc(Number(next.registrationCapacity) || 0)),
+    registrationEmailSubject: String(next.registrationEmailSubject || "").trim(),
+    registrationEmailUseTemplate: Boolean(next.registrationEmailUseTemplate),
+    registrationEmailTemplateId: String(next.registrationEmailTemplateId || "").trim(),
+    registrationEmailIsHtml: Boolean(next.registrationEmailIsHtml),
+    registrationEmailContent: String(next.registrationEmailContent || "").trim(),
+    registrationEmailUseFullHtml: Boolean(next.registrationEmailUseFullHtml),
+    registrationEmailFullHtml: String(next.registrationEmailFullHtml || "").trim(),
     ctaLabel: String(next.ctaLabel || "").trim(),
     ctaHref: String(next.ctaHref || "").trim(),
     managementPriority: String(next.managementPriority || "").trim(),
@@ -1478,14 +2188,7 @@ async function handleGetEventsV2(env) {
   });
 }
 
-async function handlePutEventsV2(request, env) {
-  const authed = await requireAuth(request, env);
-  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
-  const body = await request.json().catch(() => ({}));
-  const incoming = body && typeof body.payload === "object" ? body.payload : body;
-  const payload = normalizeEventsPayload(incoming);
-  if (!payload) return jsonResponse({ ok: false, error: "Invalid payload." }, 400);
-
+async function saveEventsPayloadV2(env, payload) {
   await ensureEventsV2Table(env);
   const now = new Date().toISOString();
   const existing = await env.DB.prepare("SELECT created_at FROM events_v2 WHERE calendar_key = ?")
@@ -1498,6 +2201,18 @@ async function handlePutEventsV2(request, env) {
   )
     .bind("primary", JSON.stringify(payload), createdAt, now)
     .run();
+  return now;
+}
+
+async function handlePutEventsV2(request, env) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
+  const body = await request.json().catch(() => ({}));
+  const incoming = body && typeof body.payload === "object" ? body.payload : body;
+  const payload = normalizeEventsPayload(incoming);
+  if (!payload) return jsonResponse({ ok: false, error: "Invalid payload." }, 400);
+
+  const now = await saveEventsPayloadV2(env, payload);
   return jsonResponse({ ok: true, payload, updatedAt: now }, 200, { "Cache-Control": "no-store" });
 }
 
@@ -1538,6 +2253,40 @@ function normalizeRegistrationText(value, maxLen = 120) {
   return String(value || "").trim().slice(0, maxLen);
 }
 
+function isDateKey(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "").trim());
+}
+
+function getChicagoTodayKey() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${lookup.year}-${lookup.month}-${lookup.day}`;
+}
+
+function addDaysToDateKey(value, days) {
+  if (!isDateKey(value)) return "";
+  const [year, month, day] = String(value).split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return date.toISOString().slice(0, 10);
+}
+
+function getRegistrationEndDate(item, eventDate) {
+  const explicitEnd = String((item && item.endDate) || "").trim();
+  if (isDateKey(explicitEnd) && explicitEnd >= eventDate) return explicitEnd;
+  const durationDays = Math.max(1, Number((item && item.durationDays) || 1) || 1);
+  return durationDays > 1 ? addDaysToDateKey(eventDate, durationDays - 1) : eventDate;
+}
+
+function isRegistrationPast(config) {
+  const endDate = String((config && (config.endDate || config.eventDate)) || "").trim();
+  return isDateKey(endDate) && endDate < getChicagoTodayKey();
+}
+
 function buildRegistrantLabel(firstName, lastName) {
   const first = normalizeRegistrationText(firstName, 40);
   const last = normalizeRegistrationText(lastName, 40);
@@ -1559,13 +2308,34 @@ function resolveRegistrationConfig(payload, sourceId, eventDate) {
     if (!definition) return "";
     return String(definition.narrative || definition.heroSummary || "").trim();
   };
+  const getRegistrationEmailContentForItem = (item) => {
+    if (!item || typeof item !== "object") return "";
+    const content = String(item.registrationEmailContent || "").trim();
+    return content || getDescriptionForItem(item);
+  };
+  const getRegistrationEmailSubjectForItem = (item) => {
+    if (!item || typeof item !== "object") return "";
+    return String(item.registrationEmailSubject || "").trim();
+  };
   const eventMatch = events.find((item) => item && item.id === sourceId && item.date === eventDate);
   if (eventMatch) {
     return {
       sourceId,
       eventDate,
+      endDate: getRegistrationEndDate(eventMatch, eventDate),
       title: String(eventMatch.title || "").trim(),
+      time: String(eventMatch.time || "").trim(),
+      endTime: String(eventMatch.endTime || "").trim(),
+      type: String(eventMatch.type || "").trim(),
+      location: String(eventMatch.location || "").trim(),
       description: getDescriptionForItem(eventMatch),
+      registrationEmailSubject: getRegistrationEmailSubjectForItem(eventMatch),
+      registrationEmailUseTemplate: Boolean(eventMatch.registrationEmailUseTemplate),
+      registrationEmailTemplateId: String(eventMatch.registrationEmailTemplateId || "").trim(),
+      registrationEmailIsHtml: Boolean(eventMatch.registrationEmailIsHtml),
+      registrationEmailContent: getRegistrationEmailContentForItem(eventMatch),
+      registrationEmailUseFullHtml: Boolean(eventMatch.registrationEmailUseFullHtml),
+      registrationEmailFullHtml: String(eventMatch.registrationEmailFullHtml || "").trim(),
       registrationEnabled: Boolean(eventMatch.registrationEnabled),
       registrationClosed: Boolean(eventMatch.registrationClosed),
       registrationCapacity: Math.max(0, Number(eventMatch.registrationCapacity) || 0),
@@ -1578,14 +2348,49 @@ function resolveRegistrationConfig(payload, sourceId, eventDate) {
   return {
     sourceId,
     eventDate,
+    endDate: getRegistrationEndDate(templateMatch, eventDate),
     title: String(templateMatch.title || "").trim(),
+    time: String(templateMatch.time || "").trim(),
+    endTime: String(templateMatch.endTime || "").trim(),
+    type: String(templateMatch.type || "").trim(),
+    location: String(templateMatch.location || "").trim(),
     description: getDescriptionForItem(templateMatch),
+    registrationEmailSubject: getRegistrationEmailSubjectForItem(templateMatch),
+    registrationEmailUseTemplate: Boolean(templateMatch.registrationEmailUseTemplate),
+    registrationEmailTemplateId: String(templateMatch.registrationEmailTemplateId || "").trim(),
+    registrationEmailIsHtml: Boolean(templateMatch.registrationEmailIsHtml),
+    registrationEmailContent: getRegistrationEmailContentForItem(templateMatch),
+    registrationEmailUseFullHtml: Boolean(templateMatch.registrationEmailUseFullHtml),
+    registrationEmailFullHtml: String(templateMatch.registrationEmailFullHtml || "").trim(),
     registrationEnabled: Boolean(templateMatch.registrationEnabled),
     registrationClosed: Boolean(templateMatch.registrationClosed),
     registrationCapacity: Math.max(0, Number(templateMatch.registrationCapacity) || 0),
     managementClassId: String(templateMatch.managementClassId || "").trim().toLowerCase(),
     managementClassRoster: Array.isArray(templateMatch.managementClassRoster) ? templateMatch.managementClassRoster : [],
   };
+}
+
+async function setRegistrationClosedForPayload(env, payload, sourceId, eventDate, closed) {
+  if (!payload || !sourceId) return false;
+  const safeSourceId = String(sourceId || "").trim();
+  const safeEventDate = String(eventDate || "").trim();
+  const nextClosed = Boolean(closed);
+  const events = Array.isArray(payload.events) ? payload.events : [];
+  const templates = Array.isArray(payload.templates) ? payload.templates : [];
+  const eventMatch = events.find((item) => item && item.id === safeSourceId && item.date === safeEventDate);
+  if (eventMatch) {
+    if (Boolean(eventMatch.registrationClosed) === nextClosed) return false;
+    eventMatch.registrationClosed = nextClosed;
+    payload.updated = new Date().toISOString().slice(0, 10);
+    await saveEventsPayloadV2(env, payload);
+    return true;
+  }
+  const templateMatch = templates.find((item) => item && item.id === safeSourceId);
+  if (!templateMatch || Boolean(templateMatch.registrationClosed) === nextClosed) return false;
+  templateMatch.registrationClosed = nextClosed;
+  payload.updated = new Date().toISOString().slice(0, 10);
+  await saveEventsPayloadV2(env, payload);
+  return true;
 }
 
 function getManagementRecordExtras(row) {
@@ -1710,7 +2515,7 @@ async function getRegistrationSnapshot(env, sourceId, eventDate, config) {
     sourceId,
     eventDate,
     registrationEnabled: Boolean(config && config.registrationEnabled),
-    registrationClosed: Boolean(config && config.registrationClosed),
+    registrationClosed: Boolean(config && config.registrationClosed) || isRegistrationPast(config),
     registrationCapacity: capacity,
     usedSpots,
     remainingSpots,
@@ -1757,6 +2562,9 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
   }
   if (config.registrationClosed) {
     return jsonResponse({ ok: false, error: "Registration has closed for this event." }, 409, { "Cache-Control": "no-store" });
+  }
+  if (isRegistrationPast(config)) {
+    return jsonResponse({ ok: false, error: "Registration has closed because this event has passed." }, 409, { "Cache-Control": "no-store" });
   }
 
   const firstName = normalizeRegistrationText(body && body.firstName, 60);
@@ -1820,6 +2628,7 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
 
   const notifyContent = buildEventRegistrationNotifyEmail({
     title: config.title || "DMZ Scuba Event",
+    subject: config.registrationEmailSubject || "",
     scheduleLine,
     registrantName,
     email,
@@ -1840,24 +2649,19 @@ async function handleCreateEventRegistrationV2(request, env, sourceId) {
   const notifyResult = await sendResendEmail(env, notifyPayload, "Event notify email");
   notifyEmailSent = Boolean(notifyResult.ok);
 
-  const attendeeContent = buildEventRegistrationConfirmationEmail({
-    title: config.title || "DMZ Scuba Event",
+  const attendeeResult = await sendEventRegistrationAttendeeEmail(env, config, {
     scheduleLine,
-    description: config.description || "",
-    contactEmail: toEmail,
+    eventDate,
     registrantName: firstName || registrantName,
+    firstName,
+    lastName,
+    fullName: registrantName,
+    email,
+    phone,
+    certLevel,
     partySize,
     remainingSpots: snapshotAfter.remainingSpots,
   });
-  const attendeePayload = {
-    from: `${fromName} <${fromEmail}>`,
-    to: [email],
-    subject: attendeeContent.subject,
-    html: attendeeContent.html,
-    text: attendeeContent.text,
-    reply_to: [toEmail],
-  };
-  const attendeeResult = await sendResendEmail(env, attendeePayload, "Event attendee confirmation email");
   attendeeEmailSent = Boolean(attendeeResult.ok);
 
   if (!notifyResult.ok || !attendeeResult.ok) {
@@ -1915,6 +2719,7 @@ async function handleDeleteEventRegistrationV2(request, env, sourceId, registrat
     return jsonResponse({ ok: false, error: "Registration not found." }, 404, { "Cache-Control": "no-store" });
   }
 
+  const snapshotBefore = await getRegistrationSnapshot(env, sourceId, eventDate, config);
   await env.DB.prepare(
     `DELETE FROM event_registrations_v2
      WHERE id = ? AND source_id = ? AND event_date = ?`
@@ -1922,7 +2727,17 @@ async function handleDeleteEventRegistrationV2(request, env, sourceId, registrat
     .bind(safeRegistrationId, sourceId, eventDate)
     .run();
 
-  const snapshot = await getRegistrationSnapshot(env, sourceId, eventDate, config);
+  let nextConfig = config;
+  let snapshot = await getRegistrationSnapshot(env, sourceId, eventDate, nextConfig);
+  const wasFull = snapshotBefore.registrationCapacity > 0 && snapshotBefore.remainingSpots <= 0;
+  const hasOpenSpots = snapshot.registrationCapacity > 0 && snapshot.remainingSpots > 0;
+  if (nextConfig.registrationClosed && wasFull && hasOpenSpots && !isRegistrationPast(nextConfig)) {
+    const reopened = await setRegistrationClosedForPayload(env, payload, sourceId, eventDate, false);
+    if (reopened) {
+      nextConfig = resolveRegistrationConfig(payload, sourceId, eventDate) || nextConfig;
+      snapshot = await getRegistrationSnapshot(env, sourceId, eventDate, nextConfig);
+    }
+  }
   return jsonResponse({ ok: true, removedRegistrationId: safeRegistrationId, ...snapshot }, 200, { "Cache-Control": "no-store" });
 }
 
@@ -1961,6 +2776,162 @@ async function handleUpdateEventRegistrationApprovalV2(request, env, sourceId, r
 
   const snapshot = await getRegistrationSnapshot(env, sourceId, eventDate, config);
   return jsonResponse({ ok: true, updatedRegistrationId: safeRegistrationId, approvalStatus: nextStatus, ...snapshot }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleResendEventRegistrationEmailV2(request, env, sourceId, registrationId) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
+
+  const url = new URL(request.url);
+  const eventDate = String(url.searchParams.get("date") || "").trim();
+  const safeRegistrationId = String(registrationId || "").trim();
+  if (!sourceId || !eventDate || !safeRegistrationId) {
+    return jsonResponse({ ok: false, error: "Missing source id, registration id, or date." }, 400, { "Cache-Control": "no-store" });
+  }
+
+  const payload = await getEventsPayloadV2(env);
+  const config = resolveRegistrationConfig(payload, sourceId, eventDate);
+  if (!config) {
+    return jsonResponse({ ok: false, error: "Event not found." }, 404, { "Cache-Control": "no-store" });
+  }
+
+  await ensureEventRegistrationsV2Table(env);
+  const row = await env.DB.prepare(
+    `SELECT id, first_name, last_name, email, phone, cert_level, additional_guests, party_size
+     FROM event_registrations_v2
+     WHERE id = ? AND source_id = ? AND event_date = ?
+     LIMIT 1`
+  )
+    .bind(safeRegistrationId, sourceId, eventDate)
+    .first();
+
+  if (!row) {
+    return jsonResponse({ ok: false, error: "Registration not found." }, 404, { "Cache-Control": "no-store" });
+  }
+
+  const snapshot = await getRegistrationSnapshot(env, sourceId, eventDate, config);
+  const firstName = String(row.first_name || "").trim();
+  const lastName = String(row.last_name || "").trim();
+  const fullName = buildRegistrantLabel(firstName, lastName);
+  const result = await sendEventRegistrationAttendeeEmail(env, config, {
+    eventDate,
+    firstName,
+    lastName,
+    fullName,
+    registrantName: firstName || fullName,
+    email: String(row.email || "").trim(),
+    phone: String(row.phone || "").trim(),
+    certLevel: String(row.cert_level || "").trim(),
+    partySize: Math.max(1, Number(row.party_size) || 1),
+    remainingSpots: snapshot.remainingSpots,
+  }, "Event attendee confirmation resend");
+
+  if (!result.ok) {
+    return jsonResponse({ ok: false, error: result.error || "Could not resend registration email." }, 502, { "Cache-Control": "no-store" });
+  }
+
+  return jsonResponse({ ok: true, resentRegistrationId: safeRegistrationId, attendeeEmailSent: true }, 200, { "Cache-Control": "no-store" });
+}
+
+async function handleSendEventAlertEmailV2(request, env, sourceId) {
+  const authed = await requireAuth(request, env);
+  if (!authed) return jsonResponse({ ok: false, error: "Unauthorized." }, 401);
+
+  const url = new URL(request.url);
+  const eventDate = String(url.searchParams.get("date") || "").trim();
+  const safeSourceId = String(sourceId || "").trim();
+  if (!safeSourceId || !eventDate) {
+    return jsonResponse({ ok: false, error: "Missing source id or date." }, 400, { "Cache-Control": "no-store" });
+  }
+
+  const payload = await getEventsPayloadV2(env);
+  const config = resolveRegistrationConfig(payload, safeSourceId, eventDate);
+  if (!config) {
+    return jsonResponse({ ok: false, error: "Event not found." }, 404, { "Cache-Control": "no-store" });
+  }
+  if (!config.registrationEnabled || config.registrationCapacity <= 0) {
+    return jsonResponse({ ok: false, error: "Registration is not open for this event." }, 400, { "Cache-Control": "no-store" });
+  }
+  if (config.registrationClosed || isRegistrationPast(config)) {
+    return jsonResponse({ ok: false, error: "Registration is closed for this event." }, 409, { "Cache-Control": "no-store" });
+  }
+
+  const snapshot = await getRegistrationSnapshot(env, safeSourceId, eventDate, config);
+  if (snapshot.registrationClosed || snapshot.remainingSpots <= 0) {
+    return jsonResponse({ ok: false, error: "Registration is full or closed for this event." }, 409, { "Cache-Control": "no-store" });
+  }
+
+  const subscribers = await listEventAlertSubscribers(env);
+  if (!subscribers.length) {
+    return jsonResponse({ ok: false, error: "No event alert subscribers found." }, 409, { "Cache-Control": "no-store" });
+  }
+
+  const fromEmail = String(env.RESEND_FROM_EMAIL || "").trim() || "no-reply@dmzscuba.com";
+  const fromName = String(env.RESEND_FROM_NAME || "").trim() || "DMZ Scuba";
+  const contactEmail = String(env.RESEND_TO || "").trim() || "info@dmzscuba.com";
+  const templateId = String(env.RESEND_TEMPLATE_EVENT_ALERT || "").trim();
+  const timeText = [config.time, config.endTime].filter(Boolean).join(" - ");
+  const registrationLink = `https://www.dmzscuba.com/pages/events/?event=${encodeURIComponent(safeSourceId)}&date=${encodeURIComponent(eventDate)}`;
+  const failures = [];
+  let sentCount = 0;
+
+  for (const subscriber of subscribers) {
+    const email = String(subscriber.email || "").trim().toLowerCase();
+    if (!email) continue;
+    const firstName = String(subscriber.firstName || subscriber.name || "Diver").trim().split(/\s+/)[0] || "Diver";
+    const details = {
+      firstName,
+      name: subscriber.name || firstName,
+      title: config.title || "DMZ Scuba Event",
+      eventDate,
+      time: timeText,
+      location: config.location || "",
+      type: config.type || "",
+      summary: config.description || "",
+      registrationLink,
+      remainingSpots: snapshot.remainingSpots,
+      contactEmail,
+    };
+    const content = buildEventAlertEmail(details);
+    const emailPayload = {
+      from: `${fromName} <${fromEmail}>`,
+      to: [email],
+      reply_to: [contactEmail],
+      ...(templateId
+        ? {
+            subject: content.subject,
+            template: {
+              id: templateId,
+              variables: buildEventAlertTemplateVariables(details),
+            },
+          }
+        : {
+            subject: content.subject,
+            html: content.html,
+            text: content.text,
+          }),
+    };
+    const result = await sendResendEmail(env, emailPayload, "Event alert email");
+    if (result.ok) {
+      sentCount += 1;
+    } else {
+      failures.push({ email, error: result.error || "Send failed." });
+    }
+  }
+
+  return jsonResponse({
+    ok: failures.length === 0,
+    event: {
+      sourceId: safeSourceId,
+      eventDate,
+      title: config.title || "DMZ Scuba Event",
+      remainingSpots: snapshot.remainingSpots,
+    },
+    subscriberCount: subscribers.length,
+    sentCount,
+    failedCount: failures.length,
+    failures: failures.slice(0, 10),
+  }, failures.length ? 207 : 200, { "Cache-Control": "no-store" });
 }
 
 async function handleGetHomeTicker(env) {
@@ -2493,10 +3464,14 @@ export default {
       response = await handleGetMedia(env);
     } else if (pathname === "/api/contact" && request.method === "POST") {
       response = await handleContact(request, env);
+    } else if (pathname === "/api/event-alert-subscribe" && request.method === "POST") {
+      response = await handleEventAlertSubscribe(request, env);
     } else if (pathname === "/api/client-telemetry" && request.method === "POST") {
       response = await handleClientTelemetry(request);
     } else if (pathname === "/api/admin/login" && request.method === "POST") {
       response = await handleLogin(request, env);
+    } else if (pathname === "/api/admin/event-alert-subscribers" && request.method === "GET") {
+      response = await handleListEventAlertSubscribers(request, env);
     } else if (pathname === "/api/admin/management" && request.method === "GET") {
       response = await handleListManagementRecords(request, env);
     } else if (pathname === "/api/admin/management" && request.method === "POST") {
@@ -2529,11 +3504,20 @@ export default {
     } else if (pathname.startsWith("/api/v2/events/") && pathname.endsWith("/registrations") && request.method === "POST") {
       const sourceId = decodeURIComponent(pathname.split("/")[4] || "").trim().toLowerCase();
       response = await handleCreateEventRegistrationV2(request, env, sourceId);
+    } else if (pathname.startsWith("/api/admin/v2/events/") && pathname.endsWith("/alerts") && request.method === "POST") {
+      const parts = pathname.split("/");
+      const sourceId = decodeURIComponent(parts[5] || "").trim().toLowerCase();
+      response = await handleSendEventAlertEmailV2(request, env, sourceId);
     } else if (pathname.startsWith("/api/admin/v2/events/") && pathname.endsWith("/approval") && request.method === "PUT") {
       const parts = pathname.split("/");
       const sourceId = decodeURIComponent(parts[5] || "").trim().toLowerCase();
       const registrationId = decodeURIComponent(parts[7] || "").trim();
       response = await handleUpdateEventRegistrationApprovalV2(request, env, sourceId, registrationId);
+    } else if (pathname.startsWith("/api/admin/v2/events/") && pathname.endsWith("/email") && request.method === "POST") {
+      const parts = pathname.split("/");
+      const sourceId = decodeURIComponent(parts[5] || "").trim().toLowerCase();
+      const registrationId = decodeURIComponent(parts[7] || "").trim();
+      response = await handleResendEventRegistrationEmailV2(request, env, sourceId, registrationId);
     } else if (pathname.startsWith("/api/admin/v2/events/") && pathname.includes("/registrations/") && request.method === "DELETE") {
       const parts = pathname.split("/");
       const sourceId = decodeURIComponent(parts[5] || "").trim().toLowerCase();

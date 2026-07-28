@@ -8,9 +8,9 @@
   <title>DMZ Scuba | Scuba Training, Travel, and Exploration</title>
 
   <!-- Main stylesheet -->
-<link rel="stylesheet" href="/css/main.css" />
 <link rel="stylesheet" href="/css/base.css" />
 <link rel="stylesheet" href="/css/components.css" />
+<link rel="stylesheet" href="/css/main.css" />
 <link rel="stylesheet" href="/css/pages/events.css?v=20260406a" />
 <link rel="stylesheet" href="/css/pages/home.css" />
 <link rel="stylesheet" href="/css/responsive.css" />
@@ -60,27 +60,7 @@
 <body>
 
   <!-- ================= HEADER / NAV ================= -->
-  <header class="site-header">
-    <div class="nav-container">
-      <a href="index.html" class="logo">
-        <img src="assets/images/logos/dmz-scuba-logo.png" alt="DMZ Scuba Logo">
-      </a>
-      <div class="site-name">DMZ Scuba</div>
-
-      <nav class="main-nav">
-        <a class="is-active" href="index.html">Home</a>
-<a href="pages/training/index.html">Training</a>
-<a href="pages/travel/index.html">Travel</a>
-<a href="pages/media/index.html">Media</a>
-<a href="pages/events/index.html">Events</a>
-<a href="pages/contact/index.html">Contact</a>
-        <a href="/pages/about/index.html">About</a>
-<!-- CTA ladder: keep header action visible but non-competing with hero primary -->
-<a class="nav-cta" href="pages/contact/index.html#dive-now">Dive Now</a>
-
-      </nav>
-    </div>
-  </header>
+  <header class="site-header" data-site-nav></header>
 
   <!-- ================= HERO ================= -->
   <section class="hero">
@@ -182,6 +162,32 @@
     <p class="events-preview-stamp" data-events-updated></p>
   </section>
 
+  <section class="event-alert-signup event-alert-signup-home" aria-labelledby="home-alert-title">
+    <div>
+      <p class="event-alert-eyebrow">Event Alerts</p>
+      <h2 id="home-alert-title">Know when new public classes and dive events open.</h2>
+      <p class="muted">Join the update list and we will email you when a new event or class is added with open registration.</p>
+    </div>
+    <form class="event-alert-form" method="post" data-event-alert-subscribe data-form-name="Home Event Alerts">
+      <div class="event-alert-fields">
+        <div class="field">
+          <label for="home-alert-name">Name</label>
+          <input id="home-alert-name" name="subscriber-name" type="text" autocomplete="name" placeholder="Your name" />
+        </div>
+        <div class="field">
+          <label for="home-alert-email">Email</label>
+          <input id="home-alert-email" name="subscriber-email" type="email" autocomplete="email" placeholder="you@email.com" required />
+        </div>
+      </div>
+      <div class="field dmz-honeypot" aria-hidden="true">
+        <label for="home-alert-company">Company</label>
+        <input id="home-alert-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+      </div>
+      <button class="btn primary" type="submit">Get Event Alerts</button>
+      <p class="muted small" data-subscribe-status aria-live="polite">Only public events with open registration will be announced.</p>
+    </form>
+  </section>
+
   <section class="dive-quiz-entry" aria-labelledby="dive-quiz-title">
     <div class="dive-quiz-entry-inner">
       <!-- Tone polish: reduce friction and keep guided-path voice -->
@@ -264,7 +270,7 @@
 
   <!-- Main JS -->
   <script src="js/main.js"></script>
-  <script src="js/events.js"></script>
+  <script src="js/events.js?v=20260508b"></script>
   <script src="js/quiz.js"></script>
   <script src="js/home.js"></script>
   <script>

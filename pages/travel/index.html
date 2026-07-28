@@ -14,32 +14,14 @@
   <link rel="stylesheet" href="/css/components.css" />
   <link rel="stylesheet" href="/css/main.css" />
   <link rel="stylesheet" href="/css/pages/events.css?v=1.0" />
-  <link rel="stylesheet" href="/css/pages/travel.css?v=1.8" />
+  <link rel="stylesheet" href="/css/pages/travel.css?v=2.0" />
   <link rel="stylesheet" href="/css/responsive.css" />
 
 </head>
 
 <body class="travel-page">
   <div class="dest-publish-banner" id="destPublishBanner" aria-live="polite"></div>
-  <header class="site-header">
-    <div class="nav-container">
-      <a class="logo" href="../../index.html" aria-label="DMZ Scuba Home">
-        <img src="../../assets/images/logos/dmz-scuba-logo.png" alt="DMZ Scuba logo" />
-      </a>
-      <div class="site-name">DMZ Scuba</div>
-
-      <nav class="main-nav" aria-label="Primary navigation">
-        <a href="../../index.html">Home</a>
-        <a href="../training/index.html">Training</a>
-        <a class="is-active" href="./index.html">Travel</a>
-        <a href="../media/index.html">Media</a>
-        <a href="/pages/events/index.html">Events</a>
-        <a href="../contact/index.html">Contact</a>
-        <a href="/pages/about/">About</a>
-        <a class="nav-cta" href="../contact/index.html#dive-now">Dive Now</a>
-      </nav>
-    </div>
-  </header>
+  <header class="site-header" data-site-nav></header>
 
   <main class="page">
     <section class="page-hero">
@@ -111,7 +93,6 @@
             <div class="dest-admin-section">
               <h3>Editing</h3>
               <div class="dest-admin-actions">
-                <button class="btn secondary dest-admin-login" type="button">DMZ Login</button>
                 <button class="btn secondary dest-admin-logout" type="button">Logout</button>
                 <button class="dest-admin-toggle" type="button" aria-pressed="false">Open Editor</button>
                 <button class="btn secondary dest-admin-add" type="button">New Destination</button>
@@ -310,43 +291,80 @@
         </div>
       </aside>
 
+      <!-- 2.0: Filter + search bar -->
+      <div class="globe-filter-bar" id="globeFilterBar">
+        <div class="globe-search-wrap">
+          <svg class="globe-search-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <input class="globe-search" id="globeSearch" type="search" placeholder="Search destinations…" autocomplete="off" aria-label="Search destinations" />
+        </div>
+        <div class="globe-filter-pills" id="globeFilterPills" role="group" aria-label="Filter by tag"></div>
+      </div>
+
       <div class="globe-shell">
         <div class="globe-wrap" id="globeWrap">
           <canvas id="globeCanvas" width="920" height="520" aria-label="Interactive destination globe"></canvas>
+          <!-- 2.0: Reset view button -->
+          <button class="globe-home-btn" id="globeHomeBtn" type="button" aria-label="Reset globe to default view" title="Reset view">
+            <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
+              <circle cx="8" cy="8" r="2" fill="currentColor"/>
+            </svg>
+          </button>
         </div>
       </div>
+
       <div class="travel-globe-legend" aria-label="Trip status key">
-        <p class="travel-globe-legend-title">Pin Key</p>
-        <div class="travel-globe-legend-items">
-          <span class="travel-globe-legend-item">
-            <span class="travel-globe-legend-swatch is-none" aria-hidden="true"></span>
-            No trip planned
-          </span>
-          <span class="travel-globe-legend-item">
-            <span class="travel-globe-legend-swatch is-planned" aria-hidden="true"></span>
-            Planned trip 60+ days out
-          </span>
-          <span class="travel-globe-legend-item">
-            <span class="travel-globe-legend-swatch is-soon" aria-hidden="true"></span>
-            Trip within 60 days
-          </span>
-          <span class="travel-globe-legend-item">
-            <span class="travel-globe-legend-swatch is-active" aria-hidden="true"></span>
-            Trip in progress
-          </span>
+        <div class="travel-globe-legend-top">
+          <p class="travel-globe-legend-title">Pin Key</p>
+          <div class="travel-globe-legend-items">
+            <span class="travel-globe-legend-item">
+              <span class="travel-globe-legend-swatch is-none" aria-hidden="true"></span>
+              No trip planned
+            </span>
+            <span class="travel-globe-legend-item">
+              <span class="travel-globe-legend-swatch is-planned" aria-hidden="true"></span>
+              Planned trip 60+ days out
+            </span>
+            <span class="travel-globe-legend-item">
+              <span class="travel-globe-legend-swatch is-soon" aria-hidden="true"></span>
+              Trip within 60 days
+            </span>
+            <span class="travel-globe-legend-item">
+              <span class="travel-globe-legend-swatch is-active" aria-hidden="true"></span>
+              Trip in progress
+            </span>
+          </div>
         </div>
+        <!-- 2.0: Live stats bar -->
+        <div class="globe-stats-bar" id="globeStatsBar" aria-live="polite"></div>
       </div>
     </section>
 
-    <!-- Destination spotlight (the “zoom in” target) -->
-    <section class="section" id="destination">
+    <!-- Destination spotlight (the zoom-in target) -->
+    <section class="section" id="destination" hidden>
       <div class="destination-shell">
+
+        <!-- 2.0: Hero image strip hidden until a destination is selected -->
+        <div class="dest-hero-strip" id="destHeroStrip">
+          <img class="dest-hero-img" id="destHeroImg" alt="" loading="lazy" />
+          <div class="dest-hero-overlay"></div>
+        </div>
+
         <div class="destination-head">
           <div class="destination-title-row">
             <h2 id="destTitle">Choose a destination</h2>
-            <a class="btn primary" href="../contact/index.html#dive-now">Dive Now</a>
+            <div class="destination-title-meta">
+              <!-- 2.0: Status badge lives here so it shows with or without a hero image -->
+              <span class="dest-status-badge" id="destStatusBadge"></span>
+              <a class="btn primary" href="../contact/index.html#dive-now">Dive Now</a>
+            </div>
           </div>
           <p id="destSub" class="section-sub">Click a globe pin to load details here.</p>
+          <!-- 2.0: Tags row -->
+          <div class="dest-tags-row" id="destTagsRow" aria-label="Destination tags"></div>
         </div>
 
         <div class="destination-grid">
@@ -369,6 +387,8 @@
 
           <div class="destination-card">
             <h3>Trip Snapshot</h3>
+            <!-- 2.0: Trip countdown chip -->
+            <div class="dest-trip-info" id="destTripInfo"></div>
             <ul class="dest-bullets" id="destBullets">
               <li>Visibility, conditions, and seasons</li>
               <li>Dive style (drift / wreck / reef)</li>
@@ -416,21 +436,21 @@
         <p class="section-sub">Prefer to browse? Pick a destination to view details.</p>
       </div>
       <div class="destination-list" id="destinationList"></div>
+      <p class="dest-list-empty muted" id="destinationListEmpty" hidden>No destinations match your current filter. <button class="dest-list-empty-clear" type="button" onclick="document.getElementById('globeFilterPills')?.querySelector('.globe-filter-clear')?.click()">Clear filters</button></p>
     </section>
 
    <footer class="site-footer travel-footer">
   <span>&copy; <span id="year"></span> DMZ Scuba. All rights reserved.</span>
-  <button class="dest-admin-login travel-login-button" type="button">DMZ Login</button>
   <button class="dest-admin-toggle travel-login-button" type="button" aria-pressed="false">Edit Destinations</button>
 </footer>
 
   </main>
 
   <script src="../../js/main.js?v=1.3" defer></script>
-  <script src="../../js/events.js?v=1.0" defer></script>
+  <script src="../../js/events.js?v=20260508b" defer></script>
   <script src="../../js/travel-admin.js?v=1.10" defer></script>
   <!-- Globe POC (pure JS, no libraries) -->
-  <script src="../../js/globe.js?v=7" defer></script>
+  <script src="../../js/globe.js?v=8" defer></script>
 
 
 </body>
