@@ -1,734 +1,1642 @@
-# DMZScuba.com — Complete Technical Reference
+# DMZScuba.com <!-- comprehensive production reference -->
 
-DMZ Scuba is a full-stack dive business platform built entirely without a front-end framework. The public site runs as static HTML/CSS/JS on Cloudflare Pages. Every dynamic feature — media, events, destinations, contact forms, and business operations — flows through a single Cloudflare Worker backed by a D1 SQLite database. The management console is a purpose-built business operations workspace that lives as a single authenticated HTML page inside the same repo, sharing the same API.
+![DMZ Scuba logo](assets/images/logos/dmz-scuba-logo-display.webp)
 
----
+DMZScuba.com is a mobile-first, full-stack platform for a working scuba training and travel business. It combines a public marketing site, training catalog, interactive dive-planning tools, travel explorer, event calendar, media library, customer inquiry system, and an authenticated business-management console in one deliberately framework-free codebase.
 
-## Table of Contents
+The public experience is static HTML, CSS, and vanilla JavaScript deployed on Cloudflare Pages. Dynamic content and business operations are provided by a Cloudflare Worker, a Cloudflare D1 database, Cloudflare Stream, Cloudflare Images, and Resend. There is no browser-side framework, package manager, bundler, or compilation step.
 
-1. [Architecture Overview](#architecture-overview)
-2. [Visual Design System](#visual-design-system)
-3. [Public Site — Page by Page](#public-site--page-by-page)
-4. [JavaScript Architecture](#javascript-architecture)
-5. [The Management Console](#the-management-console)
-6. [The Worker API](#the-worker-api)
-7. [D1 Database Schema](#d1-database-schema)
-8. [The Events System](#the-events-system)
-9. [The Media System](#the-media-system)
-10. [The Globe](#the-globe)
-11. [The Quiz Engine](#the-quiz-engine)
-12. [Email System (Resend)](#email-system-resend)
-13. [Training Section](#training-section)
-14. [Development Workflow](#development-workflow)
-15. [Scripts Reference](#scripts-reference)
-16. [Repo and Deployment Structure](#repo-and-deployment-structure)
-17. [AI Collaboration Guide](#ai-collaboration-guide)
+**Production:** [www.dmzscuba.com](https://www.dmzscuba.com/)<br>
+**Production management console:** [www.dmzscuba.com/management/](https://www.dmzscuba.com/management/)<br>
+**Live Cloudflare Pages project:** [dmzscuba-live.pages.dev](https://dmzscuba-live.pages.dev/)
+
+> This repository is the production repository. Day-to-day feature development happens in the separate `DMZScuba.com` development repository and is promoted here only after validation and explicit approval.
 
 ---
 
-## Architecture Overview
+## Table of contents
 
+1. [What this project does](#what-this-project-does)
+2. [Technical highlights](#technical-highlights)
+3. [System architecture](#system-architecture)
+4. [Technology stack](#technology-stack)
+5. [Repository map](#repository-map)
+6. [Public-site architecture](#public-site-architecture)
+7. [Public experiences, page by page](#public-experiences-page-by-page)
+8. [Mobile experience](#mobile-experience)
+9. [Training and conversion system](#training-and-conversion-system)
+10. [Travel and destination system](#travel-and-destination-system)
+11. [Events and registration system](#events-and-registration-system)
+12. [Media platform](#media-platform)
+13. [Quiz, forms, and CRM handoff](#quiz-forms-and-crm-handoff)
+14. [Management console](#management-console)
+15. [Frontend module reference](#frontend-module-reference)
+16. [Cloudflare Worker](#cloudflare-worker)
+17. [API reference](#api-reference)
+18. [D1 data model](#d1-data-model)
+19. [Static data and fallback behavior](#static-data-and-fallback-behavior)
+20. [Authentication and security model](#authentication-and-security-model)
+21. [Email system](#email-system)
+22. [Design system and CSS architecture](#design-system-and-css-architecture)
+23. [Accessibility](#accessibility)
+24. [SEO and discoverability](#seo-and-discoverability)
+25. [Performance and resilience](#performance-and-resilience)
+26. [Configuration and secrets](#configuration-and-secrets)
+27. [Local development](#local-development)
+28. [Testing and release validation](#testing-and-release-validation)
+29. [Deployment model](#deployment-model)
+30. [Common extension workflows](#common-extension-workflows)
+31. [Operational boundaries and technical debt](#operational-boundaries-and-technical-debt)
+32. [Project philosophy](#project-philosophy)
+
+---
+
+## What this project does
+
+DMZScuba.com supports the complete path from first visit to ongoing customer relationship:
+
+```text
+Discovery
+  -> course, destination, event, media, or quiz
+  -> context-specific call to action
+  -> contact request, interest signup, or event registration
+  -> automatic email and management record creation
+  -> staff follow-up in the management console
+  -> class, trip, calendar, and media updates
+  -> published changes on the public site
 ```
-Browser
-  │
-  ├── Cloudflare Pages (static HTML/CSS/JS)
-  │     ├── Public pages (/, /pages/**, /quiz, /pages/events/embed.html)
-  │     └── /management  ← single authenticated SPA
-  │
-  ├── Cloudflare Pages Function  (functions/api/[[path]].js)
-  │     └── Proxies all /api/* requests to the Worker
-  │
-  └── Cloudflare Worker  (dmz-media-api)
-        ├── D1 (SQLite) — all data
-        ├── Cloudflare Stream — video hosting + upload
-        ├── Cloudflare Images — photo hosting + upload
-        └── Resend — transactional email delivery
+
+The site is not only a brochure. It is an integrated operating system for the business:
+
+- **Marketing and discovery:** home page, structured navigation, SEO metadata, social previews, mobile calls to action, and guided funnels.
+- **Scuba training:** course catalog, course-specific landing pages, group/private options, referral paths, specialty programs, skill refresh, and educational simulations.
+- **Travel discovery:** an interactive canvas globe, searchable destination cards, detailed destination pages, live trip-status indicators, destination media, and interest-list capture.
+- **Events:** native calendar and list views, type filtering, shareable event links, capacity-aware registration, registration approval, and attendee email workflows.
+- **Media:** filterable photo/video library, destination-aware discovery, Cloudflare Stream and YouTube playback, full-screen Reel Mode, and authenticated publishing tools.
+- **Customer acquisition:** adaptive Dive Path Quiz, contact forms, course requests, travel-interest forms, event-alert subscriptions, automatic replies, and CRM record creation.
+- **Business operations:** contacts, inquiries, classes, tasks, trips/calendar records, registration escrow, bulk actions, CSV import/export, dashboards, content studios, and mobile management.
+
+---
+
+## Technical highlights
+
+- **Zero-build frontend:** 29 HTML documents, 28 JavaScript modules, and 16 stylesheets load directly in the browser.
+- **Framework-free application architecture:** large application surfaces use plain state objects, DOM events, data attributes, observers, and isolated IIFEs.
+- **Single API boundary:** browser requests use same-origin `/api/*`; a Pages Function forwards them to one Worker.
+- **Serverless persistence:** D1 stores media, events, registrations, destinations, site settings, admin sessions, and management records.
+- **Direct-to-cloud uploads:** the browser uploads video directly to Cloudflare Stream and images directly to Cloudflare Images using authenticated one-time upload URLs.
+- **Pure Canvas globe:** the travel globe implements sizing, rotation, inertia, texture rendering, search, filtering, hit testing, pins, touch gestures, and zoom without Three.js or WebGL.
+- **Two event representations:** recurring definitions are stored compactly and expanded into dated event instances for public rendering.
+- **Integrated CRM capture:** public inquiries and quiz results become management records automatically after successful delivery.
+- **Mobile-first management:** the desktop sidebar becomes a bottom-tab application shell; record editing becomes a bottom sheet with contextual floating save behavior.
+- **Graceful fallback:** selected public content can fall back to versioned JSON when live API data cannot be loaded.
+- **Automated structural tests:** Node tests protect mobile navigation, training funnels, API-facing UI contracts, media logic, and CSS block integrity.
+
+---
+
+## System architecture
+
+### Runtime topology
+
+```text
+User browser
+  |
+  +-- Cloudflare Pages: www.dmzscuba.com
+  |     |
+  |     +-- static HTML
+  |     +-- global and page-specific CSS
+  |     +-- vanilla JavaScript modules
+  |     +-- static images, icons, sprites, and fallback JSON
+  |     +-- /management/ authenticated console
+  |     |
+  |     `-- /api/*
+  |           |
+  |           +-- _redirects proxy rule
+  |           `-- functions/api/[[path]].js
+  |                 |
+  |                 `-- dmz-media-api Worker
+  |                       |
+  |                       +-- D1: dmz_media
+  |                       +-- Cloudflare Stream API
+  |                       +-- Cloudflare Images API
+  |                       `-- Resend API
+  |
+  +-- YouTube embeds and thumbnails
+  `-- HLS.js loaded on demand when native HLS is unavailable
 ```
 
-**Why no framework?** Every JS file on this site is a self-contained IIFE (Immediately Invoked Function Expression). There is no build step, no bundler, no dependencies loaded into the browser. Pages load by fetching a couple of flat `.js` files. The management console with all its features is 170KB of vanilla JS, split across 13 module files that all attach to the same shared DOM.
+### Public read flow
 
-**The Worker is the single source of truth.** No static JSON file is authoritative for production data. Static JSON files (`assets/data/*.json`) exist as local development fallbacks and for things like the globe's destination pins, but the live site reads everything from the Worker API.
-
----
-
-## Visual Design System
-
-The site uses a cinematic dark ocean theme defined in `css/base.css`:
-
-```css
---bg:      #050B14   /* near-black deep ocean */
---bg-2:    #071325   /* slightly lighter */
---text:    #EAF2FF   /* ice-white */
---muted:   rgba(234, 242, 255, 0.72)
---accent:  #E21B23   /* DMZ red */
---glow:    rgba(85, 185, 255, 0.18)  /* blue highlight glow */
---radius:  18px
+```text
+Page loads
+  -> feature JavaScript requests same-origin /api/...
+  -> Pages forwards request to Worker
+  -> Worker reads D1 and normalizes data
+  -> JSON response returns with CORS headers
+  -> page renders live data
+  -> selected features use static JSON if the API is unavailable
 ```
 
-The body background is a two-layer composite: a radial gradient that simulates light entering water from above, layered over a linear gradient from near-black to deep blue. This means every page has a subtle underwater atmosphere without any image.
+### Authenticated write flow
 
-**Scroll behavior (mobile):** `js/main.js` implements a custom accumulation-based scroll reveal for the nav header on mobile. It does not simply toggle on scroll direction — it tracks accumulated scroll distance in both directions and only hides the header after 32px of downward accumulation (44px on media), and only reveals after 240px back up (96px on media). This prevents accidental flicker on bumpy scroll. The nav stays fixed at the top for 220px before the scroll logic activates.
+```text
+Admin login
+  -> POST /api/admin/login
+  -> Worker validates ADMIN_USER and ADMIN_PASS
+  -> UUID session stored in D1 for 24 hours
+  -> token returned to browser and stored as dmzMediaToken
+  -> Authorization: Bearer <token> on protected requests
+  -> Worker checks admin_sessions before every protected operation
+```
 
-**Mobile sticky CTA:** The home page has a bottom-pinned CTA bar (`#mobile-sticky-cta`) that dismisses on close and stores `dmz-mobile-sticky-cta-dismissed` in `localStorage` so it does not re-appear after a user closes it.
+### Direct media-upload flow
 
-**URL-driven form prefill:** Any contact form URL can carry `?interest=training&location=...&course=...&name=...` parameters. `js/main.js` reads these on `DOMContentLoaded` and prefills the matching form fields, then adds `needs-input` highlight classes to any unfilled required fields so the user's eye goes straight to what they still need to complete.
+```text
+Admin selects a file
+  -> browser requests an authenticated one-time upload URL
+  -> Worker asks Cloudflare Stream or Images for that URL
+  -> browser uploads the file directly to the media service
+  -> browser creates/updates media metadata through the Worker
+  -> public media API returns the published item
+```
 
----
-
-## Public Site — Page by Page
-
-### Home (`index.html`)
-
-The most feature-dense public page. It loads five JS files: `main.js`, `events.js`, `quiz.js`, `home.js`, and an inline `mapLinkChooser` script.
-
-**Hero section:** Static layout with a background image, animated ticker, and trust microcopy. The ticker element (`data-home-ticker`) starts hidden and is revealed by `home.js` once it successfully fetches `/api/v2/home-ticker`. If the API is unreachable, the ticker simply stays hidden — no broken layout.
-
-**Events preview:** A `data-events-preview` section fetches `/api/v2/events` (falling back to `/assets/data/events.json`) and renders upcoming event cards via the shared `events.js` engine. Events appear on the home page through the exact same code that powers the full events page — the script reads `data-events-preview` to switch into embed mode.
-
-**Quiz entry:** Two buttons (`data-open-quiz="quick"` and `data-open-quiz="builder"`) launch the quiz modal. The quiz modal is statically in the HTML but `aria-hidden="true"` by default and fully managed by `quiz.js`.
-
-**Map link router:** An inline script at the bottom of the page intercepts `.js-map-link` clicks and routes to Apple Maps on iOS, the `geo:` URI scheme on Android, and Google Maps in a new tab on desktop. This means the training address opens the native map app on mobile.
-
-### Contact (`pages/contact/index.html`)
-
-Two forms in one page:
-
-1. **Quick Contact form** (`#quickContactForm`) — minimal fields, submits via `window.DMZForms.submit()` from `main.js`, redirects to `/pages/thanks/` on success.
-2. **Dive Now form** (`#dive-now .dmz-form`) — full planning form with interest, location, dates, group size, experience level, and course fields. Prefillable via URL params.
-
-Both forms use a **honeypot field** named `company`. The Worker checks for this field on `POST /api/contact` and silently returns `{ ok: true }` without sending any email if it's populated — invisible to bots, zero cost.
-
-The contact page also has `data-copy` buttons on the phone and email display. `main.js` handles these globally: `navigator.clipboard.writeText()` with a `textarea`/`execCommand` fallback for non-secure contexts (like `file://` previews). Visual confirmation via `aria-label` swap and a 1400ms auto-clearing toast.
-
-### Travel (`pages/travel/index.html`)
-
-Renders the destination grid and the interactive globe. Loads `globe.js`, `destination.js`, and `travel-admin.js`. Fetches `/api/v2/destinations` on load. The globe and destination card grid are synchronized — clicking a destination card highlights the corresponding globe pin, and clicking a globe pin scrolls to and highlights the card.
-
-Individual destinations link to `pages/travel/destination.html?id=slug`, which loads the full destination detail via `destination.js` reading `/api/v2/destinations/:id`.
-
-### Media (`pages/media/index.html`)
-
-The media gallery is a full filtering + discovery surface backed by `media.js` (~88KB). It reads `/api/media` to get the full item set and `/api/v2/destinations` to populate the location filter with destination names. Features: tag filter, location filter, text search, sort (manual/date/shuffle), card size slider, and Reel Mode.
-
-**Reel Mode** is a fullscreen vertical scroll feed — think TikTok for dive content. It renders media items as a scrolling feed using IntersectionObserver to detect which card is in the viewport, then pauses/plays video accordingly. It supports Cloudflare Stream, YouTube, and local video, with full sound-on/off control. The initial user interaction (clicking Reel Mode) unlocks audio in browsers that require a gesture first.
-
-### Events (`pages/events/index.html`)
-
-Full calendar surface with month navigation, a list/calendar toggle, event type filters (Training, Travel, Local Dive, Workshop, Community), and event detail modals. Events can have multi-day duration, and the calendar renders them spanning multiple date cells. Events with `registrationEnabled: true` show a registration form in the modal that posts to `/api/v2/events/:id/registrations`.
-
-### Quiz (`quiz/index.html`)
-
-Loads `quiz.js` in a bare page that is only ever accessed via the modal. The quiz is primarily used embedded in the home page modal, but the standalone page exists for direct linking.
+The media bytes do not pass through the Worker. This keeps Worker execution small and avoids using the API process as a large-file relay.
 
 ---
 
-## JavaScript Architecture
+## Technology stack
 
-Every JS file on the site uses the IIFE pattern:
+| Layer | Technology | Responsibility |
+|---|---|---|
+| Markup | Semantic HTML5 | Page structure, forms, dialogs, static content, SEO |
+| Styling | Handwritten CSS | Tokens, components, page themes, responsive behavior |
+| Client logic | Vanilla ES6+ JavaScript | Rendering, state, navigation, editors, uploads, simulations |
+| Hosting | Cloudflare Pages | Static hosting, deployment, redirects, custom domain |
+| Edge proxy | Cloudflare Pages Function | Same-origin forwarding from `/api/*` to the Worker |
+| API | Cloudflare Worker | Auth, validation, CRUD, integrations, email orchestration |
+| Database | Cloudflare D1 / SQLite | All dynamic business and public content |
+| Video | Cloudflare Stream | Video upload, processing, thumbnailing, HLS/delivery |
+| Images | Cloudflare Images | Direct image upload and delivery variants |
+| Email | Resend | Internal notifications and customer-facing transactional email |
+| External media | YouTube | Supported video source and embed playback |
+| Tests | Node.js `node:test` | Logic and structural regression testing |
+
+There is no root `package.json`, no frontend dependency installation, and no production build command. Node is used for tests and deployment tooling; Wrangler is invoked through `npx` for Worker deployment.
+
+---
+
+## Repository map
+
+```text
+.
+|-- index.html                         Home page and quiz host
+|-- management/
+|   `-- index.html                    Authenticated operations console
+|-- quiz/
+|   `-- index.html                    Standalone quiz entry
+|-- pages/
+|   |-- about/
+|   |-- contact/
+|   |-- events/
+|   |   |-- index.html                Public events page
+|   |   |-- event.html                Shareable event detail page
+|   |   `-- embed.html                Calendar/admin embed surface
+|   |-- media/
+|   |-- nfc/
+|   |-- privacy/
+|   |-- thanks/
+|   |-- training/                     Training hub and course subtree
+|   `-- travel/
+|       |-- index.html                Globe and destination browser
+|       `-- destination.html          Data-driven destination detail
+|-- js/                               28 browser modules
+|-- css/
+|   |-- base.css                      Tokens and foundations
+|   |-- components.css                Shared components and mobile drawer
+|   |-- main.css                      Global layout and site sections
+|   |-- responsive.css                Unified mobile behavior
+|   `-- pages/                        Page-specific styles
+|-- assets/
+|   |-- data/                         JSON fallbacks and seeded content
+|   |-- images/                       Heroes, destinations, logos, globe assets
+|   |-- media/                        Local media and thumbnails
+|   |-- icons/                        Favicons
+|   `-- contact/dmz-scuba.vcf         Downloadable contact card
+|-- functions/api/[[path]].js         Pages-to-Worker API proxy
+|-- workers/dmz-media-api/
+|   |-- src/index.js                  Worker implementation
+|   |-- schema.sql                    D1 schema reference
+|   |-- wrangler.toml                 Worker and D1 configuration
+|   `-- README.md                     Worker-focused reference
+|-- tests/
+|   |-- media-logic.test.cjs
+|   |-- mobile-experience.test.cjs
+|   `-- training-funnel.test.cjs
+|-- scripts/smoke-check.mjs           Deployed-site smoke checks
+|-- _redirects                        Domain, API, and convenience routes
+|-- _headers                          Special response headers
+|-- robots.txt
+|-- sitemap.xml
+|-- RELEASE-CHECKLIST.md
+|-- AGENTS.md                         Repository conventions for coding agents
+`-- *.bat                             Windows development/deployment helpers
+```
+
+---
+
+## Public-site architecture
+
+### Shared page shell
+
+Public pages include a minimal `<header class="site-header" data-site-nav>`. `js/main.js` replaces or hydrates that contract with the same navigation everywhere:
+
+- DMZ Scuba logo and visible brand name
+- desktop primary navigation
+- mobile three-bar menu trigger
+- viewport-level backdrop and slide-out navigation drawer
+- active-page state
+- keyboard focus management
+- Escape-to-close behavior
+- swipe-to-close behavior
+- body scroll locking while the drawer is open
+
+The mobile drawer is mounted at the end of `<body>`, outside page-specific stacking contexts. This prevents transformed heroes, filters, or page sections from clipping the menu.
+
+### Shared JavaScript contracts
+
+Most modules are IIFEs:
 
 ```js
 (() => {
-  // entire module scope — nothing leaks to window
+  "use strict";
+  // private module state and behavior
 })();
 ```
 
-The exceptions are intentional: `main.js` exposes `window.DMZForms` and `window.DMZTelemetry` so that inline `<form>` submit handlers in HTML can call them without coupling to a specific file name. Everything else communicates through the DOM (data attributes, CustomEvents, classList mutations).
+Intentional globals are limited. `main.js` exposes:
 
-**No external runtime dependencies.** The globe is pure Canvas 2D. The quiz is pure DOM manipulation. The media masonry layout is calculated manually. The management console's complex state is a plain `const state = {}` object.
+- `window.DMZForms` for consistent form serialization and submission
+- `window.DMZTelemetry` for small client-failure and CTA event reports
 
-**Shared patterns across all files:**
+Modules primarily coordinate through DOM contracts:
 
-| Pattern | Usage |
+- `data-*` selectors identify behavior and content targets.
+- classes represent visual state.
+- `MutationObserver`, `ResizeObserver`, and `IntersectionObserver` respond to rendered state without a module loader.
+- custom events and native click/change/input events keep feature modules loosely coupled.
+
+### Shared form behavior
+
+`main.js` provides a common submission path for contact-style forms:
+
+1. Serialize normal fields and selected custom controls.
+2. include form name, subject, page URL, and message context.
+3. submit JSON to `/api/contact`.
+4. show pending/success/error feedback.
+5. report failures to `/api/client-telemetry`.
+6. redirect to the thank-you page where configured.
+
+Query parameters can prefill course, interest, location, name, and related fields. Prefilled controls receive a visible state, while required empty controls can receive a `needs-input` cue.
+
+---
+
+## Public experiences, page by page
+
+### Home: `/`
+
+The home page establishes the main journey around **Train. Travel. Explore.** It contains:
+
+- mobile/desktop responsive hero imagery
+- primary training call to action
+- live homepage ticker from `/api/v2/home-ticker`
+- three discovery lanes for training, travel, and media
+- upcoming-event preview using the shared events engine
+- public event-alert subscription
+- adaptive Dive Path Quiz in an accessible modal
+- trust and positioning content
+- contact conversion section
+- device-aware map links: Apple Maps on iOS, `geo:` on Android, Google Maps on desktop
+- a dismissible mobile action bar that suppresses itself when an equivalent in-page action is visible
+
+Ticker loading is fail-soft: the area remains hidden when no usable API or fallback content is available.
+
+### About: `/pages/about/`
+
+Explains the business mission, personalized instruction philosophy, founder, experience highlights, and call to action. It uses the same shared navigation, responsive hero system, footer, and contact routing as the rest of the site.
+
+### Contact: `/pages/contact/`
+
+Provides three acquisition paths:
+
+- a short quick-contact form
+- event-alert subscription
+- a detailed Dive Now planning form
+
+The planning form captures diving interest, experience, location, course, timing, group information, and open-ended goals. URL-prefill support lets the quiz, training pages, travel pages, and CTAs hand context into the form instead of making the visitor repeat it.
+
+### Thank you: `/pages/thanks/`
+
+Confirms form completion and keeps the visitor within the site journey. This page is intentionally simple and shares the standard site shell.
+
+### Privacy: `/pages/privacy/`
+
+Documents site form, analytics/advertising, and privacy practices. The page is indexed and included in shared footer navigation.
+
+### NFC landing page: `/nfc/`
+
+A compact, phone-first landing page intended for physical NFC cards. It provides:
+
+- downloadable DMZ Scuba vCard
+- click-to-call and email actions
+- social profile access
+- key training/travel/media links
+- current opportunities populated from the event system
+
+### Standalone quiz: `/quiz/`
+
+Provides a direct route into the Dive Path Quiz. The same `quiz.js` logic also runs inside the home-page modal, so recommendations and capture behavior stay consistent.
+
+---
+
+## Mobile experience
+
+Mobile is treated as a first-class product surface rather than a compressed desktop layout.
+
+### Unified header behavior
+
+- A single 64-pixel mobile header contract applies across public shell pages.
+- The header remains visible at the start of the page, then hides after deliberate downward scrolling.
+- Accumulated scroll thresholds prevent the header from flickering during small finger movements.
+- Scrolling upward restores it.
+- Sticky subnavigation, such as training shortcuts or media controls, moves into the vacated top position when the main header hides.
+- `body.site-header-is-hidden` is the shared state hook used by dependent sticky elements.
+
+### Mobile navigation drawer
+
+- Three-bar trigger with `aria-expanded` and `aria-controls`
+- fixed viewport overlay and backdrop
+- slide-in drawer with full site navigation
+- inert/`aria-hidden` state when closed
+- focus trap while open
+- focus restoration after close
+- Escape, backdrop click, close button, navigation click, and swipe dismissal
+
+### Contextual sticky actions
+
+Key customer journeys include a bottom action bar:
+
+- home
+- training and Open Water
+- travel and destination detail
+- events and event detail
+- media
+
+The action uses safe-area insets, stays inside narrow viewports, can be dismissed for the current browser session, and can suppress itself while an equivalent CTA is visible in the page.
+
+### Horizontal discovery rails
+
+Training option cards and other intentionally horizontal tracks receive dynamic scroll dots. `main.js`:
+
+- detects whether a rail actually overflows
+- calculates the active page from scroll position
+- updates dots during scrolling and resizing
+- hides the dots if the viewport can already show everything
+
+### Mobile containment
+
+Responsive rules explicitly constrain canvas, cards, filters, embedded calendars, modal sheets, sticky controls, and destination layouts. The travel and destination pages use `overflow-x: clip` as a final containment boundary while their individual grids use `minmax(0, 1fr)` and viewport-aware widths.
+
+### Management on mobile
+
+At 680 pixels and below:
+
+- desktop sidebar becomes a bottom tab bar
+- Dashboard, Agenda, Contacts, Classes, Calendar, and More stay reachable
+- secondary tools open in a More sheet
+- the More sheet includes Media, Travel, the public DMZ Scuba home page, and Log Out
+- editor becomes a near-full-height bottom sheet
+- the floating Save button is fixed above the bottom navigation
+- Save appears only after an actual form change
+- bulk actions, media upload, search, and content editing reflow for touch
+
+---
+
+## Training and conversion system
+
+The training section is a connected funnel, not a collection of isolated pages.
+
+| Route | Purpose |
 |---|---|
-| `apiFetch(url, opts)` | Injects `Authorization: Bearer <token>` from `localStorage` on every request |
-| `escapeHtml(value)` | Used before any user content goes into `innerHTML` — XSS prevention is consistent |
-| `setStatus(node, msg, tone)` | Status feedback element that toggles `is-error` / `is-success` CSS classes |
-| `data-` attribute routing | `data-site-studio-tab`, `data-filter-type`, `data-record-id` etc. used as CSS hooks and JS selectors |
-| `normalizeSiteText(value)` | Trims, lowercases, and strips accents for consistent comparisons |
-| Telemetry on failure | `window.DMZTelemetry.report()` fires on contact submit failures and media upload failures via `navigator.sendBeacon` (fetch fallback) |
+| `/pages/training/` | Training catalog and pathway hub |
+| `/pages/training/discover-scuba/` | First-experience / try-scuba program |
+| `/pages/training/open-water/` | Full Open Water certification presentation |
+| `/pages/training/open-water-referral/` | Referral training path |
+| `/pages/training/advanced-specialty/` | Advanced training overview |
+| `/pages/training/specialty/` | Specialty catalog |
+| `/pages/training/specialty/drysuit/` | Dry Suit course |
+| `/pages/training/specialty/full-face-mask/` | Full Face Mask course |
+| `/pages/training/specialty/nitrox/` | Computer Nitrox course |
+| `/pages/training/specialty/wreck/` | Wreck Diver course |
+| `/pages/training/skill-refresh/` | Returning-diver skill refresh |
+| `/pages/training/course-builder/` | Class-date and course request builder |
+| `/pages/training/interactive-tools/` | Dive-physics learning tools |
 
-**Module split strategy:** The management console's 170KB core (`management.js`) handles data loading, rendering, and CRUD. Each behavior feature that adds UI or state is its own module file. The modules use `MutationObserver` and DOM queries to find the elements they need, so they never import from or call into `management.js`. This means any module can be removed without touching core.
+### Course-page pattern
 
----
+Commercial training pages generally include:
 
-## The Management Console
+- one search-oriented H1 and canonical URL
+- course outcome and fit
+- prerequisite and logistics information
+- included items and training format
+- expandable mobile sections
+- context-specific sticky action
+- course-prefilled route into the Course Builder
 
-The console (`management/index.html`) is a single HTML page that presents a full sidebar + main panel layout on desktop, and a bottom tab bar + bottom sheet on mobile. It is `noindex, nofollow` so it does not appear in search results. Authentication is required — the login screen is rendered in the same HTML file and toggled with `hidden`.
+Automated tests enforce title, description, canonical link, one H1, image alt text, valid internal links, known course-prefill IDs, and the presence of course-specific mobile actions.
 
-### How Auth Works
+### Open Water choice architecture
 
-1. User submits username + password via the login form.
-2. `management.js` POSTs `{ user, pass }` to `POST /api/admin/login`.
-3. Worker validates against `ADMIN_USER` + `ADMIN_PASS` environment secrets.
-4. On success, Worker generates a `crypto.randomUUID()` token, stores it in `admin_sessions` with a 24-hour expiry, returns it to the client.
-5. Token is stored in `localStorage` under `dmzMediaToken`.
-6. All subsequent API calls include `Authorization: Bearer <token>`.
-7. If any API call returns 401, the token is cleared and the login screen is shown.
+The Open Water page presents group and private formats as a horizontally explorable choice surface. The behavior remains touch-native while visual dots clarify that additional options exist offscreen. Supporting content prioritizes outcome, included items, schedule expectations, and next action before lower-priority detail on mobile.
 
-### Record Types in Depth
+### Course Builder
 
-All record types are stored in the same `management_records` table and differentiated by `record_type`. Each type has a `typeConfig` object in `management.js` that controls which form fields are shown, what labels say, and what placeholder text is used.
+The builder collects:
 
-**Contact** — The CRM leaf. Stores certification level, source channel (website/referral/phone/social), notes as a relationship log, and a linked class enrollment list. The form shows first/last name separately even though the API stores them in `extras.firstName` / `extras.lastName`. When a contact is opened, their enrolled classes are loaded and shown in a collapsible section inside the editor. You can add a contact to a class from the contact editor, or add a contact to the class roster from the class editor — both sides update the same data.
+- requested course
+- current certification
+- group size
+- group/private Open Water preference when applicable
+- timing and scheduling needs
+- payment preference
+- contact details and goals
 
-**Inquiry** — The business development record. Has a full 8-stage pipeline with `statusRank` ordering so "Progress" sort puts records in pipeline order. Financial tracking: `amountOwed` and `amountPaid` stored in `extras`. Outstanding balance (owed − paid) appears as a badge on the card. Inquiry direction (incoming vs. outgoing) and category (pool, agency, vendor, customer, travel partner, community, etc.) enable filtering by business context.
+`course-builder.js` manages custom dropdown behavior and conditional Open Water format controls. Submission uses the shared form pipeline, so the request becomes both an email and a management inquiry.
 
-**Class** — Scuba class with a multi-session schedule. Each session has a type (classroom/pool/open water), date, start time, end time, and location. The form uses a `<details>` disclosure element for the schedule so it does not dominate the editor. The `getEffectiveClassStatus()` function computes a dynamic status from the session dates: if all sessions are in the past, the class is effectively "complete" even if the status field says "scheduled". This computed status is used for rendering but not saved — saving always writes what the user explicitly set.
+### Interactive learning tools
 
-**Class ↔ Calendar sync:** When you save a class, `syncClassRecordToCalendar()` constructs a calendar event payload from the class sessions and pushes it to `PUT /api/admin/v2/events`. The first session date becomes the registration anchor date. This is how a class record generates a public calendar entry automatically.
+Two self-contained browser simulations support dive education:
 
-**Trip (Calendar Event)** — A site calendar event. Has all the scheduling fields (start/end dates, times, tag, location) plus registration configuration. Registration email config supports three modes: plain text, HTML body, or full custom HTML with merge tags. Merge tags: `{{event_title}}`, `{{event_date}}`, `{{registrant_first_name}}`, `{{registrant_last_name}}`, `{{registrant_email}}`, `{{registrant_phone}}`, `{{cert_level}}`, `{{party_size}}`.
+- **Boyle's Law Balloon Demo:** illustrates pressure/volume changes with depth.
+- **Underwater Color Loss Demo:** visualizes wavelength/color loss underwater with interactive camera and scene behavior.
 
-**Task** — The simplest record type. Title, status, priority, owner, due date, next action, notes. Quick Advance moves it: `new` → `active` → `complete`.
-
-### Dashboard Module (`management-dashboard.js`)
-
-Loads independently from the main operations list. Queries `GET /api/admin/management` itself (does not share the state object with `management.js`) and renders four sections:
-
-- **Needs Attention:** overdue records first, then records due today, de-duplicated
-- **Open Inquiries:** up to 6 open inquiries, clickable to open in the operations panel
-- **Open Tasks:** up to 6 open tasks, sorted by due date
-- **Outstanding Balance:** sum of (owed − paid) across all open non-contact records
-
-Clicking any dashboard row dispatches a navigation to the operations panel and opens that record's editor. Overdue rows get `is-overdue` class (styled red); due-today rows get `is-today` class (styled amber).
-
-### Bulk Select (`management-bulk.js`)
-
-Injects a **Select** button into the operations topbar on load (before the **+ New** button). On click, enters bulk mode: checkboxes appear on every card. A floating action bar appears below the topbar with a status select and Apply button. Selecting all via **Select All** checks every visible card. Applying updates all selected records via individual `PUT /api/admin/management/:id` calls.
-
-### Quick Advance (`management-quick-advance.js`)
-
-Attaches a `click` delegate to the record list. When a button with `data-quick-advance` is clicked, it reads the card's record type, looks up the next status in the `NEXT` pipeline map, PATCHes the record via `PUT /api/admin/management/:id`, and re-renders without opening the editor. Inquiry pipeline: `new` → `to_contact` → `reached_out` → `gathering_details` → `planning` → `payment` → `timing` → `complete`. Terminal steps have `isDone: true` and render as `✓ Close`.
-
-### Note Logger (`management-note-logger.js`)
-
-A quick-entry field visible when a record of type `inquiry`, `task`, or `contact` is open in the editor. Submitting it prepends `[May 26, 2026] <text>` to the notes textarea, with the newest entry always at the top. The textarea field value is updated in-memory but not saved until the user hits Save — consistent with the rest of the editor. The logger input is cleared after each entry.
-
-### Import / Export (`management-import-export.js`)
-
-**Export:** Downloads all currently filtered records as a CSV with 22 columns. Fields from `extras` (the JSON blob inside each record) are promoted to top-level columns.
-
-**Import:** Accepts a CSV file. Header normalization handles aliases (`firstname`, `first name`, `first_name` all map to `extras.firstName`). Records with an `id` column that matches an existing record are updated via `PUT`. Records without an `id` (or with an unrecognized ID) are created via `POST`. Import runs sequentially with a summary of created/updated/failed counts.
-
-### Site Studio
-
-The Site Studio is a section within the management console that provides inline editors for site content. It runs as separate panels within the same page.
-
-**Media Studio (`management-media-studio.js`):** Two-column layout — sidebar (list + edit form) and live preview iframe. The list shows all media items with a search input. Selecting an item loads its fields into the edit form. Changes are tracked in `st.edits` (a Map of `id → field changes`). Deleting items is tracked in `st.deleting` (a Set). The **Publish to Site** button sends the full dirty diff via `PUT /api/admin/media-bulk`. The preview iframe shows `/pages/media/` and has a Refresh button. Stream sync calls `POST /api/admin/stream-date-sync` to pull actual upload dates from Stream metadata and update `created_at` on the corresponding `media_items` rows.
-
-**Travel Studio (`management-travel-studio.js`):** Same two-column layout. The editor has three tabs: **Core** (name, subtitle, coordinates, description, hero image), **Content** (bullets, tags, dive info), and **JSON** (raw JSON editor for power editing). The JSON tab shows the full record serialized, allows direct edits, and validates JSON on save. Changes are saved per-destination via `PUT /api/admin/v2/destinations/:id`. The preview iframe shows `/pages/travel/`.
-
-### Registration Handling
-
-When a public event has `registrationEnabled: true`, the management console's Signups view loads all registrations across all enabled events in parallel via `Promise.all()` against `GET /api/v2/events/:id/registrations` for each. Each registration entry shows the registrant's details and action buttons: **Approve**, **Convert to Contact**, and **Delete**.
-
-- **Approve** → `PUT /api/admin/v2/events/:id/approval` with `{ approvalStatus: "approved" }`
-- **Convert to Contact** → creates a new Contact management record from the registration data, then approves the registration
-- **Delete** → `DELETE /api/admin/v2/events/:id/registrations/:regId`
-
-Class registrations (from the class escrow system) work similarly but load from the class editor's roster section rather than the Signups tab.
+These pages contain their own rendering and animation code so they can run independently or inside the training-tools experience.
 
 ---
 
-## The Worker API
+## Travel and destination system
 
-**Source:** `workers/dmz-media-api/src/index.js`
-**Config:** `workers/dmz-media-api/wrangler.toml`
-**D1 binding:** `DB` → database `dmz_media` (id: `47d73216-f4d9-4831-a207-4548ccad9244`)
+### Travel landing page
 
-The Worker is a single `export default { fetch }` handler. There is no routing library — route matching is a chain of `if/else if` on `pathname` and `request.method`. CORS headers are applied to every response including errors.
+The page guides visitors in this order:
 
-### CORS Strategy
+1. understand the travel offering
+2. explore the globe
+3. browse destination cards
+4. inspect a selected destination preview
+5. review upcoming travel events
+6. open the full destination detail or make contact
 
-`getAllowedOrigin()` returns the request's `Origin` header if it matches one of:
-- `localhost:*` or `127.0.0.1:*` (local dev)
-- Any `*.pages.dev` or `*.trycloudflare.com` (Cloudflare preview)
-- `dmzscuba.com` or any subdomain
-- An entry in the `ALLOWED_ORIGINS` env var
+Search and tag pills filter both the globe pins and the destination list. Selecting either representation updates the other.
 
-If none match, it falls back to the first item in `ALLOWED_ORIGINS` or `*`. The `Vary: Origin` header is set so CDN caches respect the origin-based selection.
+### Canvas globe
 
-### Auth Token Flow
+`js/globe.js` implements:
 
+- device-pixel-ratio-aware canvas sizing
+- offscreen texture buffers
+- sphere texture projection
+- continuous rotation and inertial drag
+- mouse, touch, pinch, wheel, and button zoom
+- pin projection and hit testing
+- destination search and tag filtering
+- home/reset behavior
+- selected-pin highlighting
+- synchronized card/list selection
+- deferred animation until the globe is near the viewport
+
+It uses Canvas 2D only. No mapping SDK, WebGL runtime, or 3D dependency is required.
+
+### Live trip-status pins
+
+The globe reads events and relates them to destination aliases. Pin state communicates whether a destination has no trip, a planned trip, an approaching departure, or an active trip. Because the status is derived from live event dates, staff can change travel momentum through the event system without editing globe code.
+
+### Destination detail model
+
+The detail page is data-driven through `?id=<destination-id>`. A destination can provide:
+
+- name, subtitle, latitude, longitude, and tags
+- hero and isometric/resort images
+- short summary and long narrative
+- experience and seasonality guidance
+- logistics and day-to-day expectations
+- resort/dive-operator notes
+- dive sites, conditions, and non-diving options
+- structured highlights and trip bullets
+- budget, packing, skill, and safety context
+- related media filtered from the public media library
+- interest-list form with destination context
+
+### Travel editing
+
+There are two editing surfaces:
+
+- authenticated controls embedded on public travel/destination pages
+- the native Travel Studio inside `/management/`
+
+The public editor supports structured basics, coordinates, images, summary copy, detailed copy, bullets, JSON inspection, add/delete, and publishing. Images upload directly to Cloudflare Images. The management studio provides list/search/edit/preview behavior inside the console.
+
+---
+
+## Events and registration system
+
+### Public discovery
+
+The events page combines:
+
+- mobile jump navigation
+- native calendar
+- agenda/list presentation
+- event-type filters
+- selected-date event summaries
+- registration availability checks
+- shareable event details
+- booking-oriented calls to action
+
+Supported public type filters include training, travel, local dives, workshops, and community events.
+
+### Event definitions and expansion
+
+The Worker stores a calendar payload in D1. `events.js` expands compact definitions into dated instances. Definitions can include:
+
+- start and end date/time
+- location and tag/type
+- recurring interval and unit
+- multi-day duration
+- skipped dates and occurrence overrides
+- registration enable/close state
+- capacity
+- registration email configuration
+- event-page content
+
+The client expands recurrence only through the required coverage window, then sorts and renders instances.
+
+### Event details and sharing
+
+Visitors can open a modal from the calendar or list. A share action uses the native Web Share API where supported and clipboard fallback elsewhere. Shareable URLs can target the standalone `event.html` surface and optionally auto-open registration.
+
+### Registration flow
+
+```text
+Visitor opens event
+  -> client requests registration snapshot for source ID + date
+  -> Worker returns capacity, close state, and approved/pending names
+  -> visitor submits contact, certification, and party information
+  -> Worker validates capacity and date
+  -> registration row inserted with approval_status = pending
+  -> attendee confirmation and internal notification sent through Resend
+  -> registration appears in management Signups and class escrow views
 ```
-POST /api/admin/login
-  body: { user: "...", pass: "..." }
-  → validates against ADMIN_USER + ADMIN_PASS env secrets
-  → crypto.randomUUID() → stored in admin_sessions with 24h expiry
-  → returns { ok: true, token: "..." }
 
-requireAuth(request, env)
-  → reads Authorization: Bearer <token>
-  → queries: SELECT token FROM admin_sessions WHERE token = ? AND expires_at > NOW()
-  → returns true/false
-```
+Registration is keyed by event source ID plus occurrence date, allowing recurring occurrences to have independent rosters.
 
-### Contact Form Pipeline
+### Staff registration operations
 
-`POST /api/contact` is the most complex public endpoint. On every valid submission it does four things:
+Authenticated staff can:
 
-1. **Honeypot check** — if `body.honey` or `body.website` is non-empty, return `{ ok: true }` silently.
-2. **Send internal notification** — HTML email to `RESEND_TO` via Resend with all form fields formatted as a table.
-3. **Auto-reply to submitter** — picks the right template based on `autoReplyType` field or destination detection (see Email System below).
-4. **Create management inquiry record** — calls `createManagementRecord()` to write a new `inquiry` record to D1. This means every contact form submission automatically appears in the management console as a "New" inquiry, pre-populated with the submitter's name, email, phone, related destination/course, and the raw message as notes. No manual entry required.
+- inspect occurrence-specific rosters
+- approve or update a registration status
+- resend an attendee email
+- remove a registration
+- close event registration
+- send an event alert email to opted-in contacts
+- edit registration email copy/template settings
 
-### Management Record API
+### Calendar administration
 
-```
-GET  /api/admin/management           → all records, ordered by updated_at DESC
-POST /api/admin/management           → create (generates id, timestamps)
-PUT  /api/admin/management/:id       → update (updates updated_at)
-DELETE /api/admin/management/:id     → hard delete
-```
-
-Records are stored with `data_json` column holding `extras` (all non-top-level fields). Top-level columns (`record_type`, `title`, `status`, `priority`, `owner`, `contact_name`, `contact_email`, `contact_phone`, `due_date`, `related_event`, `notes`) exist for indexing and queries.
-
-### Stream Upload Flow
-
-**Direct upload** (`POST /api/admin/stream-direct-upload`):
-- Worker calls Cloudflare Stream API with `CF_ACCOUNT_ID` + `CF_STREAM_TOKEN` to get a one-time upload URL.
-- Client uploads the file directly to Stream via the returned URL.
-- Worker is never in the upload path — the file goes browser → Stream.
-
-**Resumable TUS upload** (`POST /api/admin/stream-tus-upload`):
-- Worker initializes a TUS session with Stream and returns `{ uploadUrl, uid }`.
-- Client uses the TUS protocol (resumable uploads) to stream the file chunk-by-chunk.
-- Enables large file uploads over slow connections that can resume after interruption.
-
-### Public Endpoint Table
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/api/media` | Returns `{ mediaItems, photoItems }` from `media_items` table |
-| `POST` | `/api/contact` | Contact form: honeypot check → internal email → auto-reply → create management inquiry |
-| `POST` | `/api/client-telemetry` | Client error event logging (contact failures, upload failures) to Worker logs |
-| `GET` | `/api/v2/destinations` | All destinations from `destinations_v2` |
-| `GET` | `/api/v2/destinations/:id` | Single destination by slug ID |
-| `GET` | `/api/v2/events` | Full events payload from `events_v2` |
-| `GET` | `/api/v2/events/:id/registrations` | Registrations for a specific event + date |
-| `POST` | `/api/v2/events/:id/registrations` | Public registration submission |
-| `GET` | `/api/v2/home-ticker` | Home page ticker lines |
-
-### Admin Endpoint Table
-
-All require `Authorization: Bearer <token>`.
-
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/api/admin/login` | Authenticate, get 24h session token |
-| `GET` | `/api/admin/management` | All management records |
-| `POST` | `/api/admin/management` | Create management record |
-| `PUT` | `/api/admin/management/:id` | Update management record |
-| `DELETE` | `/api/admin/management/:id` | Delete management record |
-| `POST` | `/api/admin/media` | Create media item |
-| `PUT` | `/api/admin/media/:id` | Update media item |
-| `DELETE` | `/api/admin/media/:id` | Delete media item |
-| `PUT` | `/api/admin/media-bulk` | Bulk upsert + optional Stream delete list |
-| `POST` | `/api/admin/stream-direct-upload` | Get Stream one-time upload URL |
-| `POST` | `/api/admin/stream-tus-upload` | Initialize Stream TUS resumable upload |
-| `POST` | `/api/admin/stream-date-sync` | Sync media `created_at` from Stream metadata |
-| `POST` | `/api/admin/images-direct-upload` | Get Cloudflare Images upload URL |
-| `POST` | `/api/admin/images-delete` | Delete Cloudflare Images asset |
-| `PUT` | `/api/admin/v2/destinations/:id` | Upsert destination record |
-| `DELETE` | `/api/admin/v2/destinations/:id` | Delete destination record |
-| `PUT` | `/api/admin/v2/events` | Upsert calendar/event data |
-| `DELETE` | `/api/admin/v2/events` | Delete calendar event |
-| `PUT` | `/api/admin/v2/home-ticker` | Update home ticker lines |
-| `PUT` | `/api/admin/v2/events/:id/approval` | Approve or deny a registration |
-| `DELETE` | `/api/admin/v2/events/:id/registrations/:regId` | Delete a specific registration |
+`events-admin.js` is the large calendar-authoring surface. It supports definition editing, date selection, recurrence, multi-day behavior, preview synchronization, occurrence-level adjustments, event detail content, and publish/delete operations. Its UI state is stored in session storage so a refresh can restore the current editing context.
 
 ---
 
-## D1 Database Schema
+## Media platform
 
-Schema source: `workers/dmz-media-api/schema.sql`
+### Public library
 
-### `media_items`
-Media content records. `type` is `video` or `photo`. `stream_id` links to a Cloudflare Stream asset. `url` is the playback URL or file path. `meta` is a JSON string for flexible extra data. `sort_order` drives the "manual" sort on the media page. The `sort_order` column is added via a runtime migration (`ensureSortOrderColumn`) that runs `ALTER TABLE ... ADD COLUMN` and silently ignores the error if the column already exists — safe to run repeatedly.
+The media page supports:
 
-### `admin_sessions`
-Session token store. Cleaned up by expiry check on every `requireAuth()` call — no background job needed.
+- text search
+- media-type and tag filtering
+- destination/location filtering
+- sort modes including manual, date, views, and shuffle where available
+- adjustable card size persisted in local storage
+- responsive masonry presentation
+- modal playback
+- full-screen Reel Mode
+- YouTube and Instagram outbound discovery
 
-### `destinations_v2`
-Each row is `(id TEXT, data_json TEXT, created_at, updated_at)`. The `data_json` blob is the full destination object including name, coordinates, description, images, bullets, and all travel detail content. The `id` matches the slug used in URL params (`?id=cozumel`).
+The library fetches media and destinations in parallel. Destination data turns raw location identifiers into recognizable filter labels.
 
-### `events_v2`
-Keyed by `calendar_key` (a string identifier for the event/template). `data_json` holds the full event payload which can include both explicit event instances and recurring templates. The management console's Calendar tab and the public events page both read from this table.
+### Supported media sources
 
-### `event_registrations_v2`
-One row per registration submission. `source_id` + `event_date` form a composite index for fast lookups per event instance. `approval_status` is `pending` by default and can be set to `approved` or `denied`. `party_size` tracks group registrations.
-
-### `site_settings`
-Key/value store for miscellaneous site configuration. Currently used for the home ticker (`setting_key = 'home_ticker'`).
-
-### `management_records`
-Core business ops table. Indexed by `(record_type, status)` for filtered queries and by `due_date` for overdue calculations. The `data_json` column stores the `extras` object: financial fields, schedule data, roster, class sessions, registration email config, and any other type-specific fields that don't have their own column.
-
-### Legacy Tables
-`destinations`, `destinations_base`, `destinations_expanded` — exist in schema for backward compatibility. Active data uses `destinations_v2` only.
-
----
-
-## The Events System
-
-`js/events.js` is the largest single piece of logic on the public side. It runs in three contexts simultaneously from the same script load: `data-events-page` (full page), `data-events-preview` (home page section), and `data-events-embed-frame` (embeddable widget). Each context renders differently but uses the same data pipeline.
-
-### Event Data Model
-
-The `/api/v2/events` response carries a payload with two arrays:
-
-- **`events`** — explicit single-instance events. Each has a `date`, optional `endDate`, `type`, `title`, `location`, `summary`, `time`, `endTime`, and registration config.
-- **`templates`** — recurring event definitions. Each has a `startDate`, a `repeatInterval` + `repeatUnit` (`week`/`month`/`year`), optional `months` whitelist, optional `excludedDates`, and the same event fields.
-
-`expandSiteEventPayload()` in `events.js` and `globe.js` runs this expansion client-side: it iterates templates from their start date forward for `horizonMonths` (default 30) months, generating one explicit instance per occurrence, filtering excluded dates and month whitelists. This means the calendar data stored in D1 is compact but the rendered calendar can show dozens of future events.
-
-Multi-day events derive `durationDays` from the difference between `startDate` and `endDate`. The calendar view renders them spanning multiple date cells.
-
-**Nth weekday rule (legacy):** The `nthWeekdayOfMonth()` function handles the legacy `rule: { weekOfMonth, weekday }` template format, computing "the 2nd Tuesday of each month" type schedules. New templates use explicit `startDate` + repeat interval instead.
-
-### Registration Flow
-
-1. User clicks an event with `registrationEnabled: true`
-2. Event detail modal opens with a registration form
-3. Form submits to `POST /api/v2/events/:sourceId/registrations?date=YYYY-MM-DD`
-4. Worker validates capacity, creates a row in `event_registrations_v2`
-5. Worker sends a confirmation email to the registrant via Resend (see Email System)
-6. Registration appears in management console Signups tab with `approval_status: 'pending'`
-
-### How the Calendar Relates to Management Records
-
-Site calendar events are not management records — they are separate data. But the management console renders them side-by-side with management records in the Calendar tab. It does this by fetching both `GET /api/admin/management` and `GET /api/v2/events`, expanding the events, and interleaving them. Site event cards have a distinct visual style and link to the public event page. Clicking a site event card opens an editor that saves back to the events API, not the management records API.
-
-When a class management record is saved, `syncClassRecordToCalendar()` pushes a corresponding site calendar entry automatically, so the class appears on the public calendar without a separate step.
-
----
-
-## The Media System
-
-The media gallery (`js/media.js`, ~88KB) is one of the most sophisticated features on the site.
-
-### Data Sources
-
-On load, two parallel fetches:
-1. `GET /api/media` → video and photo items
-2. `GET /api/v2/destinations` → destination records for the location filter
-
-Destination names are mapped to location filter options so the media page's "Location" filter shows real destination names, not raw IDs.
-
-### Supported Media Types
-
-| Type | Playback method |
+| Source | Detection and playback |
 |---|---|
-| Cloudflare Stream | `iframe.videodelivery.net/:id?autoplay=true` |
-| YouTube | `youtube.com/embed/:id?autoplay=1&rel=0` |
-| Local `.mp4` / `.webm` | Native `<video>` element with `autoplay` |
-| Photo (any image URL) | Inline `<img>` |
+| Cloudflare Stream | Stream ID or delivery URL; iframe/HLS/native fallback |
+| YouTube | ID parsed from watch, short, or embed URL; YouTube embed API |
+| Local/remote video | Native `<video>` playback |
+| Photo | Standard responsive `<img>` |
 
-Stream IDs are detected from `videodelivery.net` or `cloudflarestream.com` hostnames. YouTube IDs are extracted from `youtu.be/`, `?v=`, or `/embed/` URL patterns. Everything else falls through to image or local video.
+Video thumbnails are taken from provider URLs where possible. For a directly playable video without a poster, the client can seek to an early frame, draw it to canvas, and create a JPEG data URL.
 
-### Video Poster Capture
+### Masonry and lazy behavior
 
-For local video files, `captureVideoPoster()` seeks the video to 0.1 seconds, draws the frame onto a hidden `<canvas>`, and calls `toDataURL('image/jpeg', 0.82)` to create a base64 poster image. This means local videos always show a meaningful thumbnail without any server-side processing.
-
-### Masonry Layout
-
-Cards use a CSS-columns-based masonry layout. `queueMasonryUpdate()` uses `requestAnimationFrame` debouncing so that rapid-fire DOM changes (multiple videos loading aspect ratios) batch into a single layout recalculation.
+The grid uses CSS columns plus JavaScript updates for dynamic media. Layout recalculation is batched with `requestAnimationFrame`. Intersection observers delay expensive video work and pause media that leaves the relevant viewport.
 
 ### Reel Mode
 
-Reel Mode converts the media page into a TikTok-style vertical feed. Implementation details:
+Reel Mode creates a full-screen vertical feed:
 
-- Locks `document.body` scroll by capturing `scrollY` and using `position: fixed` + `top: -${scrollY}px`
-- Renders items in a scrollable `feedEl` container
-- `IntersectionObserver` on each card detects when it enters the 60% viewport zone
-- On entry: play the video (or load/resume it), update the title label
-- On exit: pause and seek-to-start
-- Sound control: uses a `WeakMap` (`reelRemoteControllers`) to track the active player for each card, so the sound toggle can reach into the right player instance
-- HLS streams: lazy-loads `hls.js` from CDN if a stream URL needs it
-- Audio unlock: the first Reel Mode open may need a user gesture to allow audio; Reel Mode stores `audioUnlocked` state and retries audio after the gesture
+- locks and later restores the underlying page scroll position
+- renders touch-friendly, vertically scrolling media cards
+- activates media based on viewport intersection
+- pauses inactive video
+- coordinates sound state
+- supports Stream, HLS, YouTube, local video, and photos
+- loads HLS.js only when the browser cannot play HLS natively
+- cleans up provider/controller state when closed
+
+### Public-page media editor
+
+Authenticated staff can open an editor on the media page. It provides manual item editing, search, ordering, bulk publish, Stream date synchronization, and a file-first upload path. It remains useful as a public-page preview/editor surface.
+
+### Management Media Studio
+
+The management console provides the primary simplified workflow:
+
+1. press **Upload Media** or **Add Item**
+2. select a photo or video from the device
+3. enter title, description, location, and tags
+4. press **Publish Media**
+5. the dialog closes and upload progress remains visible
+6. the item metadata is written to the live media library
+
+File names do not prefill the public title. Provider URLs and thumbnail fields live under advanced hosting options rather than being presented as normal editorial inputs.
+
+The studio also loads current live items for search and editing, tracks item edits/deletions, publishes a complete media diff, supports preview toggling, and can synchronize Stream creation dates.
 
 ---
 
-## The Globe
+## Quiz, forms, and CRM handoff
 
-`js/globe.js` (~59KB) is a pure Canvas 2D interactive globe — no WebGL, no Three.js, no external library.
+### Adaptive Dive Path Quiz
 
-### Rendering
+`quiz.js` provides two modes:
 
-Device pixel ratio (`DPR`) is detected on load and applied to the canvas scaling transform. The globe is drawn each animation frame:
+- **Quick Recommendation:** a short branching route for immediate direction.
+- **Dive Path Builder:** a deeper assessment of experience, confidence, goals, travel, timeline, team, and skill focus.
 
-1. Draw ocean fill (radial gradient)
-2. Project and draw country/coastline path data as filled polygons
-3. Rotate the sphere using a continuous animation loop
-4. Draw destination pins at projected lat/lon coordinates
-5. Draw hover/selection highlight ring around active pin
-6. Draw the info card for the selected destination
+Questions can include a `when(answers)` predicate. The active question set is recalculated as answers change, and answers to branches that become inactive are removed. This prevents stale hidden answers from influencing recommendations.
 
-### Destination-Trip Status Coloring
+Results score routes such as certification, refresh, travel preparation, or direct consultation. The result builds a context-rich CTA and optional email capture.
 
-Pins are color-coded based on the trip status computed from the events calendar:
+### Quiz-to-CRM automation
 
-| Status | Color | Meaning |
+On a quiz capture submission, the Worker can:
+
+1. send the internal lead notification
+2. send a quiz-results acknowledgment/template
+3. find or create a Contact by email
+4. store quiz route, mode, path, recommendation, and answer summary in contact extras
+5. create a linked Inquiry with the quiz recommendation in its title and notes
+
+### Public inquiry automation
+
+Successful non-spam contact submissions generate a management Inquiry containing:
+
+- source form and page
+- submission timestamp
+- contact information
+- related course, event, destination, location, or interest
+- serialized submitted fields
+- message/notes
+- default `new` status and normal priority
+
+### Event-alert contacts
+
+Event-alert signup finds a contact by lowercase email or creates a new Contact. It sets opt-in metadata in `extras`, including source and timestamps. The management console can list eligible subscribers and send an event alert through the protected API.
+
+### Spam handling
+
+The Worker recognizes honeypot values such as `honey` or `website` for contact submissions, and `honey`, `website`, or `company` for event-alert subscriptions. A populated trap returns a harmless success response without email delivery or normal processing.
+
+---
+
+## Management console
+
+`/management/` is a single authenticated application shell implemented in one HTML document and 12 loaded JavaScript files. It is marked `noindex`, `nofollow`, and `noarchive`.
+
+### Navigation model
+
+Primary areas:
+
+- Dashboard
+- Agenda
+- Contacts
+- Inquiries
+- Classes
+- Calendar
+- Tasks
+- Signups
+- Media Library
+- Travel
+
+Desktop uses a fixed sidebar and primary content pane. Mobile uses a bottom tab bar and a More sheet. The public home link and Log Out remain available from the mobile More sheet.
+
+### Dashboard
+
+The dashboard summarizes:
+
+- open workload
+- overdue and due-today items
+- open inquiries
+- open tasks
+- classes and trips approaching within seven days
+- direct links into matching records
+- shortcuts to the homepage ticker and upcoming events
+
+It reloads from the same management API and reacts when records are replaced or updated.
+
+### Record model
+
+All operational records use one `management_records` table. Common columns hold identity, status, priority, contact, dates, and notes. Type-specific information is stored in `data_json.extras`.
+
+Supported editorial types:
+
+| Type | Purpose |
+|---|---|
+| Contact | Long-term customer/diver profile and enrollment relationship |
+| Inquiry | Lead, planning conversation, financial/follow-up pipeline |
+| Class | Class schedule, capacity, roster, public calendar sync |
+| Trip / Calendar | Public event and registration configuration |
+| Task | Internal operational work item |
+| Registration | Online signup representation/escrow where applicable |
+
+### Contact records
+
+Contacts support name, email, phone, certification level, source, profile notes, email-alert state, quiz metadata, and linked class enrollments. A contact can be added to a class from either side of the relationship.
+
+### Inquiry pipeline
+
+Inquiry status options represent the customer-development lifecycle:
+
+```text
+New / To Contact
+  -> Reached Out
+  -> Gathering Details
+  -> Planning / Timing
+  -> Payment
+  -> Complete, Dead End, Not Fit, or Archived
+```
+
+Inquiries support incoming/outgoing direction, category, linked contacts, related activity, next step, follow-up date, owner, priority, and financial values. Outstanding balance is computed from amount owed minus amount paid and rendered as a badge.
+
+### Classes
+
+Classes can contain separate Classroom, Pool, and Open Water sessions. Each session has date, start/end time, and location. Class records include capacity, registration-close state, description, roster, and registration email configuration.
+
+The rendered class status is date-aware: future sessions imply scheduled, current sessions can imply active, and all-past sessions can render complete. Explicit closed states remain authoritative.
+
+Saving a class can synchronize its sessions into the public event calendar. The first session anchors registration while the full schedule remains available for customer communication.
+
+### Registrations and escrow
+
+The console combines class roster information with online event registrations. Staff can see pending registration data before it becomes a finalized class relationship, approve or convert records, resend email, or delete a registration.
+
+### Agenda behavior
+
+Agenda is the default operational queue. Closed states include:
+
+- `complete`
+- `completed`
+- `closed`
+- `archived`
+- `cancelled`
+- `dead_end`
+- `not_fit`
+
+These are hidden by default. **Show Done** reveals them and persists the preference in local storage. Search, type filters, priority, pinning, due dates, and sorting determine the visible work queue.
+
+### Bulk operations
+
+Select mode adds accessible check controls to visible record cards. Staff can:
+
+- select/deselect all visible items
+- mark complete
+- set a shared follow-up date
+- change status
+- change priority
+- archive
+- permanently delete after confirmation
+
+The module fetches full records before PUT operations so unchanged fields are preserved.
+
+### Record editor and contextual save
+
+The editor changes visible fields and labels by record type. On mobile it becomes a bottom sheet. A viewport-fixed Save button:
+
+- begins hidden
+- appears after an input, change, session add, or session removal makes the form dirty
+- stays above page/editor content and mobile navigation
+- submits the existing record form
+- disappears after save/close/reset
+
+### Productivity features
+
+- quick status-advance buttons on record cards
+- timestamped note appender for running activity logs
+- pin/favorite behavior
+- balance badges
+- keyboard navigation and shortcut help
+- CSV import with automatic/manual column mapping and preview
+- CSV export
+- homepage ticker editor
+- media and travel content studios
+- refresh and logout actions
+
+### Keyboard shortcuts
+
+| Key | Action |
+|---|---|
+| `1` | Dashboard |
+| `2` | Agenda |
+| `3` | Contacts |
+| `4` | Inquiries |
+| `5` | Classes |
+| `6` | Calendar |
+| `N` | New record |
+| `/` | Search |
+| `Ctrl/Cmd + F` | Focus record search in Operations |
+| `?` | Shortcut help |
+| `Escape` | Close active overlay/editor |
+
+Keyboard handlers avoid firing shortcuts while the user is typing in an input, textarea, select, or editable element.
+
+---
+
+## Frontend module reference
+
+| File | Responsibility |
+|---|---|
+| `js/main.js` | Shared navigation, mobile drawer, forms, telemetry, copy/toast, prefill, sticky CTAs, scroll dots, sticky header |
+| `js/home.js` | Homepage ticker loading and fallback |
+| `js/quiz.js` | Adaptive quiz, scoring, result routing, capture form |
+| `js/course-builder.js` | Course Builder dropdowns and conditional Open Water format |
+| `js/events.js` | Public event expansion, calendar/list rendering, filters, modals, sharing, registration |
+| `js/events-admin.js` | Authenticated event/calendar authoring and preview synchronization |
+| `js/event-detail.js` | Standalone shareable event detail page |
+| `js/globe.js` | Canvas globe, destination list, filters, status pins, gestures |
+| `js/destination.js` | Destination detail rendering, related media, interest form, page-level editing |
+| `js/destinations-edit.js` | Legacy/embedded destination editing workflow and draft behavior |
+| `js/travel-admin.js` | Travel-page editor authentication and CRUD |
+| `js/media.js` | Public media filtering, masonry, providers, modal playback, Reel Mode |
+| `js/media-logic.js` | Testable pure media search/filter/sort helpers |
+| `js/media-edit.js` | Public media editor, direct uploads, drafts, bulk publish, Stream sync |
+| `js/nfc.js` | NFC contact/opportunity page behavior |
+| `js/management.js` | Core console state, records, events, forms, CRUD, class/contact/registration workflows |
+| `js/management-dashboard.js` | Dashboard metrics and operational summaries |
+| `js/management-media-studio.js` | Simplified live media search/edit/upload/publish workflow |
+| `js/management-travel-studio.js` | Destination list/edit/preview studio |
+| `js/management-bulk.js` | Multi-select and blanket record actions |
+| `js/management-balance.js` | Outstanding-balance badge synchronization |
+| `js/management-hide-complete.js` | Persistent Show Done behavior |
+| `js/management-import-export.js` | CSV parsing, mapping, preview, import, and export |
+| `js/management-keyboard.js` | Console keyboard shortcuts and help overlay |
+| `js/management-more.js` | Mobile More sheet, badges, and active state |
+| `js/management-note-logger.js` | Timestamped activity-note appender |
+| `js/management-quick-advance.js` | Record-specific next-status action |
+| `js/management-cal-toggle.js` | Retained compatibility module; no longer loaded by the console |
+
+---
+
+## Cloudflare Worker
+
+`workers/dmz-media-api/src/index.js` is the system's server-side application. It is approximately 3,300 lines and owns:
+
+- CORS policy and preflight responses
+- admin authentication and session validation
+- public contact and event-alert ingestion
+- automatic CRM record creation
+- media CRUD and bulk persistence
+- direct Stream and Images upload authorization
+- Stream creation-date synchronization
+- destination CRUD
+- event definition CRUD and expansion data
+- occurrence-level registration CRUD and approval
+- homepage ticker reads/writes
+- event-alert subscriber selection and sending
+- Resend templates and inline branded email fallbacks
+- client telemetry logging
+
+### Request dispatch
+
+The Worker uses an explicit method/path chain in `fetch()`. Every response is wrapped with computed CORS headers. Unknown routes return JSON 404 rather than falling through to HTML.
+
+### Normalization strategy
+
+Inputs are normalized before persistence:
+
+- text is trimmed and capped to field-specific lengths
+- choices are constrained to allowed values where applicable
+- IDs are normalized for event/destination keys
+- nested feature data is stored under a controlled `extras` or `data_json` shape
+- user-provided values inserted into email HTML pass through HTML escaping or rich-text conversion
+
+### Schema bootstrapping
+
+The Worker includes defensive `CREATE TABLE IF NOT EXISTS` and selected `ALTER TABLE` helpers for newer tables/columns. `schema.sql` remains the declarative reference for a new database, while runtime guards help an existing D1 database tolerate incremental deployment.
+
+---
+
+## API reference
+
+All browser code should call same-origin `/api/*`. Production routing forwards requests to the Worker.
+
+### Public endpoints
+
+| Method | Path | Purpose |
 |---|---|---|
-| `none` | Red `rgba(226,27,35,0.95)` | Destination exists, no trips planned |
-| `planned` | Blue `rgba(85,185,255,0.95)` | Trip scheduled in the future |
-| `soon` | Amber `rgba(255,193,69,0.96)` | Trip within 60 days |
-| `active` | Green `rgba(35,209,143,0.96)` | Trip is currently happening |
+| `GET` | `/api/media` | Return public media grouped as video/media and photo items |
+| `POST` | `/api/contact` | Send inquiry/quiz/interest email and create CRM records |
+| `POST` | `/api/event-alert-subscribe` | Create/update an opted-in contact |
+| `POST` | `/api/client-telemetry` | Log bounded client event/failure details |
+| `GET` | `/api/v2/events` | Return event calendar payload |
+| `GET` | `/api/v2/events/:sourceId/registrations?date=YYYY-MM-DD` | Return occurrence capacity and public roster snapshot |
+| `POST` | `/api/v2/events/:sourceId/registrations` | Create occurrence registration |
+| `GET` | `/api/v2/home-ticker` | Return homepage ticker setting |
+| `GET` | `/api/v2/destinations` | Return all destination objects |
+| `GET` | `/api/v2/destinations/:id` | Return one destination |
 
-`DESTINATION_EVENT_ALIASES` maps destination IDs to the text strings that might appear in event titles/locations. For example `cozumel: ["cozumel"]` and `greatlakesLM: ["lake michigan", "great lakes", "milwaukee", "two rivers", "door county"]`. `eventMatchesDestination()` normalizes and substring-matches against this alias list to determine if a calendar event is associated with a destination.
+### Authentication
 
-### Event Expansion on the Globe
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/api/admin/login` | Validate admin credentials and create 24-hour D1 session |
 
-The globe independently expands the events payload (same `expandTravelEvents()` function as `events.js`) and computes trip status per destination. This means the globe pin colors reflect the live calendar — a newly scheduled Cozumel trip will turn the Cozumel pin blue without any code change.
+### Protected management endpoints
 
----
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/admin/management` | List records; supports Worker-side filters where supplied |
+| `POST` | `/api/admin/management` | Create record |
+| `PUT` | `/api/admin/management/:id` | Replace/update normalized record |
+| `DELETE` | `/api/admin/management/:id` | Permanently delete record |
+| `GET` | `/api/admin/event-alert-subscribers` | List eligible opted-in contacts |
 
-## The Quiz Engine
+### Protected event endpoints
 
-`js/quiz.js` implements two adaptive quiz modes in under 35KB.
+| Method | Path | Purpose |
+|---|---|---|
+| `PUT` | `/api/admin/v2/events` | Publish calendar payload |
+| `DELETE` | `/api/admin/v2/events` | Remove primary calendar payload |
+| `PUT` | `/api/admin/v2/events/:sourceId/registrations/:registrationId/approval` | Update approval state |
+| `POST` | `/api/admin/v2/events/:sourceId/registrations/:registrationId/email` | Resend registration email |
+| `DELETE` | `/api/admin/v2/events/:sourceId/registrations/:registrationId` | Delete registration |
+| `POST` | `/api/admin/v2/events/:sourceId/alerts` | Send event-alert email to eligible contacts |
 
-### Two Modes
+### Protected content endpoints
 
-**Quick Recommendation (30 sec):** 9-question bank. About 5-6 questions actually appear per run depending on answers. Each question has a `when(answers)` predicate that gates it on previous answers — for example, `newGoal` only appears if `experience === "new"`.
+| Method | Path | Purpose |
+|---|---|---|
+| `PUT` | `/api/admin/v2/home-ticker` | Publish ticker setting |
+| `PUT` | `/api/admin/v2/destinations/:id` | Create/update destination |
+| `DELETE` | `/api/admin/v2/destinations/:id` | Delete destination |
+| `POST` | `/api/admin/media` | Create media item |
+| `PUT` | `/api/admin/media/:id` | Update media item |
+| `DELETE` | `/api/admin/media/:id` | Delete media item |
+| `PUT` | `/api/admin/media-bulk` | Publish ordered media set and deletions |
+| `POST` | `/api/admin/stream-date-sync` | Sync D1 dates from Stream metadata |
 
-**Dive Path Builder (2 min):** 15-question bank. More thorough, covers experience level, interests, comfort, timeline, travel goals, gear, frequency, team setup, and skill focus.
+### Protected upload endpoints
 
-### Question Branching
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/api/admin/stream-direct-upload` | Return one-time Stream direct-upload URL |
+| `POST` | `/api/admin/stream-tus-upload` | Initialize resumable TUS Stream upload |
+| `POST` | `/api/admin/images-direct-upload` | Return Images upload URL, ID, and delivery URL |
+| `POST` | `/api/admin/images-delete` | Delete hosted image by ID or supported delivery URL |
 
-`buildActiveQuestions(mode, answers)` filters the bank by evaluating each question's `when()` predicate against the current answers object. `refreshQuestionSet()` re-evaluates this on every navigation step and prunes answers for questions that are no longer active (preventing stale answer data from affecting the result when a user goes back and changes an earlier answer).
+### Response and error conventions
 
-### Accessibility
-
-The quiz modal uses `aria-hidden="true"` / `"false"` toggling, `role="dialog" aria-modal="true"`, and a focus trap (tab cycles within the card). Keyboard shortcut: `Escape` closes the quiz and returns focus to the element that opened it (`state.lastFocused`).
-
-### Result + Contact Handoff
-
-After the final question, the quiz renders a result screen with a recommended path and a **Start My Plan** CTA. The CTA links to `/pages/contact/?interest=<answer>&course=<answer>` — pre-filling the Dive Now form with the quiz's top recommendation. The quiz result screen also sends a summary email via `POST /api/contact` with `autoReplyType: "quiz-results"`.
-
----
-
-## Email System (Resend)
-
-All email delivery goes through [Resend](https://resend.com) via the Worker. The `from` address is always `no-reply@dmzscuba.com` (from `RESEND_FROM_EMAIL`). Replies go to `info@dmzscuba.com`.
-
-### Contact Form Auto-Reply Selection
-
-When `POST /api/contact` fires, the Worker picks the auto-reply template by checking the submitted fields in order:
-
-1. Is `autoReplyType === "interest-list"`? → destination-specific template
-2. Which destination was mentioned in `destination` or `location` fields?
-   - Cozumel → `RESEND_TEMPLATE_COZUMEL` (or inline `buildCozumelInterestEmail()`)
-   - Haigh Quarry → `RESEND_TEMPLATE_HAIGH`
-   - Key Largo → `RESEND_TEMPLATE_KEY_LARGO`
-   - Mermet Springs → `RESEND_TEMPLATE_MERMET`
-   - Playa del Carmen → `RESEND_TEMPLATE_PLAYA`
-   - Roatan → `RESEND_TEMPLATE_ROATAN`
-   - Catalina / Southern California → `RESEND_TEMPLATE_CATALINA`
-3. Is `autoReplyType === "quiz-results"`? → `RESEND_TEMPLATE_QUIZ_RESULTS`
-4. Default → `RESEND_TEMPLATE_GENERAL_INQUIRY` (or plain-text fallback)
-
-Each destination detection function checks both `destination` and `location` fields with normalized substring matching. Template IDs are optional env vars — if unset, the Worker falls back to inline HTML email builders that render the full branded email in code.
-
-### Event Registration Emails
-
-`sendEventRegistrationAttendeeEmail()` fires after each successful registration. It supports three rendering modes based on the event's registration email config:
-
-1. **Resend template ID:** If `registrationEmailTemplateId` is set, uses Resend's template system with a `variables` object containing all merge tag values.
-2. **Custom HTML body:** If `registrationEmailIsHtml` is true, renders the body as HTML within the standard DMZ branded email shell (`buildDmzEventEmailShell()`).
-3. **Full custom HTML:** If `registrationEmailUseFullHtml` is true, renders the entire email from `registrationEmailFullHtml` after applying merge tag substitution.
-4. **Plain text / default:** Generates a structured branded HTML email with event details, schedule, and party size from the `buildEventRegistrationConfirmationEmail()` function.
-
-### Inline Email Templates
-
-The Worker contains full branded HTML email templates for each destination inline (e.g., `buildCozumelInterestEmail()`). These are ~200-line HTML documents styled to match the site's dark ocean theme: dark backgrounds, `EAF2FF` text, rounded borders, gradient headers, DMZ branding. They are complete standalone emails — no external stylesheets or images beyond the logo.
+- JSON uses `{ ok: true, ... }` for many mutation responses.
+- Errors use `{ ok: false, error: "..." }` and an appropriate 4xx/5xx status.
+- Protected endpoints return `401 Unauthorized` when the token is missing or expired.
+- CORS headers are attached to success and error responses.
+- public data endpoints use normalized wrapper objects rather than returning raw D1 rows.
 
 ---
 
-## Training Section
+## D1 data model
 
+Database binding: `DB`<br>
+Database name: `dmz_media`
+
+### `media_items`
+
+Stores public media metadata.
+
+| Column | Meaning |
+|---|---|
+| `id` | Stable media ID |
+| `type` | Video/photo classification |
+| `title`, `description` | Editorial copy |
+| `tags`, `badge`, `thumb_text`, `meta` | Display/filter metadata |
+| `url`, `thumb_url`, `stream_id` | Provider and thumbnail references |
+| `location` | Destination/location association |
+| `sort_order` | Manual ordering |
+| `created_at` | Editorial/provider creation date |
+
+Index: `idx_media_type`.
+
+### `admin_sessions`
+
+| Column | Meaning |
+|---|---|
+| `token` | Random UUID bearer token |
+| `created_at` | Session issue time |
+| `expires_at` | 24-hour expiration timestamp |
+
+Expired rows are ignored during authentication. The current code does not use cookies or refresh tokens.
+
+### Destination tables
+
+The schema contains historical destination tables (`destinations_base`, `destinations_expanded`, and `destinations`) plus the current `destinations_v2` table.
+
+`destinations_v2` stores:
+
+- `id`
+- full destination object in `data_json`
+- `created_at`
+- `updated_at`
+
+The Worker can seed/migrate v2 data from earlier destination representations when needed.
+
+### `events_v2`
+
+Stores a keyed calendar payload:
+
+- `calendar_key` (normally `primary`)
+- `data_json` containing definitions/templates/events
+- creation/update timestamps
+
+### `event_registrations_v2`
+
+Stores occurrence-level registrations:
+
+- event `source_id`
+- occurrence `event_date`
+- registrant identity/contact/certification
+- additional guest count and computed party size
+- `approval_status`, defaulting to `pending`
+- creation timestamp
+
+Index: `idx_event_regs_source_date` on source ID and date.
+
+### `site_settings`
+
+Generic JSON settings keyed by `setting_key`. The homepage ticker uses this table.
+
+### `management_records`
+
+Common operational columns:
+
+- `id`, `record_type`, `title`
+- `status`, `priority`, `owner`
+- contact name/email/phone
+- due date and related event
+- notes
+- `data_json` for type-specific `extras`
+- creation/update timestamps
+
+Indexes:
+
+- `idx_management_type_status`
+- `idx_management_due_date`
+
+This flexible model makes new CRM fields possible without a D1 migration for every type-specific property.
+
+---
+
+## Static data and fallback behavior
+
+| File | Role |
+|---|---|
+| `assets/data/destinations.json` | Base destination fallback and seed content |
+| `assets/data/destinations-expanded.json` | Detailed legacy destination fallback |
+| `assets/data/events.json` | Minimal event fallback |
+| `assets/data/events-expanded.json` | Expanded event seed/reference data |
+| `assets/data/media.json` | Media fallback/seed structure |
+| `assets/data/home-ticker.json` | Ticker fallback |
+
+Dynamic production content is expected to come from the Worker. Static files provide local-preview resilience, initial/legacy data, and controlled failover for selected public reads. They should not be assumed to mirror the latest D1 content automatically.
+
+When changing seeded destination content, keep base and expanded IDs aligned. Production editorial changes should be published through the authenticated API/editor so D1 remains current.
+
+---
+
+## Authentication and security model
+
+### Implemented controls
+
+- Admin credentials live in Worker secrets, not repository source.
+- Successful login creates a random UUID session in D1.
+- Sessions expire after 24 hours.
+- Protected routes call `requireAuth()` before reading or mutating admin data.
+- Browser tokens are sent as bearer tokens.
+- CORS allows DMZ domains, local development, Cloudflare Pages previews, and configured origins.
+- Preflight requests advertise only the headers/methods required by the application.
+- Public form honeypots reduce low-effort bot submissions.
+- User-controlled text is normalized, length-bounded, and HTML-escaped for generated email/UI contexts.
+- Management is excluded from search indexing through robots metadata.
+- Destructive UI operations require explicit selection and, where appropriate, confirmation.
+- Direct-upload credentials remain in Worker secrets; clients receive only one-time upload URLs.
+
+### Trust boundaries
+
+- The Pages Function is a transport proxy, not an authorization layer.
+- The Worker is the enforcement boundary for protected operations.
+- The management token is stored in `localStorage` under `dmzMediaToken`; any script executing in the same origin could access it.
+- Public event registration exposes only the roster information intentionally returned by the snapshot handler.
+- `/api/client-telemetry` logs bounded diagnostic payloads to Worker logs; it is not a general analytics database.
+
+### Current limitations
+
+The repository does not currently implement a global Content Security Policy, cookie-based `HttpOnly` sessions, multifactor authentication, server-side rate limiting, a CAPTCHA, or automatic expired-session cleanup. These are sensible future hardening areas if the threat model or administrative user count grows.
+
+Never commit `.dev.vars`, API tokens, passwords, Wrangler auth material, exported production records, or D1 backups containing personal information.
+
+---
+
+## Email system
+
+All transactional email is sent through Resend by the Worker.
+
+### Email categories
+
+- internal contact-form notification
+- general inquiry acknowledgment
+- Dive Path Quiz acknowledgment
+- destination-interest confirmation
+- event registration confirmation
+- internal event registration notification
+- registration resend
+- event alert broadcast
+
+### Template selection
+
+Optional Resend template IDs are read from environment variables. When a configured template is unavailable for a supported flow, the Worker can use branded inline HTML/text builders. Destination-specific selection recognizes Catalina/Southern California, Roatan, Playa del Carmen, Mermet Springs, Haigh Quarry, Key Largo, and Cozumel.
+
+### Event email modes
+
+An event can use:
+
+1. a Resend template ID with variables
+2. custom body HTML inside the DMZ email shell
+3. complete custom HTML
+4. generated default confirmation content
+
+Event merge data includes attendee and event context such as name, date, time, location, party size, and registration link where configured.
+
+### Delivery sequencing
+
+CRM records are generally saved after successful email delivery for the corresponding public inquiry path. A Resend configuration/delivery failure returns an error rather than claiming the customer request completed normally.
+
+---
+
+## Design system and CSS architecture
+
+### File responsibilities
+
+| File | Scope |
+|---|---|
+| `css/base.css` | Color tokens, typography, reset, body foundation |
+| `css/components.css` | Buttons, cards, header, navigation drawer, shared controls |
+| `css/main.css` | General site sections and desktop/global layout |
+| `css/responsive.css` | Shared breakpoint behavior and mobile contracts |
+| `css/pages/*.css` | Home, events, media, travel, destination, management, and other page-specific systems |
+
+### Visual language
+
+The design uses a cinematic deep-ocean palette:
+
+```css
+--bg: #050b14;
+--bg-2: #071325;
+--text: #eaf2ff;
+--muted: rgba(234, 242, 255, 0.72);
+--accent: #e21b23;
+--glow: rgba(85, 185, 255, 0.18);
+--radius: 18px;
 ```
-pages/training/index.html                    Course catalog hub
-pages/training/discover-scuba/index.html     Discover Scuba try-dive class
-pages/training/open-water/index.html         Open Water Certification — $1099 for groups of 2-4
-pages/training/specialty/index.html          Specialty course listing
-  specialty/nitrox/index.html                Enriched Air / Nitrox
-  specialty/wreck/index.html                 Wreck Diving
-  specialty/drysuit/index.html               Drysuit
-  specialty/full-face-mask/index.html        Full Face Mask
-pages/training/advanced-specialty/index.html Advanced Specialty overview (multilevel page)
-pages/training/skill-refresh/index.html      Skill Refresh program
-pages/training/course-builder/index.html     Interactive course configurator (js/course-builder.js)
-pages/training/interactive-tools/index.html  Physics education tools hub
-  interactive-tools/boyles-law-demo.html     Boyle's Law pressure/volume simulation
-  interactive-tools/color-loss-demo.html     Underwater color spectrum loss demo
-pages/privacy/index.html                     Privacy policy for website forms, analytics, and advertising disclosures
-```
 
-Each specialty page follows the same structure: hero image, course overview, skills covered, who it's for, prerequisite, and a CTA that pre-fills the contact form with the relevant course interest.
+Common motifs include translucent deep-blue panels, fine blue borders, soft glow, rounded cards, high-contrast white text, restrained red conversion actions, and large underwater imagery.
 
-**Interactive Tools:** The Boyle's Law and color loss demos are fully self-contained single HTML files (~265KB and ~124KB respectively). They include inline sprite sheets and animation logic. These are educational simulations for dive physics — the Boyle's Law demo shows how air volume changes with depth using animated visualizations.
+### Breakpoints
 
-**Course Builder** (`js/course-builder.js`) is a form-based tool that guides a student through selecting their current certification level, interests, goals, and preferred timeline, then generates a recommended course sequence and links to the contact form pre-filled with that sequence.
+The project uses page-appropriate breakpoints, with major mobile contracts around 780 and 680 pixels. The management console's application-shell conversion is centered at 680 pixels. Form controls use a 16-pixel mobile font size to avoid unwanted browser zoom.
+
+### Motion
+
+Motion is used for drawers, sticky controls, card feedback, canvas rotation, and media. `prefers-reduced-motion: reduce` rules remove or reduce nonessential transitions/animation where the shared responsive layer controls them.
 
 ---
 
-## Development Workflow
+## Accessibility
 
-### Workspaces
+Accessibility is implemented as an application behavior, not only static markup.
 
-| Repo | Local path | GitHub | Cloudflare Pages |
-|---|---|---|---|
-| Dev | `Y:\980 Evo\dmz-scuba site` | `dmz34705/DMZScuba.com` | `dmzscuba-com` (`dmzscuba-com.pages.dev`) |
-| Live | `Y:\980 Evo\dmz-scuba-live` | `dmz34705/DMZScuba-live` | `dmzscuba-live` → `www.dmzscuba.com` |
+Current patterns include:
 
-**Always work in dev.** Live is only touched when Zach explicitly approves promotion of specific commits.
+- semantic landmarks and headings
+- one H1 enforced on training pages
+- descriptive image `alt` attributes enforced in tests
+- `aria-current` for active navigation
+- `aria-expanded`, `aria-controls`, `aria-hidden`, and `aria-pressed` state synchronization
+- modal/dialog roles
+- focus trapping in the mobile drawer and quiz
+- focus restoration after overlays close
+- Escape-key dismissal
+- inert mobile navigation while closed
+- live regions for form, upload, filter, calendar, and publishing feedback
+- native buttons for interactive controls
+- keyboard shortcuts that defer while the user is typing
+- minimum touch-friendly mobile controls
+- reduced-motion support
+- visible scroll dots for otherwise ambiguous horizontal content
 
-### Push Workflow
+Accessibility is not represented as a formal WCAG certification; manual assistive-technology and color-contrast audits remain valuable release practices.
+
+---
+
+## SEO and discoverability
+
+The site includes:
+
+- route-specific titles and meta descriptions
+- canonical URLs under `https://www.dmzscuba.com/`
+- `robots.txt` with sitemap declaration
+- XML sitemap for public discovery routes
+- one-H1 validation across training pages
+- descriptive, location-aware training titles
+- homepage Open Graph and Twitter card metadata
+- NFC social metadata
+- homepage JSON-LD for business/site context
+- crawl exclusion for management
+- clean permanent redirect from apex domain to `www`
+
+The training test suite also rejects known encoding artifacts and stale price copy, protecting search snippets and page trust.
+
+---
+
+## Performance and resilience
+
+### Performance choices
+
+- no framework runtime, hydration layer, or bundle bootstrap
+- no production compile step
+- page-specific scripts/styles rather than one universal application bundle
+- responsive mobile-specific hero/logo assets
+- native lazy image loading where appropriate
+- observer-driven deferred media and globe work
+- `requestAnimationFrame` batching for layout/scroll updates
+- provider-direct media uploads
+- HLS.js loaded only on demand
+- compact recurring-event storage with client expansion
+- Cloudflare edge delivery for static assets and API
+
+### Resilience choices
+
+- selected API reads have JSON fallback paths
+- ticker and optional content fail without breaking the surrounding layout
+- media supports multiple providers and playback fallbacks
+- clipboard has a legacy textarea fallback
+- event sharing falls back from Web Share to clipboard/manual guidance
+- image/video upload status remains visible during long mobile uploads
+- defensive schema creation/migration helpers protect older D1 deployments
+- API errors use predictable JSON shapes so the UI can render feedback
+
+---
+
+## Configuration and secrets
+
+### Versioned Worker configuration
+
+`workers/dmz-media-api/wrangler.toml` defines:
+
+- Worker name: `dmz-media-api`
+- entry point: `src/index.js`
+- compatibility date: `2026-01-01`
+- D1 binding: `DB`
+- public nonsecret defaults such as allowed origins and sender labels
+
+### Required/optional runtime values
+
+| Variable or binding | Purpose |
+|---|---|
+| `DB` | D1 database binding |
+| `ADMIN_USER` | Management username secret |
+| `ADMIN_PASS` | Management password secret |
+| `RESEND_API_KEY` | Resend API secret |
+| `RESEND_FROM_EMAIL` | Sender address |
+| `RESEND_FROM_NAME` | Sender display name |
+| `RESEND_TO` | Internal notification recipient |
+| `CF_ACCOUNT_ID` | Cloudflare account for Stream/Images |
+| `CF_STREAM_TOKEN` | Stream API token |
+| `CF_IMAGES_ACCOUNT_ID` | Optional Images-specific account override |
+| `CF_IMAGES_TOKEN` | Images API token |
+| `CF_IMAGES_DELIVERY` | Images delivery base/hash |
+| `CF_IMAGES_VARIANT` | Default delivery variant |
+| `ALLOWED_ORIGINS` | Additional explicit CORS origins |
+| `RESEND_TEMPLATE_*` | Optional template IDs for quiz, inquiry, travel, and event alerts |
+
+Use Wrangler secrets or the Cloudflare dashboard for secret values. The placeholders/comments in `wrangler.toml` are documentation, not credentials.
+
+---
+
+## Local development
+
+### Prerequisites
+
+- Git
+- a modern browser
+- Python 3 for the bundled static server helper
+- Node.js for tests and smoke checks
+- npm/npx and Cloudflare credentials only when deploying the Worker
+
+### Static preview
+
+On Windows:
 
 ```powershell
-# 1. Check state
-git status --short --branch
-
-# 2. Review changes
-git diff --stat
-git diff --check          # fails on trailing whitespace
-
-# 3. Validate changed JS
-node --check js\management.js
-node --check workers\dmz-media-api\src\index.js
-
-# 4. Stage specific files (avoid git add -A for large changes)
-git add README.md js\management.js
-
-# 5. Commit
-git commit -m "clear description of what changed and why"
-
-# 6. Push via the batch file
-.\push.bat
+.\Python Server.bat
 ```
 
-`push.bat` flow: verify git repo → show status → `git pull --rebase --autostash` → `git add -A` → prompt for commit message (auto-timestamp if blank) → `git commit` → `git push origin main`.
+Then open:
 
-### Worker Deployment
+```text
+http://localhost:8080
+```
 
-Only when Worker source changed:
+Do not rely on opening HTML through `file://` for final testing. Same-origin API routing, module behavior, URL resolution, and browser security features are more representative through HTTP.
+
+### Optional external preview
+
+```powershell
+.\Pcloudfare.bat
+```
+
+This opens a Cloudflare tunnel to the local server for device testing.
+
+### Useful validation commands
+
+```powershell
+node --check js\main.js
+node --check js\management.js
+node --check workers\dmz-media-api\src\index.js
+node --test tests\*.test.cjs
+node scripts\smoke-check.mjs --base https://dmzscuba-com.pages.dev
+git diff --check
+```
+
+### Browser cache busting
+
+HTML references many frequently changed CSS/JS assets with query-string versions. When behavior changes but the file path does not, increment the relevant version so deployed browsers do not reuse a stale asset.
+
+---
+
+## Testing and release validation
+
+### `tests/media-logic.test.cjs`
+
+Tests pure media helpers including:
+
+- search-text aggregation
+- key normalization
+- item/tag/location filtering
+- all-selected-tag semantics
+- search term matching
+- date/views/shuffle sorting
+
+### `tests/mobile-experience.test.cjs`
+
+Protects structural contracts for:
+
+- accessible mobile drawer
+- shared header and brand
+- touch-friendly mobile controls
+- header/subnav scroll coordination
+- events mobile planning flow
+- media direct upload and management Media Studio
+- agenda bulk operations and closed-record visibility
+- contextual floating Save behavior
+- mobile management Home/Log Out actions
+- sticky-action viewport containment
+- public-page unified header adoption
+- training rail scroll dots
+- travel/globe/destination containment
+- presence of optimized mobile assets
+- balanced CSS blocks in edited stylesheets
+
+### `tests/training-funnel.test.cjs`
+
+Walks the training subtree and validates:
+
+- title, meta description, canonical, and one H1
+- image alt attributes
+- local links and fragments
+- absence of known encoding/stale-price strings
+- course-specific mobile CTA
+- Course Builder prefill links
+- validity of every referenced course ID
+
+### Deployed smoke checks
+
+`scripts/smoke-check.mjs` checks:
+
+- home, contact, media, and travel HTML markers
+- `/api/media` response shape
+- `/api/v2/destinations` response shape
+- contact honeypot path without delivering a real message
+
+Options:
+
+```text
+--base <url>
+--timeout-ms <number>
+--skip-api
+--verbose
+```
+
+### Manual release checks
+
+The release checklist adds browser-level verification for:
+
+- public pages and forms
+- mobile navigation and sticky actions
+- media filters and Reel Mode
+- admin login
+- publishing and uploads
+- affected management operations
+
+---
+
+## Deployment model
+
+DMZ Scuba intentionally uses separate development and production repositories/projects.
+
+| Environment | GitHub repository | Cloudflare Pages project | Primary URL |
+|---|---|---|---|
+| Development | `dmz34705/DMZScuba.com` | `dmzscuba-com` | `dmzscuba-com.pages.dev` |
+| Production | `dmz34705/DMZScuba-live` | `dmzscuba-live` | `www.dmzscuba.com` |
+
+### Development release flow
+
+1. edit only the development repository
+2. validate syntax and targeted behavior
+3. run automated tests
+4. commit and push development `main`
+5. verify the development Pages deployment
+6. perform mobile/device review
+
+### Production promotion flow
+
+1. obtain explicit approval for the tested commit range
+2. confirm both worktrees are clean
+3. fetch the development repository into the live clone as a temporary remote
+4. cherry-pick only approved commits into live `main`
+5. run tests in the live worktree
+6. deploy the Worker only if Worker source/configuration changed
+7. push live `main` using the repository's intentional one-time protection bypass
+8. remove the temporary remote
+9. verify `dmzscuba-live.pages.dev` and `www.dmzscuba.com`
+
+The live clone includes a push guard. A deliberate production push uses `ALLOW_MAIN_PUSH=1` for that command only.
+
+### Worker deployment
+
+Only required when `workers/dmz-media-api/**` changes:
 
 ```powershell
 .\Deploy Worker.bat
-# Runs: cd workers\dmz-media-api && npx wrangler deploy
 ```
 
-### Live Promotion
+This runs `npx wrangler deploy` from the Worker directory. A valid Cloudflare login or `CLOUDFLARE_API_TOKEN` must be available.
 
-1. Confirm Zach explicitly approved the specific commit(s) for live promotion.
-2. `git -C "Y:/980 Evo/dmz-scuba-live" cherry-pick <commit-hash>`
-3. `git -C "Y:/980 Evo/dmz-scuba-live" push origin main`
-4. Verify Cloudflare `dmzscuba-live` deploy is green.
-5. Run `.\Smoke Check.bat https://dmzscuba-live.pages.dev`
+### Routing
 
-### Routing (`_redirects`)
+Important `_redirects` rules:
 
-```
-https://dmzscuba.com/* → https://www.dmzscuba.com/:splat  301
-http://dmzscuba.com/*  → https://www.dmzscuba.com/:splat  301
-/api/*  → https://dmz-media-api.zacharylisowski55.workers.dev/api/:splat  200
-/management  → /management/index.html  200
-/training    → /pages/training/index.html  200
-```
-
-The `/api/*` proxy (200 status) is backed by the Pages Function at `functions/api/[[path]].js`. All it does is rewrite the URL and forward the request — no logic, no auth — so the Worker handles everything.
-
----
-
-## Scripts Reference
-
-| Script | What it does |
-|---|---|
-| `push.bat` | Interactive dev push: pull rebase, stage all, commit prompt, push to `origin main` |
-| `Deploy Worker.bat` | Runs `npx wrangler deploy` in `workers/dmz-media-api` |
-| `Smoke Check.bat` | Runs `scripts/smoke-check.mjs` against the dev Pages URL. Pass `--base <url>` for a different target |
-| `Python Server.bat` | Starts a Python HTTP server for local static preview at `http://localhost:8080` |
-| `Pcloudfare.bat` | Opens a Cloudflare tunnel for external access to the local server |
-| `Test Media Logic.bat` | Runs `tests/media-logic.test.cjs` with Node |
-
-**Smoke check** (`scripts/smoke-check.mjs`) validates: all public pages return 200 and contain expected HTML markers, key API endpoints respond, contact form POST returns success, media items load, and admin login works. Can skip API checks with `--skip-api`. Default timeout is 12 seconds per check.
-
----
-
-## Repo and Deployment Structure
-
-```
-Y:\980 Evo\dmz-scuba site\
-├── index.html                         Home page
-├── management\index.html              Admin console (noindex)
-├── quiz\index.html                    Quiz standalone page
-├── pages\                             All public section pages
-│   ├── about\  contact\  thanks\
-│   ├── events\ (index, event, embed)
-│   ├── media\
-│   ├── travel\ (index, destination)
-│   └── training\ (full subtree)
-├── js\                                All JavaScript
-│   ├── main.js                        Global nav, forms, telemetry
-│   ├── management.js                  Console core (~170KB)
-│   ├── management-*.js                12 console feature modules
-│   ├── events.js  events-admin.js
-│   ├── media.js  media-edit.js  media-logic.js
-│   ├── globe.js
-│   ├── destination.js  destinations-edit.js
-│   ├── quiz.js
-│   ├── travel-admin.js
-│   ├── course-builder.js
-│   └── home.js
-├── css\
-│   ├── base.css  components.css  main.css  responsive.css
-│   └── pages\  (per-page stylesheets)
-├── assets\
-│   ├── data\  (JSON fallback files)
-│   ├── images\ (hero, logos, globe earth tiles)
-│   └── media\thumbnails\
-├── functions\api\[[path]].js          Pages Function — API proxy
-├── workers\dmz-media-api\             Cloudflare Worker
-│   ├── src\index.js                   Worker source (~2800 lines)
-│   ├── schema.sql                     D1 schema
-│   └── wrangler.toml
-├── scripts\smoke-check.mjs
-├── tests\media-logic.test.cjs
-├── _redirects                         Cloudflare Pages routing rules
-├── _headers                           Security headers
-├── push.bat  Deploy Worker.bat  Smoke Check.bat
-├── Python Server.bat  Pcloudfare.bat  Test Media Logic.bat
-└── RELEASE-CHECKLIST.md
+```text
+apex dmzscuba.com -> https://www.dmzscuba.com/:splat (301)
+/api/*            -> Worker /api/:splat (200 proxy)
+/management       -> /management/index.html (200 rewrite)
+/training         -> /pages/training/index.html (200 rewrite)
+/nfc              -> /pages/nfc/index.html (200 rewrite)
 ```
 
 ---
 
-## AI Collaboration Guide
+## Common extension workflows
 
-### Hard Rules
+### Add a public shell page
 
-- **Default to dev.** `Y:\980 Evo\dmz-scuba site` only. Never touch `Y:\980 Evo\dmz-scuba-live` without explicit instruction.
-- **Preserve local changes.** Never `git reset --hard`, `git checkout --`, or `git restore` without explicit instruction.
-- **Validate JS before committing.** `node --check js\<file>` on any changed `.js` file.
-- **Run `git diff --check`.** Trailing whitespace errors will block a clean commit history.
-- **Use `push.bat` for pushes.** Do not run bare `git push`.
-- **Only deploy the Worker if Worker source changed** or Zach explicitly requests it.
-- **Mobile-first always.** The console must remain usable at ≤680px. Bottom tab bar + bottom sheet layout is non-negotiable.
+1. add `pages/<route>/index.html`
+2. include canonical, description, one H1, shared CSS, shared header contract, and `main.js`
+3. add page-specific CSS only if shared components are insufficient
+4. add navigation/footer links if appropriate
+5. add the route to `sitemap.xml`
+6. add it to unified-shell tests when it uses the full public header
+7. verify desktop, 780-pixel, 680-pixel, and narrow-phone layouts
 
-### Architecture Rules
+### Add or change a training course
 
-- `data_json` / `extras` fields are the escape hatch for per-type data. Do not add new D1 columns without good reason — extend `extras` first.
-- When adding a new management record field, update: the HTML form in `management/index.html`, the `typeConfigs` field list in `management.js`, the `COLUMN_MAP` and `EXPORT_HEADERS` in `management-import-export.js`, and the Worker's `createManagementRecord` / `updateManagementRecord` handlers.
-- When adding a new API route to the Worker, add it to the `if/else if` chain in the `fetch` handler and ensure CORS headers are included on all response paths.
-- Do not introduce npm dependencies to the public site JS. No bundler, no `node_modules` in the site root.
-- When touching destination data, update both `assets/data/destinations.json` (local fallback) and the Worker's `destinations_v2` table. IDs must match.
+1. update/create the course page
+2. add a stable `sdi-*` Course Builder option
+3. use that exact value in course-prefilled links
+4. include course-specific mobile CTA
+5. update catalog navigation and sitemap
+6. run `training-funnel.test.cjs`
 
-### Data File Conventions
+### Add a destination
 
-- `assets/data/destinations.json` — globe + travel page fallback (dev only)
-- `assets/data/destinations-expanded.json` — detailed destination data fallback (dev only)
-- `assets/data/events.json` — events fallback (dev only, used when API unreachable)
-- `assets/data/media.json` — media fallback (dev only)
-- `assets/data/home-ticker.json` — ticker fallback (dev only)
+1. choose a stable slug ID
+2. supply name, coordinates, tags, summaries, images, and detail content
+3. publish through the v2 destination API/editor
+4. keep fallback base/expanded JSON IDs aligned if fallback content is also updated
+5. add event-alias terms if trip titles/locations will not naturally match the destination
+6. test globe pin, card, detail page, related media, interest form, and mobile containment
 
-In production, the API is always authoritative. Local JSON files are only read when `apiBase` is empty (i.e., when running from `file://` or `localhost` without the API wired up).
+### Add an event feature
+
+1. update event normalization in Worker and client as required
+2. preserve definition/instance/source ID/date semantics
+3. update admin authoring and public expansion together
+4. consider recurrence, multi-day, override, registration, and share-link behavior
+5. verify both native public calendar and authenticated admin embed
+
+### Add a management record field
+
+1. add the form control to `management/index.html`
+2. add the field to the relevant `typeConfigs` entry in `management.js`
+3. read/write it through record `extras` unless it is truly cross-type
+4. update CSV mappings/headers if it should import/export
+5. update Worker normalization limits/allowed values
+6. test create, edit, contextual Save, card rendering, mobile bottom sheet, bulk preservation, and export
+
+### Add a Worker route
+
+1. define and normalize the handler
+2. add exact method/path dispatch in `fetch()`
+3. call `requireAuth()` for protected behavior
+4. return consistent JSON errors
+5. ensure all response paths receive CORS
+6. update this API table and Worker README
+7. run Worker syntax check
+8. deploy Worker before frontend code that depends on the route
+
+### Add a media provider
+
+1. implement URL/ID detection
+2. implement thumbnail strategy
+3. implement normal modal playback
+4. implement Reel Mode activation, pause, sound, and cleanup
+5. support destination-related media rendering
+6. update editor validation and tests
+
+---
+
+## Operational boundaries and technical debt
+
+This section is intentionally candid. It helps a new developer understand where care is required.
+
+- **Large modules:** `management.js`, `events-admin.js`, `media.js`, and several page stylesheets are substantial. Feature modules reduce coupling, but future refactoring could extract more pure logic and shared API utilities.
+- **No module loader:** script order and DOM contracts matter. A missing `data-*` hook may silently disable a feature.
+- **Some legacy destination code remains:** v2 APIs are current, while earlier tables/files/editor paths remain for compatibility and migration. New work should prefer `/api/v2/destinations` and `/api/admin/v2/destinations/:id`.
+- **Shared bearer token:** several editors share `dmzMediaToken`. This is convenient but couples all admin surfaces to one browser-side session mechanism.
+- **Client-side recurrence expansion:** public rendering depends on synchronized expansion rules between event surfaces. Changes require cross-surface testing.
+- **No build-time lint pipeline:** syntax/tests and disciplined review are the release gates. There is no TypeScript or bundler to catch selector/data-shape mismatch.
+- **Static fallback drift:** fallback JSON is not automatically synchronized from D1.
+- **Limited security headers:** `_headers` currently defines the security contact content type, not a full CSP/HSTS/permissions policy suite.
+- **No formal migration runner:** schema guards and `schema.sql` are used instead of numbered migrations.
+- **No formal license file:** repository reuse terms are not declared in this project.
+- **Browser/device validation remains important:** Canvas, video autoplay, sticky positioning, safe areas, virtual keyboards, and mobile uploads have platform-specific behavior that automated structural tests cannot fully reproduce.
+
+---
+
+## Project philosophy
+
+DMZScuba.com is designed around three ideas:
+
+1. **The customer journey and the business workflow should share data.** A quiz, registration, class, destination, email, and follow-up should not become disconnected islands.
+2. **Mobile usability is a product requirement.** Most visitors arrive on phones, and the management console must also be useful from a phone in the field.
+3. **Simple technology can still support a sophisticated product.** The project demonstrates that carefully structured HTML, CSS, vanilla JavaScript, and serverless primitives can deliver rich interaction without a framework or build system.
+
+The result is both a public scuba-business experience and a custom operational platform: a live example of product design, frontend engineering, serverless API design, content modeling, workflow automation, and continual mobile refinement in one production system.
