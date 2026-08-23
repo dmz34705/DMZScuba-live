@@ -83,7 +83,7 @@ The site is not only a brochure. It is an integrated operating system for the bu
 - **Zero-build frontend:** 29 HTML documents, 28 JavaScript modules, and 16 stylesheets load directly in the browser.
 - **Framework-free application architecture:** large application surfaces use plain state objects, DOM events, data attributes, observers, and isolated IIFEs.
 - **Single API boundary:** browser requests use same-origin `/api/*`; a Pages Function forwards them to one Worker.
-- **Serverless persistence:** D1 stores media, events, registrations, destinations, site settings, admin sessions, and management records.
+- **Serverless persistence:** D1 stores media, events, registrations, destinations, site settings, admin sessions, management records, and allowlisted training-funnel events.
 - **Direct-to-cloud uploads:** the browser uploads video directly to Cloudflare Stream and images directly to Cloudflare Images using authenticated one-time upload URLs.
 - **Pure Canvas globe:** the travel globe implements sizing, rotation, inertia, texture rendering, search, filtering, hit testing, pins, touch gestures, and zoom without Three.js or WebGL.
 - **Two event representations:** recurring definitions are stored compactly and expanded into dated event instances for public rendering.
@@ -226,6 +226,7 @@ There is no root `package.json`, no frontend dependency installation, and no pro
 |-- workers/dmz-media-api/
 |   |-- src/index.js                  Worker implementation
 |   |-- schema.sql                    D1 schema reference
+|   |-- migrations/                   Numbered D1 migrations
 |   |-- wrangler.toml                 Worker and D1 configuration
 |   `-- README.md                     Worker-focused reference
 |-- tests/
@@ -967,7 +968,7 @@ All browser code should call same-origin `/api/*`. Production routing forwards r
 | `GET` | `/api/media` | Return public media grouped as video/media and photo items |
 | `POST` | `/api/contact` | Send inquiry/quiz/interest email and create CRM records |
 | `POST` | `/api/event-alert-subscribe` | Create/update an opted-in contact |
-| `POST` | `/api/client-telemetry` | Log bounded client event/failure details |
+| `POST` | `/api/client-telemetry` | Log sanitized operational events and persist allowlisted training-funnel events in D1 |
 | `GET` | `/api/v2/events` | Return event calendar payload |
 | `GET` | `/api/v2/events/:sourceId/registrations?date=YYYY-MM-DD` | Return occurrence capacity and public roster snapshot |
 | `POST` | `/api/v2/events/:sourceId/registrations` | Create occurrence registration |
@@ -1066,6 +1067,14 @@ Index: `idx_media_type`.
 
 Expired rows are ignored during authentication. The current code does not use cookies or refresh tokens.
 
+### `funnel_events`
+
+Stores the approved training journey from a course-page view through a completed inquiry. Each row uses a random event ID for idempotency and a random per-tab session ID for funnel grouping. The table stores only normalized page paths and an event-specific allowlist of course, device, campaign label, CTA, destination, source-page, experience, and group fields.
+
+The Worker does not persist full URL query strings, IP addresses, user-agent strings, names, email addresses, phone numbers, messages, form-field contents, `gclid`, or arbitrary event properties in this table. A daily scheduled handler deletes rows older than 400 days by default.
+
+Indexes support retention cleanup, event/time reporting, and session/time funnel analysis.
+
 ### Destination tables
 
 The schema contains historical destination tables (`destinations_base`, `destinations_expanded`, and `destinations`) plus the current `destinations_v2` table.
@@ -1154,6 +1163,7 @@ When changing seeded destination content, keep base and expanded IDs aligned. Pr
 - CORS allows DMZ domains, local development, Cloudflare Pages previews, and configured origins.
 - Preflight requests advertise only the headers/methods required by the application.
 - Public form honeypots reduce low-effort bot submissions.
+- Client telemetry enforces approved origins, bounded payloads, event and field allowlists, normalized paths, and idempotent D1 inserts.
 - User-controlled text is normalized, length-bounded, and HTML-escaped for generated email/UI contexts.
 - Management is excluded from search indexing through robots metadata.
 - Destructive UI operations require explicit selection and, where appropriate, confirmation.
@@ -1165,7 +1175,7 @@ When changing seeded destination content, keep base and expanded IDs aligned. Pr
 - The Worker is the enforcement boundary for protected operations.
 - The management token is stored in `localStorage` under `dmzMediaToken`; any script executing in the same origin could access it.
 - Public event registration exposes only the roster information intentionally returned by the snapshot handler.
-- `/api/client-telemetry` logs bounded diagnostic payloads to Worker logs; it is not a general analytics database.
+- `/api/client-telemetry` logs bounded, sanitized diagnostics and persists only allowlisted training-funnel events to D1; it is not a general event-ingestion database.
 
 ### Current limitations
 
